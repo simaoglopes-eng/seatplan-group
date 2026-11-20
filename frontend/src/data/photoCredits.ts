@@ -4,7 +4,7 @@
 // (illustrativePhotos.ts). The last two are built from their data files so they never drift.
 
 import { ALL_ILLUSTRATIVE } from "./illustrativePhotos";
-import { VENUE_PHOTOS, homeUseOf } from "./venuePhotos";
+import { DIRECTORY_BAND_VENUE, VENUE_PHOTOS, homeUseOf } from "./venuePhotos";
 
 export type CreditGroup = "site" | "venue" | "illustrative";
 
@@ -35,9 +35,11 @@ const CC_BY_SA_4 = "https://creativecommons.org/licenses/by-sa/4.0/";
 const CC_BY_3 = "https://creativecommons.org/licenses/by/3.0/";
 const CC_BY_SA_2 = "https://creativecommons.org/licenses/by-sa/2.0/";
 const CC_BY_SA_3_AT = "https://creativecommons.org/licenses/by-sa/3.0/at/deed.en";
+const CC_BY_4 = "https://creativecommons.org/licenses/by/4.0/";
+const CC_BY_2 = "https://creativecommons.org/licenses/by/2.0/";
 
 /** Files still served from /images/photos but no longer on any page (the home tiles now
-    show real directory venues): credited all the same, and said so. */
+    show real directory venues, the hero shows dinners): credited all the same, and said so. */
 const NOT_SHOWN = "Earlier home page photo, not shown on any page at present";
 
 const SITE_PHOTOS: Omit<PhotoCredit, "group">[] = [
@@ -48,7 +50,7 @@ const SITE_PHOTOS: Omit<PhotoCredit, "group">[] = [
     licence: "CC BY-SA 4.0",
     licenceUrl: CC_BY_SA_4,
     sourceUrl: "https://commons.wikimedia.org/wiki/File:Lichtburg-Essen-Kinosaal-2025.jpg",
-    usedFor: "Home page, top; background of the invitation page (/participant)",
+    usedFor: NOT_SHOWN,
   },
   {
     file: "/images/photos/palazzo-hall.jpg",
@@ -75,7 +77,7 @@ const SITE_PHOTOS: Omit<PhotoCredit, "group">[] = [
     licence: "CC BY-SA 3.0 AT",
     licenceUrl: CC_BY_SA_3_AT,
     sourceUrl: "https://commons.wikimedia.org/wiki/File:Parkhotel_Schoenbrunn_Ballsaal_DSC_5115w.jpg",
-    usedFor: NOT_SHOWN,
+    usedFor: "Background of the page-not-found screen",
   },
   {
     file: "/images/photos/conference-room.jpg",
@@ -93,7 +95,7 @@ const SITE_PHOTOS: Omit<PhotoCredit, "group">[] = [
     licence: "CC BY-SA 3.0 AT",
     licenceUrl: CC_BY_SA_3_AT,
     sourceUrl: "https://commons.wikimedia.org/wiki/File:Parkhotel_Schoenbrunn_Ballsaal_DSC_5115w.jpg",
-    usedFor: "Home page, top (second photo)",
+    usedFor: NOT_SHOWN,
   },
   {
     file: "/images/photos/hero-square-brussels.jpg",
@@ -102,15 +104,42 @@ const SITE_PHOTOS: Omit<PhotoCredit, "group">[] = [
     licence: "CC BY 2.0",
     licenceUrl: "https://creativecommons.org/licenses/by/2.0/",
     sourceUrl: "https://commons.wikimedia.org/wiki/File:Square_-_Brussels_Meeting_Centre_3_-_Brussels,_Belgium.jpg",
-    usedFor: "Home page, top (third photo)",
+    usedFor: NOT_SHOWN,
+  },
+  {
+    file: "/images/photos/hero-terrace-assisi.jpg",
+    title: "Terrace Dinner in Assisi",
+    author: "Andrew Parlette",
+    licence: "CC BY 4.0",
+    licenceUrl: CC_BY_4,
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Terrace_Dinner_in_Assisi.jpg",
+    usedFor: "Home page, top (first photo); background of the sign-in page, the organiser sign-up page (/organiser/register) and the invitation page (/participant)",
+  },
+  {
+    file: "/images/photos/hero-dinner-giant.jpg",
+    title: "Worlds Largest Sit Down Dinner",
+    author: "David from Washington, DC",
+    licence: "CC BY 2.0",
+    licenceUrl: CC_BY_2,
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Worlds_Largest_Sit_Down_Dinner(2677917824).jpg",
+    usedFor: "Home page, top (second photo); top of the events page (/events)",
+  },
+  {
+    file: "/images/photos/hero-dining-hall.jpg",
+    title: "Formal Dining Hall with Floral Centrepiece and Stag Head Decorations",
+    author: "Michael Gaylard",
+    licence: "CC BY 4.0",
+    licenceUrl: CC_BY_4,
+    sourceUrl: "https://commons.wikimedia.org/w/index.php?curid=191810382",
+    usedFor: "Home page, top (third photo); top of the venues page (/venues)",
   },
 ];
 
 const ALL: PhotoCredit[] = [
   ...SITE_PHOTOS.map((credit): PhotoCredit => ({ ...credit, group: "site" })),
   ...Object.entries(VENUE_PHOTOS).map(([id, photo]): PhotoCredit => {
-    const home = homeUseOf(id);
-    return { ...photo.credit, file: photo.src, usedFor: home ? `Venue photo: ${photo.name}; also on the ${home}` : `Venue photo: ${photo.name}`, group: "venue" };
+    const also = [homeUseOf(id), id === DIRECTORY_BAND_VENUE ? "top of the directory page (/directory)" : ""].filter(Boolean).join("; ");
+    return { ...photo.credit, file: photo.src, usedFor: also ? `Venue photo: ${photo.name}; also on the ${also}` : `Venue photo: ${photo.name}`, group: "venue" };
   }),
   ...ALL_ILLUSTRATIVE.map(
     (photo): PhotoCredit => ({ ...photo.credit, file: photo.src, usedFor: `Illustrative photo (${photo.subject.toLowerCase()}) on directory cards of venues without their own photo`, group: "illustrative" }),

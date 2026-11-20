@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import ParticipantStartPage from "./ParticipantStartPage";
+import ParticipantStartPage, { joinCodeOf } from "./ParticipantStartPage";
 
 function EventOpened() {
   const navigate = useNavigate();
@@ -14,9 +14,9 @@ function EventOpened() {
   );
 }
 
-function renderParticipantStart() {
+function renderParticipantStart(entry = "/participant") {
   render(
-    <MemoryRouter initialEntries={["/participant"]}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/participant" element={<ParticipantStartPage />} />
         <Route path="/j/:token" element={<EventOpened />} />
@@ -29,6 +29,20 @@ function renderParticipantStart() {
 }
 
 beforeEach(() => window.sessionStorage.clear());
+afterEach(() => vi.unstubAllGlobals());
+
+describe("joinCodeOf", () => {
+  it("reads a short code typed with or without its hyphen and spaces", () => {
+    expect(joinCodeOf("7kq-24m8pq3vzd")).toBe("7KQ-24M8PQ3VZD");
+    expect(joinCodeOf(" 7KQ 24M8 PQ3V ZD ")).toBe("7KQ-24M8PQ3VZD");
+  });
+
+  it("leaves shared link tokens alone: codes never contain I, L, O or U", () => {
+    expect(joinCodeOf("return-to-form")).toBeNull();
+    expect(joinCodeOf("TEST")).toBeNull();
+    expect(joinCodeOf("abc_123")).toBeNull();
+  });
+});
 
 describe("Participant entry", () => {
   it("opens a shared event from its short invitation code", () => {
@@ -64,6 +78,35 @@ describe("Participant entry", () => {
     fireEvent.click(screen.getByRole("button", { name: "Back to invitation entry" }));
 
     expect((screen.getByLabelText("Invitation link or code") as HTMLInputElement).value).toBe("return-to-form");
+  });
+
+  it("fills in ?code= from the landing without opening a value that is not a code", () => {
+    window.sessionStorage.setItem("seatplan.participant-entry.invitation", "older-value");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    renderParticipantStart("/participant?code=TEST");
+
+    expect((screen.getByLabelText("Invitation link or code") as HTMLInputElement).value).toBe("TEST");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("opened-path")).toBeNull();
+  });
+
+  it("opens a well-formed ?code= straight away", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ path: "/j/shared-token" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    renderParticipantStart("/participant?code=7KQ-24M8PQ3VZD");
+
+    expect((await screen.findByTestId("opened-path")).textContent).toBe("/j/shared-token");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/join-code/7KQ-24M8PQ3VZD");
+  });
+
+  it("keeps a ?code= the server does not know in the form, with the error", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: "not_found", message: "Not valid" } }), { status: 404 })));
+    renderParticipantStart("/participant?code=7KQ-24M8PQ3VZD");
+
+    expect((await screen.findByRole("alert")).textContent).toMatch(/valid SeatPlan invitation/);
+    expect((screen.getByLabelText("Invitation link or code") as HTMLInputElement).value).toBe("7KQ-24M8PQ3VZD");
   });
 
   it("offers participant account creation and sign-in", () => {

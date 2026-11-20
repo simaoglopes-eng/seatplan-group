@@ -44,7 +44,7 @@
 
 /* variant="overlay" (the home page only): the bar sits transparent over the hero
    photo with white text, and scrolls away with it. */
-/* The public header links (PublicHeaderActions): small capitals, square account button. */
+/* The public header links (PublicHeaderActions): small capitals, round buttons. */
 .site-nav .site-nav-links .btn,
 .site-nav .site-nav-toggle,
 .site-nav .site-nav-login {
@@ -75,7 +75,7 @@
   background: var(--c-primary);
   color: var(--c-on-primary);
   border: var(--border-width) solid var(--c-primary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-button);
   box-shadow: none;
   white-space: nowrap;
 }
@@ -97,28 +97,43 @@
 .shell-overlay .shell-header .wordmark,
 .shell-overlay .shell-header .site-nav-links:not(.is-open) .btn,
 .shell-overlay .shell-header .site-nav-toggle { color: var(--c-on-band); }
-.shell-overlay .shell-header .site-nav-login {
-  background: transparent;
-  color: var(--c-on-band);
-  border-color: var(--c-on-band);
+/* Over the hero photo "Sign in" is clear glass and "Create your own event" green
+   glass (the .btn-glass recipes below). The open phone menu is a solid panel, so
+   its create button keeps the plain primary fill: glass never sits on a flat colour. */
+.shell-overlay .shell-header .site-nav-login,
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create {
+  color: var(--glass-text);
+  border: var(--border-width) solid var(--glass-border);
+  box-shadow: var(--glass-shadow-button);
+  -webkit-backdrop-filter: var(--glass-blur-button);
+  backdrop-filter: var(--glass-blur-button);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
 }
-.shell-overlay .shell-header .site-nav-login:hover { background: var(--c-on-band); color: var(--c-band); }
+.shell-overlay .shell-header .site-nav-login { background: var(--glass-bg); }
+.shell-overlay .shell-header .site-nav-login:hover:not(:disabled) { background: var(--glass-bg-hover); color: var(--glass-text); border-color: var(--glass-border-hover); }
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create { background: var(--glass-green); }
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create:hover:not(:disabled) {
+  background: var(--glass-green-hover);
+  border-color: var(--glass-border-hover);
+  color: var(--glass-text);
+}
 .shell-overlay .shell-header .site-nav-toggle:hover:not(:disabled),
 .shell-overlay .shell-header .site-nav-toggle[aria-expanded="true"],
-.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--c-on-band) 14%, transparent);
-  color: var(--c-on-band);
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn:not(.site-nav-create):hover:not(:disabled) {
+  background: var(--glass-bg);
+  color: var(--glass-text);
 }
-/* Over the hero photo the create button is white with navy ink; the open phone menu keeps the primary fill. */
-.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create {
-  background: var(--c-on-band);
-  color: var(--c-band);
-  border-color: var(--c-on-band);
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .shell-overlay .shell-header .site-nav-login { background: var(--glass-fallback); }
 }
-.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create:hover:not(:disabled) {
-  background: var(--c-on-band-muted);
-  border-color: var(--c-on-band-muted);
-  color: var(--c-band);
+/* Less transparency asked for: the two header buttons turn solid, hover included. */
+@media (prefers-reduced-transparency: reduce) {
+  .shell-overlay .shell-header .site-nav-login,
+  .shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .shell-overlay .shell-header .site-nav-login,
+  .shell-overlay .shell-header .site-nav-login:hover:not(:disabled) { background: var(--glass-fallback); }
+  .shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create,
+  .shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create:hover:not(:disabled) { background: var(--glass-green-solid); }
 }
 .shell-overlay .shell-header :focus-visible { outline-color: var(--c-on-band); }
 /* The open phone menu is a white panel: its links keep the normal ring. */
@@ -205,11 +220,20 @@
 .restaurant-brand-text { display:grid;gap:.15rem;line-height:1.05; }
 .restaurant-brand-label { color:var(--c-text-muted);font:600 .6875rem/1.05 var(--font-body); }
 
+/* Federico's mark (the favicon artwork, PageShell.tsx) beside "SeatPlan" in Gloock. */
+.wordmark-mark {
+  flex: none;
+  display: block;
+  width: 30px;
+  height: 30px;
+}
+
 .wordmark-text {
   font-family: var(--font-display);
-  font-size: var(--fs-xl);
-  font-weight: var(--fw-bold);
-  letter-spacing: -0.01em;
+  font-size: 1.5rem;
+  font-weight: var(--fw-display);
+  line-height: 1;
+  letter-spacing: var(--ls-display);
 }
 
 /* ---------- Button ---------- */
@@ -765,4 +789,101 @@
 .shell-header .shell-inner { min-height: 4.5rem; }
 .shell-main { padding-block: clamp(1.5rem, 4vw, 3rem) 4rem; }
 .shell-footer { padding-block: 1.5rem; }
-.wordmark-text { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+
+/* ---------- Glass over photographs (direction E) ----------
+   Rule: glass only ever sits on a photograph, never on a flat colour. Every class
+   here assumes a photo behind it (usually under a --photo-veil). Text is white;
+   the focus ring is white too, because the blue ring cannot be relied on over a
+   photo. Without backdrop-filter, or when the visitor asks for less transparency,
+   the panel becomes a solid dark green-black (--glass-fallback). */
+.glass-panel {
+  color: var(--glass-text);
+  background: var(--glass-bg);
+  border: var(--border-width) solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.22);
+}
+.glass-panel :is(h1, h2, h3, strong) { color: var(--glass-text); }
+.glass-panel :is(p, li, span) { color: inherit; }
+.glass-panel .glass-muted { color: var(--glass-text-muted); }
+.glass-panel .glass-eyebrow { color: var(--glass-eyebrow); }
+.glass-panel a:not(.btn) { color: var(--glass-text); }
+.glass-panel :focus-visible,
+.photo-band :focus-visible,
+:is(.btn-glass, .btn-glass-green, .btn-glass-brass):focus-visible { outline-color: var(--glass-text); }
+
+/* Glass buttons: round, white text, a thinner blur than panels. */
+.btn.btn-glass,
+.btn.btn-glass-green,
+.btn.btn-glass-brass {
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-button);
+  border: var(--border-width) solid rgba(255, 255, 255, 0.4);
+  background: var(--glass-bg);
+  color: var(--glass-text);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  box-shadow: var(--glass-shadow-button);
+  -webkit-backdrop-filter: var(--glass-blur-button);
+  backdrop-filter: var(--glass-blur-button);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.btn.btn-glass-green { background: var(--glass-green); }
+.btn.btn-glass-brass { background: var(--glass-brass); }
+.btn.btn-glass:hover:not(:disabled) { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); color: var(--glass-text); }
+.btn.btn-glass-green:hover:not(:disabled) { background: var(--glass-green-hover); border-color: var(--glass-border-hover); color: var(--glass-text); }
+.btn.btn-glass-brass:hover:not(:disabled) { background: var(--glass-brass-hover); border-color: var(--glass-border-hover); color: var(--glass-text); }
+
+/* A field on glass: a clearer pane with white text and a light placeholder. */
+.glass-field {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border: var(--border-width) solid var(--glass-field-border);
+  border-radius: var(--radius-input);
+  background: var(--glass-field);
+  color: var(--glass-text);
+  font: inherit;
+  letter-spacing: 0.04em;
+}
+.glass-field::placeholder { color: rgba(255, 255, 255, 0.7); opacity: 1; }
+.glass-field:hover { border-color: var(--glass-border-hover); }
+.glass-field:focus { border-color: var(--glass-text); background: rgba(255, 255, 255, 0.18); }
+
+/* A block with a full-bleed cover photo, a legibility veil and a glass panel for
+   its content. Markup: .photo-band > .photo-band-photo (img) + .photo-band-inner > .glass-panel */
+.photo-band {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--glass-text);
+  background: var(--c-band);
+}
+.photo-band-photo { position: absolute; inset: 0; z-index: -2; overflow: hidden; }
+.photo-band-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.photo-band::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--photo-veil);
+  pointer-events: none;
+}
+.photo-band-inner { position: relative; }
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel, .btn.btn-glass { background: var(--glass-fallback); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel, .btn.btn-glass { background: var(--glass-fallback); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .btn.btn-glass-green { background: var(--glass-green-solid); }
+  .btn.btn-glass-brass { background: var(--glass-brass-solid); }
+}

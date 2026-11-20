@@ -136,6 +136,9 @@ export const VENUE_PHOTOS: Record<string, VenuePhoto> = {
   r10379191: HAND_r10379191,
 };
 
+/** The venue whose photo fills the top band of /directory (DirectoryPage.tsx); credited as such on /credits. */
+export const DIRECTORY_BAND_VENUE = "w142509065";
+
 /** Venues shown on the home page, two per country, in this order. */
 export const FEATURED_VENUES = ["r5424595", "w142509065", "r10379191", "r10794433", "w144502504", "w43664624"] as const;
 

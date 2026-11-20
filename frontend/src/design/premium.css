@@ -1,5 +1,6 @@
-/* Product-wide visual layer: flat surfaces, hairlines, square corners, clear
-   hierarchy and touch-first spacing. Tokens only, so dark mode follows. */
+/* Product-wide visual layer (direction E): linen surfaces, hairlines, soft 14px
+   corners, round buttons, Gloock headings at their one weight, touch-first spacing.
+   Tokens only, so dark mode follows. Glass lives in components.css, photos only. */
 
 body {
   background: var(--c-bg);
@@ -62,7 +63,7 @@ textarea {
 .btn {
   min-height: 46px;
   padding-inline: 1.25rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-button);
   font-weight: 600;
   letter-spacing: 0.01em;
   transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
@@ -80,7 +81,7 @@ select,
 textarea {
   min-height: 48px;
   border-color: var(--c-border-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-input);
   background: var(--c-surface);
   color: var(--c-text);
 }
@@ -118,7 +119,7 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   border-color: var(--c-border-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-button);
   padding: .6rem 1rem;
   font-size: .85rem;
   font-weight: 600;
@@ -161,7 +162,7 @@ textarea:focus {
   gap: .9rem;
   padding: .8rem 1.25rem;
   border: 1px solid var(--c-border-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-button);
   font-size: .86rem;
   font-weight: 600;
   text-decoration: none;
@@ -219,13 +220,13 @@ textarea:focus {
 .welcome-role-guest { min-height: 300px; }
 .welcome-role:hover { border-color: var(--c-border-strong); }
 .welcome-role-number { color: var(--c-text-muted); font-size: .68rem; letter-spacing: var(--ls-eyebrow); }
-.welcome-role-copy strong { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: clamp(1.8rem, 2.4vw, 2.4rem); letter-spacing: var(--ls-display); }
+.welcome-role-copy strong { font-family: var(--font-display); font-weight: var(--fw-display); font-size: clamp(1.8rem, 2.4vw, 2.4rem); letter-spacing: var(--ls-display); }
 .welcome-role-copy span { max-width: 33ch; color: var(--c-text-muted); font-size: .94rem; line-height: 1.55; }
 .welcome-icon { color: var(--c-primary); }
 .welcome-role-action { font-size: .87rem; font-weight: 700; }
 .welcome-invite { max-width: 32rem; }
 .welcome-invite label { font-size: .8rem; font-weight: 600; }
-.welcome-invite-row { min-height: 50px; border-radius: var(--radius-sm); border-color: var(--c-border-strong); background: var(--c-surface); }
+.welcome-invite-row { min-height: 50px; border-radius: var(--radius-input); border-color: var(--c-border-strong); background: var(--c-surface); }
 .welcome-invite-row input { min-height: 48px; padding-inline: .9rem; }
 .welcome-invite-row button { min-width: 50px; background: var(--c-primary); }
 .welcome-account-links { gap: .25rem 1rem; }
@@ -264,7 +265,7 @@ textarea:focus {
 .auth-story::before,
 .auth-story::after { content: none; }
 .auth-eyebrow { margin: 0 0 2rem; color: var(--c-on-band-muted); font-size: .68rem; font-weight: 600; letter-spacing: var(--ls-eyebrow); }
-.auth-story h2 { max-width: 10ch; margin: 0; color: inherit; font: var(--fw-bold) clamp(2.2rem, 4vw, 3.4rem)/1.06 var(--font-display); letter-spacing: var(--ls-display); }
+.auth-story h2 { max-width: 10ch; margin: 0; color: inherit; font: var(--fw-display) clamp(2.2rem, 4vw, 3.4rem)/1.06 var(--font-display); letter-spacing: var(--ls-display); }
 .auth-description { max-width: 30ch; margin: 1rem 0 0; color: var(--c-on-band-muted); line-height: 1.65; }
 .auth-illustration { width: min(100%, 17rem); height: auto; margin: auto 0 1rem; color: var(--c-on-band-muted); }
 .auth-note { display: flex; gap: .65rem; align-items: center; margin: 0; color: var(--c-on-band-muted); font-size: .8rem; }
@@ -309,7 +310,7 @@ textarea:focus {
 .dashboard-content { max-width: 78rem; padding: clamp(1.25rem, 3vw, 2.5rem) 0 0; }
 .dashboard-kicker,
 .dashboard-label { color: var(--c-text-muted); font-size: .68rem; letter-spacing: var(--ls-eyebrow); }
-.dashboard-content h1 { max-width: 14ch; margin: .7rem 0 .85rem; color: var(--c-heading); font: var(--fw-bold) clamp(2.5rem, 5vw, 4rem)/1.04 var(--font-display); letter-spacing: -0.03em; }
+.dashboard-content h1 { max-width: 14ch; margin: .7rem 0 .85rem; color: var(--c-heading); font: var(--fw-display) clamp(2.5rem, 5vw, 4rem)/1.04 var(--font-display); letter-spacing: var(--ls-display); }
 .dashboard-content h1 em { color: var(--c-text-muted); font-style: normal; }
 .dashboard-intro,
 .dashboard-card p { color: var(--c-text-muted); }
@@ -318,11 +319,11 @@ textarea:focus {
 .dashboard-card,
 .dashboard-created { border-color: var(--c-border); border-radius: var(--radius-lg); background: var(--c-surface); padding: clamp(1.25rem, 3vw, 2rem); box-shadow: none; }
 .dashboard-card:first-child { background: var(--c-surface-sunk); border-color: var(--c-border); }
-.dashboard-card h2 { margin: .65rem 0 .5rem; color: var(--c-heading); font: var(--fw-bold) clamp(1.7rem, 3vw, 2.25rem)/1.12 var(--font-display); letter-spacing: var(--ls-display); }
+.dashboard-card h2 { margin: .65rem 0 .5rem; color: var(--c-heading); font: var(--fw-display) clamp(1.7rem, 3vw, 2.25rem)/1.12 var(--font-display); letter-spacing: var(--ls-display); }
 .dashboard-card form { gap: 1rem; margin-top: 1.2rem; }
 .dashboard-card label { color: var(--c-text); font-size: .84rem; font-weight: 600; }
-.dashboard-card input { min-height: 48px; padding: .75rem .85rem; border: 1px solid var(--c-border-strong); border-radius: var(--radius-sm); background: var(--c-surface); }
-.dashboard-card button { min-height: 48px; border-radius: var(--radius-sm); background: var(--c-primary); font-weight: 600; }
+.dashboard-card input { min-height: 48px; padding: .75rem .85rem; border: 1px solid var(--c-border-strong); border-radius: var(--radius-input); background: var(--c-surface); }
+.dashboard-card button { min-height: 48px; border-radius: var(--radius-button); background: var(--c-primary); font-weight: 600; }
 .dashboard-card button:hover:not(:disabled) { background: var(--c-primary-hover); }
 .dashboard-list li { border-color: var(--c-border); }
 .dashboard-list li > div:last-child { gap: .5rem 1rem; }

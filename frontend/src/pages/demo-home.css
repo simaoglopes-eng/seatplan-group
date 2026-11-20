@@ -9,22 +9,22 @@
 }
 
 .home-hero h1 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
   font-size: clamp(2.5rem, 1.5rem + 3.2vw, 4.25rem);
   line-height: 1.02;
-  letter-spacing: -0.025em;
+  letter-spacing: var(--ls-display);
   margin-bottom: var(--space-5);
 }
 
-/* The sample room sits in a frosted frame; the floor itself stays solid so
-   every seat glyph keeps its checked contrast. */
+/* The sample room sits in a linen frame (direction E: no glass, there is no photo behind
+   it); the floor itself stays solid so every seat glyph keeps its checked contrast. */
 .home-hero-map {
   padding: var(--space-2);
-  border-radius: var(--radius-lg);
-  background: var(--glass-fill);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border: var(--border-width) solid var(--glass-edge);
-  box-shadow: var(--glass-highlight), var(--shadow-glass);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-line);
+  box-shadow: var(--shadow-sm);
 }
 
 .home-hero-map .seatmap-viewport {
@@ -39,10 +39,9 @@
 /* The legend is the key printed under a seating plan: a quiet pane of its own. */
 .home-hero-text .legend {
   padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  background: var(--glass-fill-soft);
-  border: var(--border-width) solid var(--glass-edge);
-  box-shadow: var(--glass-highlight);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-line);
 }
 
 .home-eyebrow {
@@ -69,9 +68,16 @@
 }
 
 .home-demo > h2,
+.home-how > h2,
+.home-card h3,
+.home-steps h3 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-display);
+}
+.home-demo > h2,
 .home-how > h2 {
   font-size: clamp(2rem, 1.5rem + 1.4vw, 2.75rem);
-  letter-spacing: -0.02em;
 }
 
 .home-cards {
@@ -83,12 +89,10 @@
 
 .home-card {
   padding: var(--space-6) var(--space-5) var(--space-5);
-  border-radius: var(--radius-lg);
-  background: var(--glass-fill);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border: var(--border-width) solid var(--glass-edge);
-  box-shadow: var(--glass-highlight), var(--shadow-glass);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-line);
+  box-shadow: var(--shadow-sm);
 }
 
 .home-card h3 {
@@ -114,10 +118,9 @@
   column-gap: var(--space-3);
   min-height: var(--touch-target);
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  border: var(--border-width) solid var(--glass-edge);
-  background: var(--glass-fill-soft);
-  box-shadow: var(--glass-highlight);
+  border-radius: var(--radius-input);
+  border: var(--border-width) solid var(--c-line);
+  background: var(--c-bg);
   color: var(--c-text);
   text-decoration: none;
   transition:
@@ -127,14 +130,13 @@
 }
 
 .home-link:hover {
-  background: var(--glass-fill-hover);
-  box-shadow: var(--glass-highlight), var(--shadow-md);
+  background: var(--c-surface-sunk);
+  border-color: var(--c-primary);
   color: var(--c-text);
 }
 
 .home-link:active {
   transform: translateY(1px);
-  box-shadow: var(--glass-highlight);
 }
 
 .home-link-label {

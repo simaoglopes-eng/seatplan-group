@@ -77,6 +77,7 @@ export default function EventsPage() {
       <PageShell title="Event booking" headerActions={<PublicHeaderActions />}>
         <PageBand
           id="events-heading"
+          photo={{ src: "/images/photos/hero-dinner-giant.jpg", position: "center 45%" }}
           eyebrow="Upcoming events"
           title="Choose your seat at an event."
           count={countText(results.status === "ready" ? results.total : results.status === "error" ? undefined : null, "upcoming event", "upcoming events")}

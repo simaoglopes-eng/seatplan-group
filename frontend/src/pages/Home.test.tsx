@@ -76,31 +76,82 @@ const renderHome = () =>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/directory" element={<Where />} />
+        <Route path="/participant" element={<Where />} />
       </Routes>
     </MemoryRouter>,
   );
 
 describe("Home", () => {
-  it("opens on the hero with the live venue total, real ways in and decorative slides", async () => {
+  it("opens on the dinner hero with two glass choice cards and decorative slides", async () => {
     stub();
     renderHome();
-    expect(screen.getByRole("heading", { level: 1, name: "Venues for events that matter." })).toBeTruthy();
-    expect(screen.getByText("Portugal · Belgium · Italy")).toBeTruthy();
-    // The live total is its own element (it counts up), so the whole sentence is read from the paragraph.
-    await waitFor(() => expect(document.querySelector(".ld-lede")?.textContent).toMatch(/^1,287 quintas, halls and conference centres\. Choose/));
-    expect(screen.getByRole("link", { name: "Find a venue" }).getAttribute("href")).toBe("/directory");
-    const hero = screen.getByRole("region", { name: "Venues for events that matter." });
-    expect(within(hero).getByRole("link", { name: "I have an invitation" }).getAttribute("href")).toBe("/participant");
-    // Three slides: decorative (empty alt), sized, only the first one loads eagerly.
+    expect(screen.getByRole("heading", { level: 1, name: "Long tables, good company, everyone seated." })).toBeTruthy();
+    expect(screen.getByText("Dinners · Conferences · Parties")).toBeTruthy();
+    expect(screen.getByText("Seat plans for events of every size, up to 800 guests. Tell us who you are.")).toBeTruthy();
+    const hero = screen.getByRole("region", { name: "Long tables, good company, everyone seated." });
+    // Three dinner slides: decorative (empty alt), sized, only the first one loads eagerly.
     const slides = hero.querySelectorAll(".ld-slides img");
-    expect(slides).toHaveLength(3);
+    expect(Array.from(slides).map((img) => img.getAttribute("src"))).toEqual([
+      "/images/photos/hero-terrace-assisi.jpg",
+      "/images/photos/hero-dinner-giant.jpg",
+      "/images/photos/hero-dining-hall.jpg",
+    ]);
     slides.forEach((img, i) => {
       expect(img.getAttribute("alt")).toBe("");
       expect(img.getAttribute("width")).toBeTruthy();
       expect(img.getAttribute("loading")).toBe(i === 0 ? null : "lazy");
     });
-    // The search sits inside the hero, without a guests field.
-    const search = within(hero).getByRole("search", { name: "Find a venue" });
+    // The organiser card: create, then browse with the live total.
+    const organiser = within(hero).getByRole("region", { name: "Plan an event" });
+    expect(organiser.classList.contains("glass-panel")).toBe(true);
+    expect(within(organiser).getByText("I am organising")).toBeTruthy();
+    const create = within(organiser).getByRole("link", { name: "Create your own event" });
+    expect(create.getAttribute("href")).toBe("/organiser?new=1");
+    expect(create.classList.contains("btn-glass-green")).toBe(true);
+    const browse = await within(organiser).findByRole("link", { name: "or browse 1,287 venues" });
+    expect(browse.getAttribute("href")).toBe("/directory");
+    // The guest card: a form with the invitation code and a brass glass button.
+    const guest = within(hero).getByRole("form", { name: "Find my seat" });
+    expect(guest.classList.contains("glass-panel")).toBe(true);
+    expect(within(guest).getByText("I am a guest")).toBeTruthy();
+    expect(within(guest).getByLabelText("Invitation code").getAttribute("placeholder")).toBe("e.g. 7KQ-24M");
+    expect(within(guest).getByRole("button", { name: "Open my invitation" }).classList.contains("btn-glass-brass")).toBe(true);
+    // The venue search left the hero for the rooms block; no wedding copy up here.
+    expect(within(hero).queryByRole("search")).toBeNull();
+    expect(hero.textContent).not.toMatch(/wedding/i);
+  });
+
+  it("opens the guest's invitation on /participant with the code typed in", () => {
+    stub();
+    renderHome();
+    const guest = screen.getByRole("form", { name: "Find my seat" });
+    fireEvent.change(within(guest).getByLabelText("Invitation code"), { target: { value: "  7KQ-24M  " } });
+    fireEvent.click(within(guest).getByRole("button", { name: "Open my invitation" }));
+    expect(screen.getByTestId("where").textContent).toBe("/participant?code=7KQ-24M");
+  });
+
+  it("encodes a pasted invitation link in the query", () => {
+    stub();
+    renderHome();
+    const guest = screen.getByRole("form", { name: "Find my seat" });
+    fireEvent.change(within(guest).getByLabelText("Invitation code"), { target: { value: "http://localhost/j/abc?x=1&y=2" } });
+    fireEvent.submit(guest);
+    expect(screen.getByTestId("where").textContent).toBe("/participant?code=http%3A%2F%2Flocalhost%2Fj%2Fabc%3Fx%3D1%26y%3D2");
+  });
+
+  it("opens /participant without a code when the field is empty (phones hide it)", () => {
+    stub();
+    renderHome();
+    fireEvent.click(within(screen.getByRole("form", { name: "Find my seat" })).getByRole("button", { name: "Open my invitation" }));
+    expect(screen.getByTestId("where").textContent).toBe("/participant");
+  });
+
+  it("puts the venue search in the header of the rooms block", () => {
+    stub();
+    renderHome();
+    const rooms = screen.getByRole("region", { name: "Three kinds of room, one way to seat it." });
+    const search = within(rooms).getByRole("search", { name: "Find a venue" });
+    expect(rooms.querySelector(".ld-head")?.contains(search)).toBe(true);
     expect(within(search).queryByLabelText(/guests/i)).toBeNull();
   });
 
@@ -125,7 +176,7 @@ describe("Home", () => {
     expect(within(search).getByRole("button", { name: "Search venues" })).toBeTruthy();
     expect(screen.queryByText(/NaN/)).toBeNull();
     expect(screen.queryByText(/\b0 venues/)).toBeNull();
-    expect(screen.getByText(/^Quintas, halls and conference centres\./)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "or browse the venues" }).getAttribute("href")).toBe("/directory");
     fireEvent.click(within(search).getByRole("button", { name: "Search venues" }));
     expect(screen.getByTestId("where").textContent).toBe("/directory");
   });
@@ -162,6 +213,8 @@ describe("Home", () => {
     const tiles = rooms.querySelectorAll<HTMLAnchorElement>("a.ld-tile");
     expect(tiles).toHaveLength(3);
     tiles.forEach((tile) => {
+      // The caption is a glass panel over the photos.
+      expect(tile.querySelector(".ld-tile-text")?.classList.contains("glass-panel")).toBe(true);
       const want = expected[tile.getAttribute("href") ?? ""];
       expect(want).toBeTruthy();
       const imgs = Array.from(tile.querySelectorAll("img"));
@@ -209,7 +262,7 @@ describe("Home", () => {
   it("offers 'Create your own event' in the hero, the header and the organisers band, all to the new-event form", () => {
     stub();
     renderHome();
-    const hero = screen.getByRole("region", { name: "Venues for events that matter." });
+    const hero = screen.getByRole("region", { name: "Long tables, good company, everyone seated." });
     expect(within(hero).getByRole("link", { name: "Create your own event" }).getAttribute("href")).toBe("/organiser?new=1");
     const header = screen.getByRole("navigation", { name: "Main" });
     const inMenu = within(header).getByRole("link", { name: "Create your own event" });
@@ -239,7 +292,11 @@ describe("Home", () => {
       expect(img.getAttribute("loading")).toBe("lazy");
       expect(within(card).getByText("Conference centre · Portugal")).toBeTruthy();
       expect(within(card).getByText("Porto, Portugal")).toBeTruthy();
-      expect(within(card).getByRole("link", { name: `Plan an event here: ${NAMES[id]}` }).getAttribute("href")).toBe(`/organiser?at=${id}`);
+      const plan = within(card).getByRole("link", { name: `Plan an event here: ${NAMES[id]}` });
+      expect(plan.getAttribute("href")).toBe(`/organiser?at=${id}`);
+      // On the photo, so it is a glass button there.
+      expect(plan.closest(".ld-card-photo")).toBeTruthy();
+      expect(plan.classList.contains("btn-glass-green")).toBe(true);
       const out = within(card).getByRole("link", { name: id.startsWith("r") ? /^Website/ : /^Map/ });
       expect(out.getAttribute("href")).toBe(id.startsWith("r") ? "https://example.org" : `https://www.openstreetmap.org/x/${id}`);
       expect(out.getAttribute("target")).toBe("_blank");
@@ -324,11 +381,18 @@ describe("Home", () => {
     await screen.findByText("Roma Convention Center La Nuvola");
   });
 
-  it("puts the credited Palazzo Vecchio photo in the organisers band, next to the way to plan", () => {
+  it("lays the organisers band over the credited Palazzo Vecchio photo, its copy on glass", () => {
     stub();
     renderHome();
     const band = screen.getByRole("region", { name: "Every guest, in the right seat." });
-    expect(within(band).getByRole("img", { name: /Palazzo Vecchio/ }).getAttribute("src")).toBe("/images/photos/palazzo-hall.jpg");
+    expect(band.classList.contains("photo-band")).toBe(true);
+    const photo = within(band).getByRole("img", { name: /Palazzo Vecchio/ });
+    expect(photo.getAttribute("src")).toBe("/images/photos/palazzo-hall.jpg");
+    expect(photo.closest(".photo-band-photo")).toBeTruthy();
+    // The heading, the steps and the button sit in one glass panel.
+    const panel = band.querySelector(".glass-panel");
+    expect(panel?.contains(within(band).getByRole("heading", { level: 2 }))).toBe(true);
+    expect(within(band).getByRole("link", { name: "Create your own event" }).classList.contains("btn-glass-green")).toBe(true);
     expect(within(band).getByRole("list").querySelectorAll("li")).toHaveLength(3);
     expect(within(band).getByRole("link", { name: "Create your own event" }).getAttribute("href")).toBe("/organiser?new=1");
   });
@@ -347,7 +411,11 @@ describe("Home", () => {
     stub();
     renderHome();
     const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    expect(headings).toEqual(["Three kinds of room, one way to seat it.", "Start with a room you can visit.", "Every guest, in the right seat.", "Try choosing a seat."]);
+    expect(headings).toEqual(["Plan an event", "Find my seat", "Three kinds of room, one way to seat it.", "Start with a room you can visit.", "Every guest, in the right seat.", "Try choosing a seat."]);
+    // The header carries Federico's mark beside the name, and the glass "Sign in".
+    const brand = screen.getByRole("link", { name: "SeatPlan, home" });
+    expect(brand.querySelector("svg.wordmark-mark")).toBeTruthy();
+    expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/account");
     const footer = screen.getByRole("contentinfo");
     expect(within(footer).getByRole("link", { name: "Demo rooms" }).getAttribute("href")).toBe("/venues");
     expect(within(footer).getByRole("link", { name: "Live demo" }).getAttribute("href")).toBe("/demo");

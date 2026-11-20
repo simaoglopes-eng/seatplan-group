@@ -125,11 +125,20 @@ function VenueCard({ listing }: { listing: Listing }) {
   const photo = venuePhoto(listing.id);
   const website = safeWebsite(listing.website);
   const out = website ?? safeWebsite(listing.source_url);
+  // "Plan an event here" sits on the photo as a glass button; without a photo it stays a
+  // plain link under the card (glass never goes on a flat colour).
+  const plan = (className?: string) => (
+    <Link className={className} to={planHref(listing)}>
+      Plan an event here<span className="visually-hidden">: {listing.name}</span>
+      {className && <span aria-hidden="true"> →</span>}
+    </Link>
+  );
   return (
     <li className="ld-card">
       <article aria-labelledby={`ld-card-${listing.id}`}>
         <div className="ld-card-photo">
           {photo && <img src={photo.src} alt={photo.alt} width={960} height={720} loading="lazy" decoding="async" />}
+          {photo && plan("btn btn-glass-green ld-card-plan")}
         </div>
         <p className="ld-card-eyebrow">
           {listing.kind_label} · {listing.country_label}
@@ -137,9 +146,7 @@ function VenueCard({ listing }: { listing: Listing }) {
         <h3 id={`ld-card-${listing.id}`}>{listing.name}</h3>
         <p className="ld-card-place">{placeLine(listing)}</p>
         <p className="ld-card-links">
-          <Link to={planHref(listing)}>
-            Plan an event here<span className="visually-hidden">: {listing.name}</span>
-          </Link>
+          {!photo && plan()}
           {out && (
             <a href={out} target="_blank" rel="noopener noreferrer">
               {website ? "Website" : "Map"} <span aria-hidden="true">↗</span>

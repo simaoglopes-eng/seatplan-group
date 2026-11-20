@@ -14,7 +14,12 @@ const SITE_FILES = [
   "/images/photos/conference-room.jpg",
   "/images/photos/hero-ballroom.jpg",
   "/images/photos/hero-square-brussels.jpg",
+  "/images/photos/hero-terrace-assisi.jpg",
+  "/images/photos/hero-dinner-giant.jpg",
+  "/images/photos/hero-dining-hall.jpg",
 ];
+// Commons file pages, or the permanent page-id link Commons gives for a file (?curid=).
+const COMMONS_SOURCE = /^https:\/\/commons\.wikimedia\.org\/(wiki\/File:|w\/index\.php\?curid=\d+$)/;
 
 function renderPage() {
   render(
@@ -68,13 +73,17 @@ describe("CreditsPage", () => {
     expect(Object.keys(VENUE_PHOTOS)).toHaveLength(45);
     expect(ALL_ILLUSTRATIVE).toHaveLength(9);
     for (const c of PHOTO_CREDITS) {
-      expect(c.sourceUrl.startsWith("https://commons.wikimedia.org/wiki/File:")).toBe(true);
+      expect(c.sourceUrl).toMatch(COMMONS_SOURCE);
       expect(c.licenceUrl.startsWith("https://creativecommons.org/")).toBe(true);
       expect(c.author.trim()).not.toBe("");
       expect(c.author).not.toMatch(/[<>]/);
     }
-    // The auditorium is also the background of /participant, so its credit says so.
-    expect(PHOTO_CREDITS[0].usedFor).toMatch(/participant/);
+    // The terrace is also the background of /participant (ParticipantStartPage.tsx), so its credit says so.
+    expect(PHOTO_CREDITS.find((c) => c.file === "/images/photos/hero-terrace-assisi.jpg")?.usedFor).toMatch(/participant/);
+    // ...and of the organiser sign-up (AuthPhoto in Login.tsx, used by OrganiserRegister.tsx).
+    expect(PHOTO_CREDITS.find((c) => c.file === "/images/photos/hero-terrace-assisi.jpg")?.usedFor).toMatch(/organiser\/register/);
+    // The /directory band photo (DirectoryPage.tsx) names that page in its credit.
+    expect(PHOTO_CREDITS.find((c) => c.file === "/images/venues/way-142509065.jpg")?.usedFor).toMatch(/\/directory/);
   });
 
   it("says what a venue photo and an illustrative photo are", () => {

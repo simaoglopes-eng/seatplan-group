@@ -35,13 +35,34 @@ interface PageShellProps {
   restaurantBrand?: boolean;
 }
 
+/**
+ * Federico's mark, the same artwork as public/favicon.svg: a rounded bottle-green
+ * square, a cream table and four cream seats, one of them brass (yours). Fixed
+ * colours on purpose: it is the logo, the same on linen, on dark and on a photo.
+ */
+export function SeatPlanMark() {
+  return (
+    <svg className="wordmark-mark" viewBox="0 0 32 32" width={30} height={30} aria-hidden="true" focusable="false">
+      <rect width="32" height="32" rx="8" fill="#1F5A48" />
+      <circle cx="16" cy="16" r="6" fill="#F4EFE6" />
+      <circle cx="16" cy="5.5" r="2.6" fill="#F4EFE6" />
+      <circle cx="26.5" cy="16" r="2.6" fill="#F4EFE6" />
+      <circle cx="16" cy="26.5" r="2.6" fill="#F4EFE6" />
+      <circle cx="5.5" cy="16" r="2.6" fill="#D9A441" />
+    </svg>
+  );
+}
+
 export function Wordmark({ restaurantBrand = false }: { restaurantBrand?: boolean } = {}) {
   return (
     <Link to="/" className={restaurantBrand ? "wordmark wordmark-restaurants" : "wordmark"}
       aria-label={restaurantBrand ? "SeatPlan Restaurantes, home" : "SeatPlan, home"}>
       {restaurantBrand
         ? <img className="wordmark-logo" src={seatPlanLogo} alt="" width={132} height={40} />
-        : <span className="wordmark-text" aria-hidden="true">SeatPlan</span>}
+        : <>
+            <SeatPlanMark />
+            <span className="wordmark-text" aria-hidden="true">SeatPlan</span>
+          </>}
     </Link>
   );
 }

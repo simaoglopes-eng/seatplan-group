@@ -1,10 +1,12 @@
-// Route /: the front door, direction A "corporate" of the approved mock. Every block
-// fills one screen: the photo hero with the search at its foot, the three room tiles,
-// six real venues from the directory, the organisers band, and the sample seat map
-// to try. Every count is live data and every link lands on a page that honours what
-// it says: the search and the room tiles open the directory with that country and
-// kind; "See all" opens the directory; "Plan an event here" opens the organiser
-// space with that venue named. Motion is gentle and stops under reduced motion.
+// Route /: the front door, direction E "relaxed + glass" of the approved mock. Every
+// block fills one screen: the photo hero with two glass choice cards (organiser, guest),
+// the three room tiles with the venue search in their header, six real venues from the
+// directory, the organisers band on a photo, and the sample seat map to try. Glass only
+// ever sits on a photograph. Every count is live data and every link lands on a page
+// that honours what it says: the search and the room tiles open the directory with that
+// country and kind; the guest card opens /participant with the code typed in; "Plan an
+// event here" opens the organiser space with that venue named. Motion is gentle (one
+// per block) and stops under reduced motion.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -14,7 +16,7 @@ import { CREATE_EVENT_HREF, PublicHeaderActions } from "./discover/PublicHeaderA
 import { getDirectoryCounts } from "../api/venueDirectory";
 import type { DirectoryCountry, DirectoryCounts, DirectoryKind } from "../api/venueDirectory";
 import { COUNTRIES, KINDS, countryFrom, directoryHref, kindFrom } from "./directory/directoryModel";
-import { ROOM_TILES, SAMPLE_RECOMMENDED, buildSampleFloor, formatCount } from "./homeSample";
+import { ROOM_TILES, SAMPLE_RECOMMENDED, buildSampleFloor, formatCount, guestHref } from "./homeSample";
 import { useLoad } from "./restaurant/useLoad";
 import type { Loaded } from "./restaurant/useLoad";
 import { CountUp } from "./home/CountUp";
@@ -42,7 +44,7 @@ export default function Home() {
   return (
     <div className="ld-route" ref={footerReveal}>
       <PageShell
-        title="Venues for events that matter"
+        title="Seat plans for events of every size"
         width="wide"
         variant="overlay"
         headerActions={<PublicHeaderActions />}
@@ -80,42 +82,73 @@ function useFooterReveal(): (route: HTMLDivElement | null) => void {
 
 function Hero({ count }: { count: CountFn }) {
   const { index, go } = useSlides(HERO_SLIDES.length);
-  const total = count ? count(null, null) : 0;
   return (
     <section className="ld-hero ld-block" aria-labelledby="ld-hero-title">
       <HeroPhotos index={index} />
       <div className="ld-hero-copy">
         <div className="ld-wrap">
-          <p className="ld-eyebrow">Portugal · Belgium · Italy</p>
-          <h1 id="ld-hero-title">Venues for events that matter.</h1>
-          <p className="ld-lede">
-            {total > 0 ? (
-              <>
-                <CountUp value={total} /> quintas, halls and conference centres.
-              </>
-            ) : (
-              "Quintas, halls and conference centres."
-            )}{" "}
-            Choose the room, draw the tables and let every guest choose a seat.
-          </p>
-          <div className="ld-hero-actions">
-            <Link className="btn ld-btn-light" to="/directory">
-              Find a venue
-            </Link>
-            <Link className="btn ld-btn-line" to="/participant">
-              I have an invitation
-            </Link>
+          <p className="ld-eyebrow">Dinners · Conferences · Parties</p>
+          <h1 id="ld-hero-title">Long tables, good company, everyone seated.</h1>
+          <p className="ld-lede">Seat plans for events of every size, up to 800 guests. Tell us who you are.</p>
+          <div className="ld-choose">
+            <OrganiserCard count={count} />
+            <GuestCard />
           </div>
           <HeroDots index={index} go={go} />
         </div>
       </div>
-      <div className="ld-wrap ld-search">
-        <SearchBar count={count} />
-        <Link className="btn ld-btn-line ld-create" to={CREATE_EVENT_HREF}>
-          Create your own event
-        </Link>
-      </div>
     </section>
+  );
+}
+
+function OrganiserCard({ count }: { count: CountFn }) {
+  const total = count ? count(null, null) : 0;
+  return (
+    <section className="ld-pick glass-panel" aria-labelledby="ld-pick-organiser">
+      <p className="ld-pick-cap glass-eyebrow">I am organising</p>
+      <h2 className="ld-pick-title" id="ld-pick-organiser">Plan an event</h2>
+      <p className="ld-pick-text glass-muted">Create your event at any place, set up the room as banquet, theatre or cocktail, and invite your guests.</p>
+      <Link className="btn btn-glass-green ld-go" to={CREATE_EVENT_HREF}>
+        Create your own event <span aria-hidden="true">→</span>
+      </Link>
+      <p className="ld-pick-sub glass-muted">
+        <Link to="/directory">{total > 0 ? <>or browse <CountUp value={total} /> venues</> : "or browse the venues"}</Link>
+      </p>
+    </section>
+  );
+}
+
+function GuestCard() {
+  const navigate = useNavigate();
+  const [code, setCode] = useState("");
+  // /participant reads ?code=, fills its field with it and opens the invitation.
+  const submit = (event: FormEvent): void => {
+    event.preventDefault();
+    navigate(guestHref(code));
+  };
+  return (
+    <form className="ld-pick glass-panel" aria-labelledby="ld-pick-guest" onSubmit={submit}>
+      <p className="ld-pick-cap glass-eyebrow">I am a guest</p>
+      <h2 className="ld-pick-title" id="ld-pick-guest">Find my seat</h2>
+      <p className="ld-pick-text glass-muted">Open your invitation, choose your seat and tell the organiser what you need.</p>
+      <div className="ld-code">
+        <label htmlFor="ld-code">Invitation code</label>
+        <input
+          id="ld-code"
+          className="glass-field"
+          name="code"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="e.g. 7KQ-24M"
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+        />
+      </div>
+      <button type="submit" className="btn btn-glass-brass ld-go">
+        Open my invitation <span aria-hidden="true">→</span>
+      </button>
+    </form>
   );
 }
 
@@ -130,33 +163,33 @@ function SearchBar({ count }: { count: CountFn }) {
   };
   return (
     <form className="ld-bar" role="search" aria-label="Find a venue" onSubmit={submit}>
-        <div className="ld-field">
-          <label htmlFor="ld-country">Country</label>
-          <select id="ld-country" value={country ?? ""} onChange={(e) => setCountry(countryFrom(e.target.value))}>
-            <option value="">All countries{n(kind, null)}</option>
-            {COUNTRIES.map((c) => (
-              <option key={c.key} value={c.key}>
-                {c.label}
-                {n(kind, c.key)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="ld-field">
-          <label htmlFor="ld-kind">Kind of venue</label>
-          <select id="ld-kind" value={kind ?? ""} onChange={(e) => setKind(kindFrom(e.target.value))}>
-            <option value="">All kinds{n(null, country)}</option>
-            {KINDS.map((k) => (
-              <option key={k.key} value={k.key}>
-                {k.label}
-                {n(k.key, country)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button type="submit" className="ld-bar-submit">
-          {count ? `Search ${formatCount(count(kind, country))} venues` : "Search venues"}
-        </button>
+      <div className="ld-field">
+        <label htmlFor="ld-country">Country</label>
+        <select id="ld-country" value={country ?? ""} onChange={(e) => setCountry(countryFrom(e.target.value))}>
+          <option value="">All countries{n(kind, null)}</option>
+          {COUNTRIES.map((c) => (
+            <option key={c.key} value={c.key}>
+              {c.label}
+              {n(kind, c.key)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="ld-field">
+        <label htmlFor="ld-kind">Kind of venue</label>
+        <select id="ld-kind" value={kind ?? ""} onChange={(e) => setKind(kindFrom(e.target.value))}>
+          <option value="">All kinds{n(null, country)}</option>
+          {KINDS.map((k) => (
+            <option key={k.key} value={k.key}>
+              {k.label}
+              {n(k.key, country)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <button type="submit" className="btn btn-primary ld-bar-submit">
+        {count ? `Search ${formatCount(count(kind, country))} venues` : "Search venues"}
+      </button>
     </form>
   );
 }
@@ -168,14 +201,15 @@ function Rooms({ count }: { count: CountFn }) {
   const reveal = useReveal<HTMLDivElement>();
   const shown = useRoomSlides(TILE_PHOTOS.length, PHOTOS_PER_TILE);
   return (
-    <section className="ld-block ld-section ld-tone-white" aria-labelledby="ld-rooms-title">
+    <section className="ld-block ld-section ld-tone-bg ld-rooms" aria-labelledby="ld-rooms-title">
       <div className="ld-wrap ld-drift" ref={reveal}>
-        <div className="ld-head">
+        <div className="ld-head ld-rooms-head">
           <div>
             <p className="ld-eyebrow">The rooms</p>
             <h2 id="ld-rooms-title">Three kinds of room, one way to seat it.</h2>
           </div>
-          <p>Real venues from OpenStreetMap across three countries. Open one and start planning there.</p>
+          <p className="ld-head-note">Real venues from OpenStreetMap across three countries. Open one and start planning there.</p>
+          <SearchBar count={count} />
         </div>
         <ul className="ld-tiles">
           {ROOM_TILES.map((tile, i) => {
@@ -185,7 +219,7 @@ function Rooms({ count }: { count: CountFn }) {
               <li key={tile.kind}>
                 <Link className="ld-tile" to={directoryHref(null, tile.kind)}>
                   <TileSlides photos={TILE_PHOTOS[i]} index={shown[i] ?? 0} />
-                  <span className="ld-tile-text">
+                  <span className="ld-tile-text glass-panel">
                     <span className="ld-tile-count">{n > 0 ? <><CountUp value={n} /> venues</> : "Venues"}</span>
                     <span className="ld-tile-title">{label}</span>
                     <span className="ld-tile-blurb">{tile.blurb}</span>
@@ -217,25 +251,26 @@ function Directory({ count }: { count: CountFn }) {
 
 const STEPS = ["Choose the venue and draw the floor plan.", "Invite guests with a single link or code.", "Check guests in at the door on the day."];
 
+/** For organisers: a photo band (the Palazzo Vecchio hall, slow Ken Burns) with the copy on glass. */
 function Organisers() {
   const reveal = useReveal<HTMLDivElement>();
   return (
-    <section className="ld-block ld-band" aria-labelledby="ld-band-title">
-      <div className="ld-wrap ld-band-grid ld-drift" ref={reveal}>
-        <div className="ld-band-photo">
-          <img
-            src="/images/photos/palazzo-hall.jpg"
-            width={1400}
-            height={933}
-            alt="The grand hall of the Palazzo Vecchio, with a carved ceiling over rows of chairs"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
-        <div className="ld-band-copy">
-          <p className="ld-eyebrow">For organisers</p>
+    <section className="ld-block photo-band ld-band" aria-labelledby="ld-band-title">
+      <div className="photo-band-photo ld-band-photo">
+        <img
+          src="/images/photos/palazzo-hall.jpg"
+          width={1400}
+          height={933}
+          alt="The grand hall of the Palazzo Vecchio, with a carved ceiling over rows of chairs"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+      <div className="photo-band-inner ld-wrap ld-drift" ref={reveal}>
+        <div className="glass-panel ld-band-panel">
+          <p className="ld-eyebrow glass-eyebrow">For organisers</p>
           <h2 id="ld-band-title">Every guest, in the right seat.</h2>
-          <p className="ld-band-lede">Draw the tables once. Send one link. Guests see the room, who is coming, and choose where they sit.</p>
+          <p className="ld-band-lede glass-muted">Draw the tables once. Send one link. Guests see the room, who is coming, and choose where they sit.</p>
           <ol className="ld-steps">
             {STEPS.map((step, i) => (
               <li key={step}>
@@ -244,7 +279,7 @@ function Organisers() {
               </li>
             ))}
           </ol>
-          <Link className="btn ld-btn-light" to={CREATE_EVENT_HREF}>
+          <Link className="btn btn-glass-green ld-go" to={CREATE_EVENT_HREF}>
             Create your own event
           </Link>
         </div>
@@ -274,7 +309,7 @@ function usePageWheel<T extends HTMLElement>() {
   return ref;
 }
 
-/** "Try choosing a seat": the fixed sample floor (homeSample.ts). It never talks to the server. */
+/** "Try choosing a seat": the fixed sample floor (homeSample.ts), on plain linen. It never talks to the server. */
 function TrySeat() {
   // A later threshold than the other blocks, so the seats light up where the visitor can see them.
   const reveal = useReveal<HTMLDivElement>(0.4);
@@ -282,7 +317,7 @@ function TrySeat() {
   const [selected, setSelected] = useState<number | null>(null);
   const mapBox = usePageWheel<HTMLDivElement>();
   return (
-    <section className="ld-block ld-section ld-tone-white ld-try" aria-labelledby="ld-try-title">
+    <section className="ld-block ld-section ld-tone-bg ld-try" aria-labelledby="ld-try-title">
       <div className="ld-wrap ld-try-grid ld-drift" ref={reveal}>
         <div className="ld-try-copy">
           <p className="ld-eyebrow">Try it</p>
@@ -297,7 +332,7 @@ function TrySeat() {
           </p>
           <Legend states={["free", "held", "taken", "friend", "blocked"]} showAccessible showRecommended />
           <p className="ld-try-links">
-            <Link className="btn ld-btn-dark" to="/demo">
+            <Link className="btn btn-primary ld-btn" to="/demo">
               Open the live demo
             </Link>
             <Link className="ld-text-link" to="/participant">

@@ -1,18 +1,34 @@
-// The short navy band at the top of /directory, /events and /venues: an eyebrow, the page
-// title, one line of context and the live count, so these pages read as the same site as
-// the landing. It bleeds to the window edges with a box-shadow (events-public.css), so it
-// never widens the page.
+// The photo band at the top of /directory, /events and /venues (direction E): a credited
+// photograph runs to the window edges under a dark legibility gradient, and the eyebrow,
+// title, one line of context and the live count sit in a glass panel over it. Glass only
+// ever sits over a photograph. The band breaks out of the page column with negative
+// margins; the page wrapper (.pg-route) clips the overflow, so it never widens the page.
 import type { ReactNode } from "react";
 
-export function PageBand({ id, eyebrow, title, children, count }: { id: string; eyebrow: string; title: string; children: ReactNode; count: ReactNode }) {
+export interface BandPhoto {
+  /** Served path of a photo credited on /credits (photoCredits.ts or venuePhotos.ts). */
+  src: string;
+  /** CSS object-position, to keep the subject in frame on a wide band. */
+  position?: string;
+}
+
+export function PageBand({ id, eyebrow, title, children, count, photo }: { id: string; eyebrow: string; title: string; children: ReactNode; count: ReactNode; photo: BandPhoto }) {
   return (
-    <section className="pg-band" aria-labelledby={id}>
-      <div className="pg-band-text">
-        <p className="pg-eyebrow">{eyebrow}</p>
-        <h1 id={id}>{title}</h1>
-        <p className="pg-band-lede">{children}</p>
+    <section className="pg-band photo-band" aria-labelledby={id}>
+      {/* Decoration: the band's words carry the meaning, so the photo has empty alt text. */}
+      <div className="photo-band-photo pg-band-photo">
+        <img src={photo.src} alt="" style={photo.position ? { objectPosition: photo.position } : undefined} />
       </div>
-      <p className="pg-band-count">{count}</p>
+      <div className="photo-band-inner pg-band-inner">
+        <div className="pg-band-panel glass-panel">
+          <div className="pg-band-text">
+            <p className="pg-eyebrow glass-eyebrow">{eyebrow}</p>
+            <h1 id={id}>{title}</h1>
+            <p className="pg-band-lede glass-muted">{children}</p>
+          </div>
+          <p className="pg-band-count">{count}</p>
+        </div>
+      </div>
     </section>
   );
 }

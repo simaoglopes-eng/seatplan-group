@@ -1,0 +1,33 @@
+/* The page for unknown addresses (NotFound.tsx), direction E: a full-bleed photo band with
+   the message in a glass panel. The shared .photo-band, .glass-panel and .btn-glass* come
+   from components.css; this file sizes the band and breaks it out of the page column
+   (.nf-route clips the sideways overflow, so the page never scrolls sideways). */
+.nf-route { overflow-x: clip; }
+/* The band grows to fill the main area, so no linen strip shows above the footer on tall screens. */
+.nf-route .shell .shell-main { padding-block: 0; display: flex; flex-direction: column; }
+.nf-band {
+  flex: 1 0 auto;
+  display: flex;
+  align-items: center;
+  min-height: clamp(28rem, 70vh, 44rem);
+  margin-inline: calc(50% - 50vw);
+  padding-block: var(--space-7);
+  background: #18241f; /* the veil's dark, behind the photo while it loads */
+}
+/* A touch more veil than the shared band: the clear-glass "Browse venues" sits over bright
+   chandeliers and needs 4.5:1. */
+.photo-band.nf-band::after { background: linear-gradient(rgb(var(--photo-veil-ink) / 0.3), rgb(var(--photo-veil-ink) / 0.3)), var(--photo-veil); }
+/* Clear glass on a glass panel stacks two white tints; at rest this one keeps a lighter tint. */
+.nf-panel .btn.btn-glass:not(:hover) { background: rgb(255 255 255 / 0.06); }
+@media (prefers-reduced-transparency: reduce) {
+  .nf-panel .btn.btn-glass:not(:hover) { background: var(--glass-fallback); }
+}
+.nf-inner { width: 100%; max-width: var(--frame-max); margin-inline: auto; padding-inline: var(--gutter); }
+.nf-panel { max-width: 36rem; padding: clamp(1.5rem, 3vw, 2.5rem); }
+.nf-eyebrow { margin: 0 0 var(--space-2); font-size: 0.75rem; font-weight: var(--fw-medium); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }
+.nf-panel h1 { margin: 0 0 var(--space-3); font-family: var(--font-display); font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem); font-weight: var(--fw-display); line-height: 1.04; letter-spacing: var(--ls-display); }
+.nf-panel p { margin: 0; line-height: 1.6; }
+.nf-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
+@media (max-width: 30rem) {
+  .nf-actions .btn { flex: 1 1 100%; justify-content: center; }
+}

@@ -62,6 +62,13 @@ export const ROOM_TILES: { kind: DirectoryKind; blurb: string }[] = [
   { kind: "conference", blurb: "Auditoriums and meeting rooms" },
 ];
 
+/** Where the home guest card goes: /participant, with the trimmed code when one was typed
+    (ParticipantStartPage reads ?code=, fills its field and opens the invitation). */
+export function guestHref(code: string): string {
+  const value = code.trim();
+  return value ? `/participant?code=${encodeURIComponent(value)}` : "/participant";
+}
+
 /** 1835 -> "1,835", the same on every machine (no reliance on the browser's locale). */
 export function formatCount(n: number): string {
   return n.toLocaleString("en-GB");

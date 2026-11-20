@@ -41,7 +41,7 @@ export function PublicHeaderActions() {
       </div>
       {/* One account for bookings and work (plan 2026-11-18): either session means signed in. */}
       <Link to="/account" className="btn btn-primary site-nav-login" onClick={() => setOpen(false)}>
-        {getGuestToken() || getSessionToken() ? "My account" : "Log in"}
+        {getGuestToken() || getSessionToken() ? "My account" : "Sign in"}
       </Link>
     </nav>
   );

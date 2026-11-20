@@ -5,10 +5,11 @@
 import { useEffect, useState } from "react";
 import { useReducedMotion } from "./useMotion";
 
+/** Long tables and dinners (direction E). landing.css frames each one (object-position) for tall phones. */
 export const HERO_SLIDES = [
-  { src: "/images/photos/hero-auditorium.jpg", width: 2000, height: 1334, label: "Auditorium" },
-  { src: "/images/photos/hero-ballroom.jpg", width: 2000, height: 1333, label: "Ballroom" },
-  { src: "/images/photos/hero-square-brussels.jpg", width: 2000, height: 1333, label: "Conference centre foyer" },
+  { src: "/images/photos/hero-terrace-assisi.jpg", width: 2000, height: 1333, label: "Terrace dinner in Assisi" },
+  { src: "/images/photos/hero-dinner-giant.jpg", width: 2000, height: 824, label: "A long sit-down dinner" },
+  { src: "/images/photos/hero-dining-hall.jpg", width: 2000, height: 1333, label: "Formal dining hall" },
 ] as const;
 
 export const SLIDE_MS = 6500;

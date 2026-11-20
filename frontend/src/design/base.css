@@ -1,9 +1,8 @@
 /* Global defaults. Reads only tokens from tokens.css; defines no raw values
    except 0, 100% and unitless numbers. */
 
-/* Gloock, the serif of the hidden Restaurants look only (tokens.css makes it
-   their display face; the browser fetches it only when a page uses it).
-   Served from our own origin (the CSP allows fonts from 'self' only). From Google Fonts, SIL Open Font License: fonts/OFL.txt. */
+/* Gloock, the one-weight serif of every heading and of the wordmark
+   (tokens.css, --font-display). Served from our own origin (the CSP allows fonts from 'self' only). From Google Fonts, SIL Open Font License: fonts/OFL.txt. */
 @font-face {
   font-family: "Gloock";
   font-style: normal;
@@ -83,23 +82,22 @@ body::after {
   opacity: 1;
 }
 
-/* Headings: the system sans at a firm weight, slightly tight. The Restaurants
-   look (restaurant-theme.css) puts its one-weight serif back. */
+/* Headings: Gloock at its only weight, barely tightened. */
 h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-display);
   color: var(--c-heading);
   line-height: var(--lh-tight);
   margin: 0 0 var(--space-3);
   letter-spacing: var(--ls-display);
 }
 
-/* Many page stylesheets were written for a one-weight serif and pin headings to
-   400. On the Events side the sans needs its weight back. */
+/* Some page stylesheets still give headings a bold weight from the sans days.
+   Gloock has one weight, so any bold would be faked: every heading keeps 400. */
 :root:not([data-surface="restaurants"]) body :is(h1, h2, h3) {
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-display);
 }
 
 h1 { font-size: var(--fs-3xl); }
@@ -120,7 +118,7 @@ a:hover {
   color: var(--c-primary-hover);
 }
 
-/* One focus style for the whole product: a rust ring that is never used to
+/* One focus style for the whole product: a blue ring that is never used to
    mean anything else, shown only for keyboard focus. */
 :focus-visible {
   outline: var(--focus-width) solid var(--c-focus);

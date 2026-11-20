@@ -6,7 +6,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { getDirectory } from "../../api/venueDirectory";
 import type { DirectoryCountry, DirectoryKind, Listing } from "../../api/venueDirectory";
 import { illustrativeLayout } from "../../data/illustrativePhotos";
-import { venuePhoto } from "../../data/venuePhotos";
+import { DIRECTORY_BAND_VENUE, venuePhoto } from "../../data/venuePhotos";
 import { Button, EmptyState, ErrorState, PageShell, Skeleton } from "../../design/components";
 import { Chip, Chips } from "../discover/Chips";
 import { PublicHeaderActions } from "../discover/PublicHeaderActions";
@@ -21,6 +21,8 @@ import "../events-public/events-public.css";
 import "./directory.css";
 
 const PAGE = 24;
+// The band shows a real directory venue (Kasteel van Groenenberg, credited from venuePhotos.ts).
+const BAND_PHOTO = { src: venuePhoto(DIRECTORY_BAND_VENUE)?.src ?? "/images/venues/way-142509065.jpg", position: "center 60%" };
 
 /** How many columns the auto-fill grid has right now (1 until measured, e.g. in tests). */
 function useGridColumns(): [(el: HTMLDivElement | null) => void, number] {
@@ -88,7 +90,7 @@ export default function DirectoryPage() {
   return (
     <div className="discover-route pg-route dir-page">
       <PageShell title="Venue directory" headerActions={<PublicHeaderActions />}>
-        <PageBand id="dir-heading" eyebrow="Portugal · Belgium · Italy" title="Venues in Portugal, Belgium and Italy" count={countText(ready ? ready.total : list.state.status === "error" ? undefined : null, "venue", "venues")}>
+        <PageBand id="dir-heading" photo={BAND_PHOTO} eyebrow="Portugal · Belgium · Italy" title="Venues in Portugal, Belgium and Italy" count={countText(ready ? ready.total : list.state.status === "error" ? undefined : null, "venue", "venues")}>
           Real quintas, event halls and conference centres. Pick one and plan your event there: draw its tables and invite your guests.
         </PageBand>
         <Link className="rp-back ep-back" to="/">

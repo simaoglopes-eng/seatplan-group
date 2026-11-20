@@ -61,6 +61,7 @@ export default function VenuesPage() {
       <PageShell title="Venues" headerActions={<PublicHeaderActions />}>
         <PageBand
           id="venues-heading"
+          photo={{ src: "/images/photos/hero-dining-hall.jpg", position: "center 40%" }}
           eyebrow="Halls and quintas"
           title="Quintas, halls and conference rooms"
           count={countText(venues.state.status === "ready" ? venues.state.data.items.length : venues.state.status === "error" ? undefined : null, "venue with a seat map", "venues with a seat map")}

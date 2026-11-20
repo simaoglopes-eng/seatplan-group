@@ -71,3 +71,32 @@ describe("PageShell frame", () => {
     expect(document.documentElement.dataset.surface).toBeUndefined();
   });
 });
+
+describe("PageShell logo", () => {
+  it("shows Federico's mark (the favicon artwork) beside the name, hidden from screen readers", () => {
+    const view = render(
+      <MemoryRouter initialEntries={["/events"]}>
+        <PageShell title="Events">x</PageShell>
+      </MemoryRouter>,
+    );
+    const brand = view.getByRole("link", { name: "SeatPlan, home" });
+    const mark = brand.querySelector("svg.wordmark-mark");
+    expect(mark).not.toBeNull();
+    expect(mark?.getAttribute("aria-hidden")).toBe("true");
+    expect(mark?.getAttribute("width")).toBe("30");
+    // A green rounded square, four cream seats around a cream table, one seat brass.
+    expect(mark?.querySelector("rect")?.getAttribute("fill")).toBe("#1F5A48");
+    const fills = Array.from(mark?.querySelectorAll("circle") ?? []).map((c) => c.getAttribute("fill"));
+    expect(fills).toEqual(["#F4EFE6", "#F4EFE6", "#F4EFE6", "#F4EFE6", "#D9A441"]);
+    expect(brand.querySelector(".wordmark-text")?.textContent).toBe("SeatPlan");
+    // The Restaurants brand keeps its own logo image and no mark.
+    view.unmount();
+    const restaurants = render(
+      <MemoryRouter initialEntries={["/restaurants/x"]}>
+        <PageShell title="R" restaurantBrand>x</PageShell>
+      </MemoryRouter>,
+    );
+    expect(restaurants.container.querySelector("svg.wordmark-mark")).toBeNull();
+    expect(restaurants.container.querySelector("img.wordmark-logo")).not.toBeNull();
+  });
+});

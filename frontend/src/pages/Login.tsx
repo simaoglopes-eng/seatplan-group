@@ -1,7 +1,7 @@
 // Organiser and staff sign-in. On success the session token is stored by
 // api/client.ts and we go back to where the person came from (?next=...).
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, login } from "../api/client";
 import { AuthLayout, Button, Field, PageShell, useToast } from "../design/components";
@@ -55,7 +55,8 @@ export default function Login({ defaultNext = "/organiser" }: { defaultNext?: st
   };
 
   return (
-    <PageShell title="Sign in" headerActions={<PublicHeaderActions />}>
+    <AuthPhoto>
+    <PageShell title="Sign in" variant="overlay" headerActions={<PublicHeaderActions />}>
       <AuthLayout eyebrow={isStaff ? "STAFF ACCESS" : "FOR ORGANISERS"} headline="Plan the details. Enjoy the moment." description="Bring your event together with a seating plan that feels effortless to manage.">
       <div className="login">
         <h1>{isStaff ? "Staff sign in" : "Organiser sign in"}</h1>
@@ -82,5 +83,23 @@ export default function Login({ defaultNext = "/organiser" }: { defaultNext?: st
       </div>
       </AuthLayout>
     </PageShell>
+    </AuthPhoto>
+  );
+}
+
+/**
+ * Direction E for the organiser sign-in and sign-up: the credited terrace photo fills the
+ * window behind the page (photoCredits.ts), under the dark veil, and the form sits in a glass
+ * panel (login.css, .ap-route). Only these two pages use it: StaffAccess and the participant
+ * register share .login but have no photo, so they keep the linen card.
+ */
+export function AuthPhoto({ children }: { children: ReactNode }) {
+  return (
+    <div className="ap-route">
+      <div className="ap-photo" aria-hidden="true">
+        <img src="/images/photos/hero-terrace-assisi.jpg" alt="" />
+      </div>
+      {children}
+    </div>
   );
 }

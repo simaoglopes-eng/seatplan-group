@@ -6,12 +6,13 @@
   min-width: 0;
   padding: var(--space-4);
   background: var(--c-surface);
-  border: var(--border-width) solid var(--c-border);
-  border-radius: var(--radius-lg);
+  border: var(--border-width) solid var(--c-line, var(--c-border));
+  border-radius: var(--radius, 14px);
   transition: border-color var(--dur-base) var(--ease-out);
 }
 @media (hover: hover) { .dir-page .dir-card:hover { border-color: var(--c-border-strong); } }
-.dir-card h3 { margin: 0 0 var(--space-1); overflow-wrap: anywhere; font-size: 1.1875rem; line-height: 1.25; letter-spacing: var(--ls-display); }
+/* Direction E: venue names in Gloock at 400. */
+.dir-card h3 { margin: 0 0 var(--space-1); overflow-wrap: anywhere; font-family: var(--font-display); font-size: 1.5rem; font-weight: 400; line-height: 1.15; letter-spacing: -0.005em; }
 .dir-place { margin: 0; color: var(--c-text); }
 .dir-street { margin: var(--space-1) 0 0; color: var(--c-text-muted); font-size: var(--fs-sm); overflow-wrap: anywhere; }
 .dir-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); margin-top: auto; padding-top: var(--space-4); }
@@ -25,17 +26,20 @@
 }
 @media (prefers-reduced-motion: reduce) { .dir-card-photo img { transition: none; transform: none; } }
 /* A venue without its own photo shows an illustrative one (illustrativePhotos.ts), always labelled.
-   The label is a solid navy chip, a sibling of the img so it never zooms, legible on any photo. */
+   The label is a dark glass pill (it sits on the photo, so glass is allowed), a sibling of the
+   img so it never zooms; its fill is dark enough for white 11px text on any photo. */
 .dir-photo-label {
   position: absolute;
   left: var(--space-2);
   bottom: var(--space-2);
   z-index: 1;
-  padding: 0.125rem 0.4375rem;
-  background: var(--c-band);
-  color: var(--c-on-band);
-  border: var(--border-width) solid rgb(255 255 255 / 0.18);
-  border-radius: var(--radius-sm);
+  padding: 0.1875rem 0.625rem;
+  background: rgb(24 36 31 / 0.72);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
+  color: #fff;
+  border: var(--border-width) solid rgb(255 255 255 / 0.34);
+  border-radius: 999px;
   font-size: 0.6875rem;
   font-weight: var(--fw-bold);
   line-height: 1.4;
@@ -53,9 +57,10 @@
   margin: var(--space-6) 0 0;
   padding: var(--space-4) var(--space-5);
   background: var(--c-surface-sunk);
-  border: var(--border-width) solid var(--c-border);
-  border-radius: var(--radius-lg);
+  border: var(--border-width) solid var(--c-line, var(--c-border));
+  border-radius: var(--radius, 14px);
 }
+.dir-own .btn, .dir-card .btn { border-radius: 999px; }
 .dir-own-text { flex: 1 1 18rem; min-width: 0; max-width: none; margin: 0; color: var(--c-text); }
 .dir-own-text strong { font-weight: var(--fw-bold); }
 .dir-own-btn { flex: none; }
@@ -65,7 +70,7 @@
 
 .dir-search { display: flex; flex-direction: column; gap: var(--space-1); margin-top: 0; max-width: 24rem; }
 .dir-search label { font-weight: var(--fw-bold); }
-.dir-search input { min-height: 2.75rem; padding: 0 var(--space-3); font: inherit; color: var(--c-text); background: var(--c-surface); border: var(--border-width) solid var(--c-border-strong); border-radius: var(--radius-sm); }
+.dir-search input { min-height: 2.75rem; padding: 0 var(--space-3); font: inherit; color: var(--c-text); background: var(--c-surface); border: var(--border-width) solid var(--c-border-strong); border-radius: 10px; }
 .dir-search input:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
 /* "Show more" is centred under the grid (the paragraph drops the global 65ch cap). */
 .dir-more { display: flex; justify-content: center; max-width: none; margin: var(--space-6) 0 0; }

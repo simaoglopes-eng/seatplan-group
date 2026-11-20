@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { Wordmark } from "../design/components";
 import { invitationPath } from "./join/invitationPath";
@@ -15,8 +15,24 @@ function savedInvitation(): string {
   }
 }
 
+/**
+ * The short invitation code ("7KQ-24M8PQ3VZD") as the server reads it, or null when the value is
+ * not one. Codes use Crockford base32 (no I, L, O or U: backend events_service/share.py), so a
+ * value with those letters is a shared link token instead, e.g. "return-to-form", and opens
+ * /j/<token> directly. Spaces and hyphens typed by hand are forgiven; the hyphen goes back in
+ * before the last ten characters.
+ */
+export function joinCodeOf(value: string): string | null {
+  const compact = value.trim().toUpperCase().replace(/[\s-]/g, "");
+  const code = compact.replace(/^([0-9A-Z]+)([0-9A-Z]{10})$/, "$1-$2");
+  return /^[0-9A-HJKMNP-TV-Z]{1,20}-[0-9A-HJKMNP-TV-Z]{10}$/.test(code) ? code : null;
+}
+
 export default function ParticipantStartPage() {
-  const [invitation, setInvitation] = useState(savedInvitation);
+  const [params] = useSearchParams();
+  // A link from the landing's guest card (/participant?code=...) wins over a saved value.
+  const fromLink = (params.get("code") ?? "").trim().slice(0, 200);
+  const [invitation, setInvitation] = useState(() => fromLink || savedInvitation());
   const [error, setError] = useState("");
   const [lookingUpCode, setLookingUpCode] = useState(false);
   const navigate = useNavigate();
@@ -38,13 +54,10 @@ export default function ParticipantStartPage() {
     }
   }, [invitation]);
 
-  async function openInvitation(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const compact = invitation.trim().toUpperCase().replace(/[\s-]/g, "");
-    const code = compact.replace(/^([0-9A-Z]+)([0-9A-Z]{10})$/, "$1-$2");
-    const isJoinCode = /^[0-9A-Z]{1,20}-[0-9A-Z]{10}$/.test(code);
+  async function open(value: string, replace: boolean): Promise<void> {
+    const code = joinCodeOf(value);
     let path: string | null = null;
-    if (isJoinCode) {
+    if (code) {
       setLookingUpCode(true);
       try {
         const resolved = await api.get<{ path: string }>(`/join-code/${encodeURIComponent(code)}`, "none");
@@ -55,20 +68,37 @@ export default function ParticipantStartPage() {
         setLookingUpCode(false);
       }
     } else {
-      path = invitationPath(invitation, window.location.origin);
+      path = invitationPath(value, window.location.origin);
     }
     if (!path) {
       setError("Enter a valid SeatPlan invitation link or code, or ask the organiser for the latest one.");
       return;
     }
     setError("");
-    navigate(path);
+    navigate(path, { replace });
   }
+
+  function openInvitation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void open(invitation, false);
+  }
+
+  // ?code= with a well-formed invitation code opens it straight away, replacing this entry in
+  // the history so Back returns to the page that linked here. Anything else is only filled in.
+  // The ref keeps React's development double effect from looking the code up twice.
+  const autoOpened = useRef(false);
+  useEffect(() => {
+    if (autoOpened.current || !fromLink || !joinCodeOf(fromLink)) return;
+    autoOpened.current = true;
+    void open(fromLink, true);
+    // Only on arrival: later typing must not resubmit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="pt-page">
-      {/* The auditorium photo is credited on /credits (photoCredits.ts); it is decoration here. */}
-      <img className="pt-photo" src="/images/photos/hero-auditorium.jpg" alt="" />
+      {/* The terrace photo is credited on /credits (photoCredits.ts); it is decoration here. */}
+      <img className="pt-photo" src="/images/photos/hero-terrace-assisi.jpg" alt="" />
       <a className="skip-link" href="#main">Skip to main content</a>
       <header className="pt-header">
         <div className="pt-wrap">
@@ -127,7 +157,7 @@ export default function ParticipantStartPage() {
 
       <footer className="pt-footer">
         <div className="pt-wrap">
-          <p><span className="pt-credit-text">Photo: Lichtburg, Essen, by Tuxyso, CC BY-SA 4.0. </span><Link to="/credits">Photo credits</Link></p>
+          <p><span className="pt-credit-text">Photo: Terrace Dinner in Assisi, by Andrew Parlette, CC BY 4.0. </span><Link to="/credits">Photo credits</Link></p>
           <Link to="/staff">Staff area</Link>
         </div>
       </footer>
