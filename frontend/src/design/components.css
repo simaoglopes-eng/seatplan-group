@@ -1,0 +1,687 @@
+/* Styles for src/design/components. Only tokens, no raw colours or sizes. */
+
+/* ---------- Page shell ---------- */
+
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell-inner {
+  width: 100%;
+  margin: 0 auto;
+  padding-inline: var(--space-4);
+}
+
+.shell-normal { max-width: var(--layout-max); }
+.shell-wide { max-width: none; }
+
+.skip-link {
+  position: absolute;
+  left: var(--space-3);
+  top: calc(-1 * var(--space-8));
+  z-index: var(--z-skip-link);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-weight: var(--fw-bold);
+}
+
+.skip-link:focus {
+  top: var(--space-3);
+}
+
+/* Frosted, but nearly opaque: photos and the map scroll under it and the
+   header text must stay readable over the darkest of them. */
+.shell-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  background: var(--glass-fill-strong);
+  -webkit-backdrop-filter: var(--glass-blur-strong);
+  backdrop-filter: var(--glass-blur-strong);
+  border-bottom: var(--border-width) solid var(--glass-edge);
+  box-shadow: 0 1px 0 var(--c-border);
+}
+
+.shell-header .shell-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 3.75rem;
+}
+
+.shell-actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.shell-main {
+  flex: 1;
+  padding-block: var(--space-6) var(--space-7);
+}
+
+.shell-main:focus {
+  outline: none;
+}
+
+.shell-footer {
+  border-top: var(--border-width) solid var(--glass-edge);
+  background: var(--glass-fill-soft);
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
+  padding-block: var(--space-3);
+}
+
+.shell-footer p {
+  margin: 0;
+  max-width: none;
+}
+
+/* The notes in the footer (the project line, map and photo credits) sit side by side and only wrap when they must. */
+.shell-footer .shell-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-5);
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  color: var(--c-text);
+  text-decoration: none;
+}
+
+.wordmark-logo {
+  flex: none;
+  display: block;
+  height: 40px;
+  width: auto;
+}
+@media (max-width: 30rem) {
+  .wordmark-logo { height: 34px; }
+}
+@media (prefers-color-scheme: dark) {
+  /* The logo is dark purple: on a dark page it sits on a light plate so it stays readable. */
+  :root:not([data-surface="restaurants"]) .wordmark-logo,
+  :root[data-surface="restaurants"][data-theme="dark"] .wordmark-logo {
+    background: #f6f3ff;
+    border-radius: var(--radius-md);
+    padding: 3px 8px;
+  }
+}
+
+.restaurant-brand-text { display:grid;gap:.15rem;line-height:1.05; }
+.restaurant-brand-label { color:var(--c-text-muted);font:600 .6875rem/1.05 var(--font-body); }
+
+.wordmark-text {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Button ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  min-width: var(--touch-target);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-pill);
+  border: var(--border-width) solid transparent;
+  font: inherit;
+  font-weight: var(--fw-medium);
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-instant) var(--ease-out);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Busy buttons stay focusable (Button.tsx explains why), so they get their own look. */
+.btn[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+.btn-primary {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  box-shadow: var(--btn-sheen);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--c-primary-hover);
+  box-shadow: var(--btn-sheen), var(--shadow-press);
+}
+
+/* A pane of glass with a lit edge, not an outlined box. */
+.btn-secondary {
+  background: var(--glass-fill-soft);
+  color: var(--c-text);
+  border-color: var(--glass-edge);
+  box-shadow: var(--glass-highlight), var(--shadow-sm);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--glass-fill-hover);
+  box-shadow: var(--glass-highlight), var(--shadow-md);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--c-primary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--glass-fill-soft);
+  box-shadow: var(--glass-highlight);
+}
+
+.btn-danger {
+  background: var(--c-surface);
+  color: var(--c-danger);
+  border-color: var(--c-danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--c-danger-soft);
+}
+
+.btn-spinner {
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: spin calc(var(--dur-slow) * 2) linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Field and Select ---------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.field-label {
+  font-weight: var(--fw-medium);
+}
+
+.field-hint {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.field-input {
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--c-border-strong);
+  background: var(--glass-fill-soft);
+  box-shadow: var(--glass-highlight);
+  color: var(--c-text);
+  font: inherit;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.field-input:focus {
+  background: var(--glass-fill-hover);
+}
+
+.field-input:hover {
+  border-color: var(--c-text);
+}
+
+.field-invalid .field-input {
+  border-color: var(--c-danger);
+  border-width: 2px;
+}
+
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--c-danger);
+  font-weight: var(--fw-medium);
+}
+
+.field-error-icon {
+  flex: none;
+  width: 1em;
+  height: 1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.select-input {
+  appearance: none;
+  width: 100%;
+  padding-right: var(--space-7);
+  /* Arrow drawn in CSS so it inherits the text colour in both themes. */
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--c-text) 50%),
+    linear-gradient(135deg, var(--c-text) 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) 50%,
+    calc(100% - 15px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+@supports (appearance:base-select) {
+  :is(select.select-themed,.select-themed select) { appearance:base-select;cursor:pointer; }
+  .select-themed .select-input { background-image:none;padding-inline-end:var(--space-3); }
+  :is(select.select-themed,.select-themed select)::picker(select) {
+    appearance:base-select;max-height:min(18rem,50vh);overflow-y:auto;margin-block:.375rem;padding:.375rem;
+    min-inline-size:max(anchor-size(self-inline),8.5rem);border:1px solid var(--c-border);
+    border-radius:var(--radius-md);background:var(--c-surface);color:var(--c-text);
+    box-shadow:var(--shadow-lg);font:.875rem/1.3 var(--font-body);overscroll-behavior:contain;
+  }
+  :is(select.select-themed,.select-themed select)::picker-icon { color:var(--c-primary); }
+  :is(select.select-themed,.select-themed select) option {
+    min-height:2.25rem;gap:.5rem;padding:.375rem .5rem;border-radius:var(--radius-sm);
+  }
+  :is(select.select-themed,.select-themed select) option:checked { color:var(--c-primary);font-weight:700; }
+  :is(select.select-themed,.select-themed select) option:is(:focus,:hover) { background:var(--c-primary-soft); }
+}
+
+/* ---------- Checkbox ---------- */
+
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.checkbox-input {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: calc((var(--touch-target) - 1.25rem) / 2) 0;
+  accent-color: var(--c-primary);
+}
+
+.checkbox-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: var(--touch-target);
+  cursor: pointer;
+}
+
+.checkbox-hint {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+/* ---------- Dialog ---------- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: var(--c-overlay);
+  animation: backdrop-in var(--dur-base) var(--ease-out);
+}
+
+/* Only the dimming fades in. Fading the whole backdrop (opacity) would also fade the dialog's text for a few frames. */
+@keyframes backdrop-in {
+  from { background-color: transparent; }
+}
+
+.dialog {
+  width: min(100%, 32rem);
+  max-height: calc(100vh - var(--space-7));
+  overflow: auto;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-lg);
+  animation: rise-in var(--dur-base) var(--ease-out);
+}
+
+.dialog:focus {
+  outline: none;
+}
+
+/* A drawer from the right edge: used for the discovery filters. */
+.dialog-backdrop-side {
+  place-items: stretch end;
+  padding: 0;
+}
+
+.dialog-side {
+  width: min(100%, 24rem);
+  max-height: none;
+  height: 100%;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  animation: slide-in-right var(--dur-base) var(--ease-out);
+}
+
+/* The panel slides; it never fades, so its text keeps full contrast from the first frame (the backdrop does the fading). */
+@keyframes slide-in-right {
+  from { transform: translateX(2rem); }
+  to { transform: none; }
+}
+
+.dialog-title {
+  font-size: var(--fs-xl);
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Toast ---------- */
+
+.toast-region {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  left: var(--space-4);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 28rem;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  color: var(--c-text);
+  box-shadow: var(--shadow-lg);
+  border-left: 4px solid var(--c-info);
+  pointer-events: auto;
+  animation: rise-in var(--dur-base) var(--ease-out);
+}
+
+.toast-success { border-left-color: var(--c-primary); }
+.toast-warning { border-left-color: var(--c-accent); }
+.toast-danger { border-left-color: var(--c-danger); }
+
+.toast-tone {
+  font-weight: var(--fw-bold);
+}
+
+.toast-message {
+  flex: 1;
+}
+
+.toast-close {
+  display: grid;
+  place-items: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--c-text-muted);
+  cursor: pointer;
+}
+
+.toast-close:hover {
+  background: var(--c-surface-sunk);
+}
+
+.toast-close svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* ---------- Badge ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1em 0.6em;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.02em;
+  background: var(--c-surface-sunk);
+  color: var(--c-text);
+  border: var(--border-width) solid var(--c-border);
+}
+
+.badge-success { background: var(--c-primary-soft); color: var(--c-primary); border-color: transparent; }
+.badge-warning { background: var(--c-accent-soft); color: var(--c-accent); border-color: transparent; }
+.badge-danger { background: var(--c-danger-soft); color: var(--c-danger); border-color: transparent; }
+.badge-info { background: var(--c-info-soft); color: var(--c-info); border-color: transparent; }
+.badge-friend { background: var(--c-friend-soft); color: var(--c-friend); border-color: transparent; }
+
+/* ---------- Skeleton, empty and error ---------- */
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.skeleton-line {
+  display: block;
+  height: 1.1rem;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--c-surface-sunk), var(--c-surface-strong), var(--c-surface-sunk));
+  background-size: 200% 100%;
+  animation: shimmer calc(var(--dur-pulse) * 0.8) var(--ease-in-out) infinite;
+}
+
+.skeleton-line:nth-child(3n) { width: 70%; }
+.skeleton-line:nth-child(3n + 1) { width: 90%; }
+
+@keyframes shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+.state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: var(--border-width) dashed var(--c-border-strong);
+  text-align: center;
+}
+
+.state-error {
+  border-style: solid;
+  border-color: var(--c-danger);
+  background: var(--c-danger-soft);
+}
+
+.state-icon {
+  width: 48px;
+  height: 48px;
+  fill: none;
+  stroke: var(--c-text-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.state-error .state-icon {
+  stroke: var(--c-danger);
+}
+
+.state-title {
+  font-size: var(--fs-xl);
+  margin: 0;
+}
+
+.state-body {
+  margin: 0 0 var(--space-2);
+  color: var(--c-text);
+}
+
+/* ---------- Stepper ---------- */
+
+.stepper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.stepper-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--c-text-muted);
+}
+
+.stepper-dot {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 2px solid var(--c-border-strong);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+.stepper-dot svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stepper-current {
+  color: var(--c-text);
+  font-weight: var(--fw-bold);
+}
+
+.stepper-current .stepper-dot {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.stepper-done {
+  color: var(--c-text);
+}
+
+.stepper-done .stepper-dot {
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+}
+
+/* ---------- Legend ---------- */
+
+.legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.legend-swatch {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+
+.legend-name {
+  display: block;
+  font-size: var(--fs-sm);
+}
+
+.legend-hint {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--c-text-muted);
+}
+
+/* A legend is a picture of a rule, not a live seat: no pulsing. */
+.legend-static {
+  animation: none;
+}
+
+/* Site frame: consistent spacing across the event and account journeys. */
+.shell-header .shell-inner { min-height: 4.5rem; }
+.shell-main { padding-block: clamp(1.5rem, 4vw, 3rem) 4rem; }
+.shell-footer { padding-block: 1.5rem; }
+.wordmark-text { font-family: var(--font-body); font-size: 1.35rem; font-weight: 750; letter-spacing: -.055em; }
+@media (min-width: 48rem) { .shell-inner { padding-inline: 2rem; } }

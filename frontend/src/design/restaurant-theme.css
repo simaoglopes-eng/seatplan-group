@@ -1,0 +1,263 @@
+/*
+  The Restaurants look: white and lavender surfaces, deep purple for structure and choices,
+  pink for the one main action and for what we recommend.
+
+  PageShell sets data-surface="restaurants" on <html> for the diner, owner and
+  staff routes ("/", "/restaurants/...", "/r/...", "/b/...", "/owner...",
+  "/staff/...", and the owner or staff sign-in), and on no other route. So this
+  file changes only those pages: the events pages and the login for events keep
+  the linen and bottle-green look from tokens.css.
+
+  It only re-defines token values (and the main button's colour); no other stylesheet
+  needs to know about it. Every pair is checked by scripts/contrast.mjs (WCAG 2.2 AA),
+  the same way as tokens.css.
+
+  Palette (chosen by Martim from the Dribbble references, Nov 2026): white #FFFFFF and
+  lavender #F8F7FC surfaces, ink #1F1B33, secondary #5F5A75, purple #4F3F8F for
+  structure and selection, pink #B0347A for the main action (white text 5.9:1) and
+  #A12F6F as text, warning amber #734619 on #F8EBD3, destructive red #923B31.
+*/
+
+:root[data-surface="restaurants"] {
+  /* The restaurant pages are always light, white and purple like the references,
+     whatever the system's dark mode says. The dark palette below is kept for a
+     later "dark" switch (data-theme="dark") and is not applied on its own. */
+  color-scheme: light;
+
+  /* ---------- Colour: light ---------- */
+  /* The light values of the shared tokens the system dark mode would otherwise change. */
+  --c-friend: #6b3a68;
+  --c-friend-soft: #eedcec;
+  --c-info: #2f4f6b;
+  --c-info-soft: #dde6ee;
+  --seat-accessible: #2f4f6b;
+  --seat-accessible-mark: #fbf8f2;
+  --seat-friend: #6b3a68;
+  --seat-friend-soft: #eedcec;
+  --c-ops-bg: #f6f5fa;
+  --c-ops-nav: #2a2150;
+  --c-ops-nav-text: #ffffff;
+  --c-bg: #fbfaff;
+  --c-surface: #ffffff;
+  --c-surface-sunk: #f0eef6;   /* the floor under a plan */
+  --c-surface-strong: #dcd8ea; /* tables drawn on the floor */
+  --c-text: #1f1b33;
+  --c-text-muted: #555070;   /* a step darker so it holds 4.5:1 on the apricot pool and on clear glass */
+  --c-border: #e3e0ec;
+  --c-border-strong: #857f9c;
+
+  --c-primary: #4f3f8f;        /* deep purple: structure, selection, links */
+  --c-primary-hover: #3f3275;
+  --c-on-primary: #ffffff;
+  --c-primary-soft: #eeebf7;   /* selection */
+
+  --c-cta: #b0347a;            /* pink: the one main action of a screen */
+  --c-cta-hover: #962a66;
+
+  --c-accent: #a12f6f;         /* pink, dark enough for text: "recommended" */
+  --c-accent-bright: #c2508f;
+  --c-accent-soft: #f9e8f1;
+
+  --c-danger: #923b31;         /* needs attention, destructive */
+  --c-danger-soft: #f6e3df;
+
+  --c-focus: #005fcc;
+  --c-overlay: rgb(31 27 51 / 0.45);
+  --c-heading: #2b2160;        /* deep indigo: between the ink and the purple */
+
+  /* ---------- Glass: Lisbon at dusk over a floor plan ---------- */
+  /* An apricot sun low over the river (top right) and a faint violet shade (left).
+     The apricot is the darker pool, so it is --c-bg-deep; --c-glass-floor and
+     --c-glass-soft-floor are the white glass over it. */
+  --c-lamp-warm: #fbdcc4;
+  --c-lamp-cool: #ebe3fb;
+  --c-bg-deep: #fbdcc4;
+  --c-glass-floor: #fdefe4;
+  --c-glass-soft-floor: #fdebdd;
+  --glass-fill: rgb(255 255 255 / 0.55);
+  --glass-fill-strong: rgb(255 255 255 / 0.9);
+  --glass-fill-soft: rgb(255 255 255 / 0.42);
+  --glass-fill-hover: rgb(255 255 255 / 0.8);
+  --glass-edge: rgb(255 255 255 / 0.8);
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.95), inset 0 0 0 1px rgb(255 255 255 / 0.4);
+  --grid-dot: rgb(43 33 96 / 0.11);
+
+  --seat-free-fill: #ffffff;
+  --seat-free-stroke: #3f3a55;
+  --seat-held: #734619;
+  --seat-held-soft: #f8ebd3;
+  --seat-taken: #625d76;
+  --seat-taken-mark: #ffffff;
+  --seat-mine: #4f3f8f;
+  --seat-mine-mark: #ffffff;
+  --seat-blocked: #7a7590;
+  --seat-blocked-soft: #e6e3ef;
+  --seat-highlight: #a12f6f;
+
+  /* ---------- Type: Gloock for names and headings (tokens.css), the sans for everything else ---------- */
+
+  /* ---------- Shape: soft, 12 px controls, 16 to 20 px surfaces ---------- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  --shadow-sm: 0 1px 2px rgb(31 27 51 / 0.06);
+  --shadow-md: 0 6px 18px rgb(31 27 51 / 0.08), 0 1px 3px rgb(31 27 51 / 0.06);
+  --shadow-lg: 0 18px 48px rgb(31 27 51 / 0.18);
+  --shadow-glass:
+    0 1px 1px rgb(31 27 51 / 0.03),
+    0 16px 40px -20px rgb(43 33 96 / 0.18);
+  --shadow-glass-hover:
+    0 1px 2px rgb(31 27 51 / 0.05),
+    0 20px 44px -18px rgb(43 33 96 / 0.24);
+  --shadow-press: 0 8px 18px -8px rgb(176 52 122 / 0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-surface="restaurants"][data-theme="dark"] {
+    color-scheme: dark;
+    --c-ops-bg: #14111d;
+    --c-ops-nav: #1d1830;
+    --c-ops-nav-text: #f1eef9;
+    --c-bg: #14111d;
+    --c-surface: #1e1a2b;
+    --c-surface-sunk: #100e17;
+    --c-surface-strong: #2e2943;
+    --c-text: #f1eef9;
+    --c-text-muted: #bab4cc;
+    --c-border: #37314c;
+    --c-border-strong: #8b84a6;
+
+    --c-primary: #c3b8f2;
+    --c-primary-hover: #d6cef8;
+    --c-on-primary: #1b1533;
+    --c-primary-soft: #2f2750;
+
+    --c-cta: #f29cc8;
+    --c-cta-hover: #f7b8d8;
+
+    --c-accent: #f29cc8;
+    --c-accent-bright: #f29cc8;
+    --c-accent-soft: #4a2238;
+
+    --c-danger: #f2a58f;
+    --c-danger-soft: #45241b;
+
+    --c-focus: #9ac2ff;
+    --c-overlay: rgb(0 0 0 / 0.6);
+    --c-heading: #ece7fb;
+
+    --c-lamp-warm: #4a2240;
+    --c-lamp-cool: #1f1a3a;
+    --c-bg-deep: #2c2152;
+    --c-glass-floor: #2f1d33;
+    --c-glass-soft-floor: #512b48;
+    --glass-fill: rgb(30 26 43 / 0.62);
+    --glass-fill-strong: rgb(20 17 29 / 0.9);
+    --glass-fill-soft: rgb(255 255 255 / 0.04);
+    --glass-fill-hover: rgb(255 255 255 / 0.08);
+    --glass-edge: rgb(255 255 255 / 0.1);
+    --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.09), inset 0 0 0 1px rgb(255 255 255 / 0.03);
+    --grid-dot: rgb(241 238 249 / 0.06);
+
+    --seat-free-fill: #1e1a2b;
+    --seat-free-stroke: #cfc9e2;
+    --seat-held: #ffd480;
+    --seat-held-soft: #4a3419;
+    --seat-taken: #9d97b3;
+    --seat-taken-mark: #100e17;
+    --seat-mine: #c3b8f2;
+    --seat-mine-mark: #100e17;
+    --seat-blocked: #736d8c;
+    --seat-blocked-soft: #241f35;
+    --seat-highlight: #f29cc8;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 14px rgb(0 0 0 / 0.45);
+    --shadow-lg: 0 18px 48px rgb(0 0 0 / 0.6);
+    --shadow-glass: 0 1px 1px rgb(0 0 0 / 0.3), 0 16px 40px -16px rgb(0 0 0 / 0.7);
+    --shadow-glass-hover: 0 1px 2px rgb(0 0 0 / 0.35), 0 22px 48px -16px rgb(0 0 0 / 0.8);
+    --shadow-press: 0 6px 16px -6px rgb(0 0 0 / 0.7);
+  }
+}
+
+/* The solid fallback for the restaurant glass (tokens.css explains it). */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root[data-surface="restaurants"] {
+    --glass-fill: var(--c-surface);
+    --glass-fill-strong: var(--c-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-surface="restaurants"] {
+    --glass-fill: var(--c-surface);
+    --glass-fill-strong: var(--c-surface);
+    --glass-fill-soft: var(--c-surface);
+    --glass-fill-hover: var(--c-primary-soft);
+  }
+}
+
+/* The main action of a screen is pink; every other button keeps the purple and neutral looks. */
+:root[data-surface="restaurants"] .btn-primary {
+  background: var(--c-cta);
+  border-color: var(--c-cta);
+  color: var(--c-on-primary);
+}
+
+:root[data-surface="restaurants"] .btn-primary:hover:not(:disabled) {
+  background: var(--c-cta-hover);
+  border-color: var(--c-cta-hover);
+}
+
+/* Headings: Gloock at its one weight, slightly tight. */
+:root[data-surface="restaurants"] :is(h1, h2, h3) {
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Ordinary actions are rounded rectangles; capsules stay for filters and indicators. */
+:root[data-surface="restaurants"] .btn {
+  border-radius: var(--radius-md);
+}
+
+/* Deep indigo carries the names and headings; purple carries the controls (chips, times, links).
+   Pink stays for the one main action and for what we recommend. */
+:root[data-surface="restaurants"] :is(h1, h2, h3) {
+  color: var(--c-heading);
+}
+
+:root[data-surface="restaurants"] .discover-card h3 a {
+  color: var(--c-heading);
+}
+
+:root[data-surface="restaurants"] .discover-card-number {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+:root[data-surface="restaurants"] .discover-ambience {
+  color: var(--c-accent);
+}
+
+:root[data-surface="restaurants"] .discover-chip {
+  color: var(--c-primary);
+  border-color: transparent;
+}
+
+:root[data-surface="restaurants"] .discover-chip.is-on {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+:root[data-surface="restaurants"] .discover-time {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+:root[data-surface="restaurants"] .discover-time.is-requested {
+  background: var(--c-cta);
+  border-color: var(--c-cta);
+}

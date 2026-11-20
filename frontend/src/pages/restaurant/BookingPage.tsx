@@ -1,0 +1,194 @@
+// Route /r/:venueId: the diner's booking flow, mobile first.
+//
+// Five steps, one screen each: 1 date and party, 2 time, 3 table, 4 details,
+// 5 confirmation. This file only draws: the answers so far live in
+// useBookingFlow.ts, and each step lives in its own file.
+import { useEffect, useRef } from "react";
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { ApiError } from "../../api/client";
+import { getRestaurant } from "../../api/restaurant";
+import type { BookingConfirmation, RestaurantInfo } from "../../api/restaurant";
+import { EmptyState, ErrorState, PageShell, Skeleton, Stepper } from "../../design/components";
+import { ChooseSeat } from "./ChooseSeat";
+import { Confirmation } from "./Confirmation";
+import { errorMessage } from "./format";
+import { StepDetails } from "./StepDetails";
+import { StepParty } from "./StepParty";
+import { StepTable } from "./StepTable";
+import { StepTime } from "./StepTime";
+import { rememberPendingBooking } from "../pay/pendingBooking";
+import { STEP, useBookingFlow } from "./useBookingFlow";
+import { linkedTime, useLinkedTime } from "./useLinkedTime";
+import { useLoad } from "./useLoad";
+import "./restaurant.css";
+import "./booking-v5.css";
+
+// Three stages for the diner: When (date, party and time), Table, Details. The confirmation is the end, not a stage.
+const STEPS = ["When", "Table", "Details"];
+
+/** Which of the three stages is on screen. A held table, or a chair being requested, already belongs to Details. */
+function stageOf(step: number, holding: boolean, choosingSeat: boolean): number {
+  if (step === STEP.done) return STEPS.length;
+  if (step === STEP.details || (step === STEP.table && (holding || choosingSeat))) return 2;
+  if (step === STEP.table) return 1;
+  return 0;
+}
+
+export default function BookingPage() {
+  const { venueId = "" } = useParams();
+  const { state, reload } = useLoad(() => getRestaurant(venueId), venueId);
+  const title = state.status === "ready" ? `Book at ${state.data.name}` : "Book a table";
+  return (
+    <PageShell title={title}>
+      <div className="rb-page">
+        <h1 className="rb-title">{title}</h1>
+        {state.status === "loading" && <Skeleton lines={5} label="Loading the restaurant" />}
+        {state.status === "error" && <LoadError error={state.error} onRetry={() => reload()} />}
+        {state.status === "ready" && state.data.slug && <ForwardToPublicPage slug={state.data.slug} />}
+        {state.status === "ready" && !state.data.slug && state.data.max_party < 1 && <NotBookable name={state.data.name} />}
+        {state.status === "ready" && !state.data.slug && state.data.max_party >= 1 && <BookingFlow venueId={venueId} info={state.data} />}
+      </div>
+    </PageShell>
+  );
+}
+
+/** An old /r/<id> link of a restaurant with a public page goes there, keeping ?date=&time=&party=. */
+function ForwardToPublicPage({ slug }: { slug: string }) {
+  const { search } = useLocation();
+  return <Navigate to={`/restaurants/${encodeURIComponent(slug)}${search}`} replace />;
+}
+
+function LoadError({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+  if (error instanceof ApiError && error.code === "not_found") {
+    return (
+      <EmptyState title="We cannot find this restaurant">
+        <p>The booking link may be old or mistyped. Please ask the restaurant for its current link.</p>
+      </EmptyState>
+    );
+  }
+  return <ErrorState title="We could not open the booking page" message={errorMessage(error)} onRetry={onRetry} />;
+}
+
+/** The whole booking flow for one restaurant, loading it first. The public page embeds this. */
+export function BookingEmbed({ venueId }: { venueId: string }) {
+  const { state, reload } = useLoad(() => getRestaurant(venueId), venueId);
+  return (
+    <>
+      {state.status === "loading" && <Skeleton lines={5} label="Loading the booking form" />}
+      {state.status === "error" && <LoadError error={state.error} onRetry={() => reload()} />}
+      {state.status === "ready" && state.data.max_party < 1 && <NotBookable name={state.data.name} />}
+      {state.status === "ready" && state.data.max_party >= 1 && <BookingFlow venueId={venueId} info={state.data} />}
+    </>
+  );
+}
+
+/** max_party is 0 when no table or no service is set up yet: a party-size list would be empty. */
+function NotBookable({ name }: { name: string }) {
+  return (
+    <EmptyState title="Online booking is not open">
+      <p>{name} is not taking bookings online yet. Please call the restaurant.</p>
+    </EmptyState>
+  );
+}
+
+function BookingFlow({ venueId, info }: { venueId: string; info: RestaurantInfo }) {
+  // A waitlist offer email links here with ?date=&time=&party= filled in.
+  const [params] = useSearchParams();
+  const link = { date: params.get("date"), party: params.get("party"), time: params.get("time") };
+  const flow = useBookingFlow(info, link);
+  const linked = useLinkedTime(venueId, link, flow);
+  const { step, needs, time, hold } = flow;
+  const stage = stageOf(step, hold !== null, flow.choosingSeat);
+  if (linked.checking) return <Skeleton lines={3} label="Checking that time" />;
+  return (
+    <>
+      {linked.notice && step === STEP.time && <p role="status" className="rb-muted">{linked.notice}</p>}
+      {/* Once a table is held the form is on screen, and asking for a chair belongs to it: the indicator says Details. */}
+      <StageBar name={info.name} stage={stage} showName={stage > 0 && step !== STEP.done} />
+      {step === STEP.party && <StepParty info={info} needs={needs} onChange={flow.setNeeds} onNext={() => flow.go(STEP.time)} focusOnMount={false} />}
+      {step === STEP.time && <StepTime info={info} onChange={flow.setNeeds} venueId={venueId} needs={needs} wanted={time ?? linkedTime(needs, link)} onPick={flow.pickTime} onBack={() => flow.go(STEP.party)} />}
+      {step === STEP.table && flow.choosingSeat && hold && (
+        <ChooseSeat venueId={venueId} hold={hold} party={needs.party} secondsLeft={flow.secondsLeft} seatId={flow.seatId} onDone={flow.chooseSeat} onBackToMap={flow.backToMap} />
+      )}
+      {step === STEP.table && time && !flow.choosingSeat && (
+        <StepTable
+          venueId={venueId}
+          needs={needs}
+          time={time}
+          hold={hold}
+          secondsLeft={flow.secondsLeft}
+          submitting={flow.submitting}
+          carriedNotice={flow.carriedNotice}
+          onAccessibilityChange={(checked) => flow.setNeeds({ ...needs, needs_accessible: checked })}
+          onHold={flow.setHold}
+          onNext={flow.askSeat}
+          onBack={() => flow.go(STEP.time)}
+          details={{
+            seatId: flow.seatId, seatLabel: flow.seatLabel, onClearSeat: flow.clearSeat,
+            contact: flow.contact, onContactChange: flow.setContact, onBooked: flow.booked,
+            onHoldLost: flow.holdLost, onSubmittingChange: flow.setSubmitting,
+          }}
+        />
+      )}
+      {step === STEP.details && hold && (
+        <StepDetails
+          venueId={venueId}
+          needs={needs}
+          time={time}
+          hold={hold}
+          seatId={flow.seatId}
+          secondsLeft={flow.secondsLeft ?? 0}
+          contact={flow.contact}
+          onContactChange={flow.setContact}
+          onBooked={flow.booked}
+          onHoldLost={flow.holdLost}
+          onSubmittingChange={flow.setSubmitting}
+          onBack={() => flow.go(STEP.table)}
+        />
+      )}
+      {step === STEP.done && flow.confirmation && (flow.confirmation.payment ? <GoToPayment confirmation={flow.confirmation} /> : <Confirmation confirmation={flow.confirmation} />)}
+    </>
+  );
+}
+
+/**
+ * The booking is saved but waiting for its deposit: take the diner to the payment page. The manage
+ * link stays in this tab meanwhile, because the payment page must never see it (see pendingBooking.ts).
+ */
+function GoToPayment({ confirmation }: { confirmation: BookingConfirmation }) {
+  const navigate = useNavigate();
+  const payment = confirmation.payment;
+  const manageUrl = confirmation.manage_url;
+  const email = confirmation.email;
+  useEffect(() => {
+    if (!payment) return;
+    rememberPendingBooking(payment.payment_id, { manageUrl, email });
+    // A path is our own demo page; anything else is the payment provider's page.
+    if (payment.next_url.startsWith("/")) navigate(payment.next_url, { replace: true });
+    else window.location.assign(payment.next_url);
+  }, [payment, manageUrl, email, navigate]);
+  return <Skeleton lines={3} label="Taking you to the payment page" />;
+}
+
+/** The restaurant and the day above the stages, the three stages on wide screens, "2 of 3 · Table" on a phone. */
+function StageBar({ name, stage, showName }: { name: string; stage: number; showName: boolean }) {
+  const shown = Math.min(stage, STEPS.length - 1);
+  const ref = useRef<HTMLDivElement>(null);
+  // A new stage (or arriving on a time chosen elsewhere) starts at the top of the booking, not wherever the page was.
+  useEffect(() => {
+    if (stage > 0) ref.current?.scrollIntoView?.({ block: "start" });
+  }, [stage]);
+  return (
+    <div className="rb5-stagebar" id="booking-stages" ref={ref}>
+      <div className="rb5-stage-meta">{showName && <strong>{name}</strong>}</div>
+      <div className="rb5-stage-nav">
+        <Stepper steps={STEPS} current={stage} label="Booking steps" />
+        {stage < STEPS.length && (
+          <p className="rb5-stage-count" aria-hidden="true">
+            {shown + 1} of {STEPS.length} · {STEPS[shown]}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

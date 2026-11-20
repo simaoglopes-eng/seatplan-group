@@ -1,0 +1,317 @@
+"""The email outbox: emails are written to a table first and sent later.
+
+Writing first means a booking never fails because the email provider is slow,
+and a retry can never send the same email twice: each email has an
+idempotency_key (for example "booking-confirmed-<booking public id>") and the
+table refuses a second row with the same key.
+
+Life of one row (the "status" column):
+
+    queued --claim--> sending --ok--------------> sent
+                         |----not on allowlist--> skipped
+                         |----error, tries left-> queued (later, see backoff_delay)
+                         |----error, 5th try----> failed
+
+Personal links (security finding S9): a queued row must keep the diner's or
+guest's raw link, or the email could not be sent. Once a row is finished
+(sent, skipped or failed for good) the link has no more use, so the stored
+words and invite are rewritten without it. RETENTION_DAYS later the words, invite and
+picture are blanked altogether; subject, recipient, status and times stay, so
+the log can still show that the email existed.
+
+Emailed codes (guest accounts) are secrets too: once a code email is
+finished its words become CODE_REMOVED. Code emails must arrive while the
+person waits, so send_now() sends one row at once instead of waiting for the
+cron; the claim below still makes sure it goes out only once.
+"""
+
+import logging
+import re
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+
+from sqlalchemy import select, update
+from sqlalchemy.orm import Session
+
+from app import db
+from app.config import get_settings
+from app.mail.providers import OutgoingEmail, Provider
+from app.models import EmailOutbox, utc_now
+
+logger = logging.getLogger("seatplan.mail")
+
+MAX_ATTEMPTS = 5
+FIRST_RETRY_DELAY = timedelta(minutes=5)
+# How long a claimed row belongs to one processor. If that processor crashes
+# mid-send, another one may take the row again after this time.
+CLAIM_LEASE = timedelta(minutes=10)
+MAX_ERROR_LENGTH = 500
+# Statuses a row never leaves through process_due(): nothing more to send.
+FINISHED = ("sent", "skipped", "failed")
+# How long a finished row keeps its (link-free) words and invite.
+RETENTION_DAYS = 30
+# A personal link: optional "https://host" then /b/<token> (booking), /e/<token>
+# (attendee page), /a/<token> (attendee API) or /j/<token> (an event's shared
+# link). Tokens are url-safe base64.
+_PERSONAL_LINK = re.compile(r"(?:https?://[^\s\"'<>]*?)?/[abej]/[A-Za-z0-9_-]+")
+LINK_REMOVED = "[personal link removed]"
+# Emails whose words hold a 6-digit code (events_service/accounts.py).
+CODE_KINDS = ("account_code", "password_code")
+CODE_REMOVED = "[code removed]"
+
+
+def redact_links(text: str) -> str:
+    """The same text with every personal link replaced by LINK_REMOVED."""
+    return _PERSONAL_LINK.sub(LINK_REMOVED, text)
+
+
+def _forget_links(row: EmailOutbox) -> None:
+    """Drop the raw links (and any code) from a finished row; it will never be sent again."""
+    if row.kind in CODE_KINDS:
+        row.body_text = CODE_REMOVED
+        row.body_html = CODE_REMOVED
+    row.body_text = redact_links(row.body_text)
+    row.body_html = redact_links(row.body_html)
+    if row.ics is not None:
+        # An invite folds long lines ("CRLF space", RFC 5545 section 3.1), which
+        # can cut a link in two. Unfold first; nobody sends this invite again.
+        row.ics = redact_links(row.ics.replace("\r\n ", ""))
+    if row.last_error:
+        # A provider's error text may quote the email, link included.
+        row.last_error = redact_links(row.last_error)
+
+
+def enqueue(
+    session: Session,
+    *,
+    idempotency_key: str,
+    to_email: str,
+    kind: str,
+    subject: str,
+    body_text: str,
+    body_html: str,
+    ics: str | None = None,
+    send_after: datetime | None = None,
+    image_png: str | None = None,
+) -> None:
+    """Queue one email, or do nothing if this idempotency_key is already queued.
+
+    Does not commit: the email is saved together with the change that caused
+    it, so a rolled-back booking never leaves a confirmation email behind.
+    """
+    values = {
+        "idempotency_key": idempotency_key,
+        "to_email": to_email,
+        "kind": kind,
+        "subject": subject,
+        "body_text": body_text,
+        "body_html": body_html,
+        "ics": ics,
+        "image_png": image_png,
+        "status": "queued",
+        "attempts": 0,
+        "next_attempt_at": send_after or utc_now(),
+    }
+    db.insert_ignoring_duplicates(session, EmailOutbox.__table__, values)
+
+
+@dataclass
+class ProcessReport:
+    """What one call of process_due() did, returned to the cron caller."""
+
+    sent: int = 0
+    skipped: int = 0
+    retrying: int = 0
+    failed: int = 0
+
+
+def backoff_delay(attempts: int) -> timedelta:
+    """Wait before the next try: 5, 10, 20, 40 minutes after tries 1 to 4.
+
+    Doubling the wait gives a provider that is down time to recover instead of
+    hammering it every few minutes.
+    """
+    return FIRST_RETRY_DELAY * 2 ** (attempts - 1)
+
+
+def _due_ids(session: Session, now: datetime, batch: int) -> list[int]:
+    # A "sending" row whose lease has run out was left by a crashed processor.
+    query = (
+        select(EmailOutbox.id)
+        .where(EmailOutbox.status.in_(("queued", "sending")))
+        .where(EmailOutbox.next_attempt_at <= now)
+        .order_by(EmailOutbox.next_attempt_at, EmailOutbox.id)
+        .limit(batch)
+    )
+    ids = list(session.scalars(query))
+    # End the read transaction now, so our claims below start fresh and see
+    # what other processors have committed in the meantime.
+    session.commit()
+    return ids
+
+
+def _claim(session: Session, row_id: int, now: datetime) -> bool:
+    """Try to take one row for ourselves. True means we, and only we, won it.
+
+    The WHERE clause repeats the "is it due?" test. The database runs the two
+    competing UPDATEs one after the other; the first moves next_attempt_at into
+    the future, so for the second the WHERE no longer matches and it changes
+    0 rows. This is the same "let the database decide" idea as the seat locks.
+    """
+    result = session.execute(
+        update(EmailOutbox)
+        .where(EmailOutbox.id == row_id)
+        .where(EmailOutbox.status.in_(("queued", "sending")))
+        .where(EmailOutbox.next_attempt_at <= now)
+        .values(status="sending", next_attempt_at=now + CLAIM_LEASE)
+    )
+    # Commit at once so the other processor sees the claim before our slow send.
+    session.commit()
+    return result.rowcount == 1
+
+
+def _to_message(row: EmailOutbox) -> OutgoingEmail:
+    return OutgoingEmail(
+        to_email=row.to_email,
+        subject=row.subject,
+        body_text=row.body_text,
+        body_html=row.body_html,
+        ics=row.ics,
+        idempotency_key=row.idempotency_key,
+        image_png=row.image_png,
+    )
+
+
+def _record_failure(row: EmailOutbox, error: Exception, now: datetime) -> str:
+    """Count the failed try and decide: try again later, or give up."""
+    row.attempts += 1
+    row.last_error = f"{type(error).__name__}: {error}"[:MAX_ERROR_LENGTH]
+    if row.attempts >= MAX_ATTEMPTS:
+        row.status = "failed"
+        _forget_links(row)
+    else:
+        # The words stay whole: the next try must carry the working link.
+        row.status = "queued"
+        row.next_attempt_at = now + backoff_delay(row.attempts)
+    return row.status
+
+
+def _process_one(
+    row: EmailOutbox,
+    provider: Provider,
+    allowlist: tuple[str, ...],
+    now: datetime,
+    *,
+    allow_all: bool = False,
+) -> str:
+    """Send one claimed row and return its new status."""
+    if not allow_all and row.to_email.strip().lower() not in allowlist:
+        # Demo-safety rule: only addresses on EMAIL_ALLOWLIST ever get email.
+        row.status = "skipped"
+        row.last_error = "Not on EMAIL_ALLOWLIST, so not sent."
+        _forget_links(row)
+        return row.status
+    try:
+        row.provider_message_id = provider.send(_to_message(row))
+    except Exception as error:  # noqa: BLE001 (reason below)
+        # Any error, not only ProviderError: one broken email must not stop the
+        # batch or stay stuck in "sending".
+        return _record_failure(row, error, now)
+    row.status = "sent"
+    row.sent_at = now
+    row.last_error = None
+    _forget_links(row)
+    return row.status
+
+
+def _count(report: ProcessReport, status: str) -> None:
+    if status == "sent":
+        report.sent += 1
+    elif status == "skipped":
+        report.skipped += 1
+    elif status == "queued":
+        report.retrying += 1
+    else:
+        report.failed += 1
+
+
+def process_due(
+    session: Session, provider: Provider, now: datetime, batch: int = 20
+) -> ProcessReport:
+    """Send up to `batch` emails whose time has come. Commits as it goes.
+
+    Safe to run twice at the same moment (two cron calls overlapping): each row
+    is claimed by exactly one processor, so no email goes out twice.
+    """
+    allowlist = get_settings().email_allowlist
+    report = ProcessReport()
+    for row_id in _due_ids(session, now, batch):
+        if not _claim(session, row_id, now):
+            continue  # another processor won this row
+        row = session.get(EmailOutbox, row_id, populate_existing=True)
+        if row is None:
+            continue
+        status = _process_one(
+            row, provider, allowlist, now, allow_all=get_settings().email_allow_all
+        )
+        session.commit()
+        _count(report, status)
+    return report
+
+
+def send_now(session: Session, provider: Provider, idempotency_key: str, now: datetime) -> str:
+    """Send one queued row at once (code emails). Commits. Returns its new status.
+
+    The row is claimed exactly as process_due() claims it, so if the cron
+    runs at the same moment only one of the two sends it. Never raises: any
+    error is logged and the row stays queued for the cron to try again.
+    """
+    try:
+        row_id = session.scalar(
+            select(EmailOutbox.id).where(EmailOutbox.idempotency_key == idempotency_key)
+        )
+        session.commit()
+        if row_id is None or not _claim(session, row_id, now):
+            return "not_claimed"
+        row = session.get(EmailOutbox, row_id, populate_existing=True)
+        if row is None:
+            return "not_claimed"
+        status = _process_one(
+            row,
+            provider,
+            get_settings().email_allowlist,
+            now,
+            allow_all=get_settings().email_allow_all,
+        )
+        session.commit()
+        return status
+    except Exception:  # any error: the person's request must still succeed
+        session.rollback()
+        logger.exception("send_now failed; the cron will retry the email")
+        return "error"
+
+
+def scrub_expired(session: Session, now: datetime) -> int:
+    """Retention: blank words, invite and picture of finished rows older than RETENTION_DAYS.
+
+    Called by the cron endpoint after process_due(). A row's age is its
+    sent_at, or next_attempt_at when it was never sent (skipped or failed);
+    the table has no created_at. Queued rows are never touched, so retries
+    still work. Commits; returns how many rows were blanked.
+    """
+    cutoff = now - timedelta(days=RETENTION_DAYS)
+    sent_at, waited = EmailOutbox.sent_at, EmailOutbox.next_attempt_at
+    old = (sent_at < cutoff) | (sent_at.is_(None) & (waited < cutoff))
+    not_blank = (
+        (EmailOutbox.body_text != "")
+        | (EmailOutbox.body_html != "")
+        | EmailOutbox.ics.is_not(None)
+        | EmailOutbox.image_png.is_not(None)
+    )
+    result = session.execute(
+        update(EmailOutbox)
+        .where(EmailOutbox.status.in_(FINISHED) & old & not_blank)
+        .values(body_text="", body_html="", ics=None, image_png=None)
+    )
+    session.commit()
+    return result.rowcount

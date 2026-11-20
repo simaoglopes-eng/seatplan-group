@@ -1,0 +1,64 @@
+/* The shared event link (/j/:token): the visitor's map, the places-left
+   panel and the panel that opens when a free seat is picked. The page frame
+   (.ev-page, .ev-card, .ev-map) comes from pages/events/events.css. */
+
+.join-status p {
+  margin: 0;
+}
+
+.join-places {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+}
+
+.join-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* On a phone each button fills the width: bigger targets, no hunting. */
+.join-actions .btn {
+  flex: 1 1 14rem;
+}
+
+.join-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-border-strong);
+  border-left: calc(var(--border-width) * 4) solid var(--c-primary);
+  border-radius: var(--radius-lg);
+}
+
+.join-panel p {
+  margin: 0;
+}
+
+.join-panel-title {
+  margin: 0;
+  font-size: var(--fs-lg);
+}
+
+.join-panel > .btn-ghost {
+  align-self: flex-start;
+}
+
+.join-closed {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: 40rem;
+  margin: var(--space-5) auto 0;
+}
+
+/* Shared event preview */
+.join-page .ev-header { padding: clamp(1.5rem,4vw,2.75rem); border: 1px solid var(--c-border); border-radius: 1.5rem; background: var(--c-primary-soft); }
+.join-page .ev-title { font-family: var(--font-display); font-size: clamp(2.4rem,5vw,4rem); font-weight: 400; letter-spacing: -.045em; line-height: 1.08; overflow-wrap: anywhere; }
+.join-page .join-status { padding: clamp(1.25rem,3vw,2rem); border-radius: 1.2rem; }
+.join-page .join-panel { padding: 1.5rem; border-radius: 1.1rem; box-shadow: var(--shadow-sm); }
+.join-page .join-panel-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 400; }
+@media(max-width:600px){.join-page .ev-header{padding:1.5rem;border-radius:1.15rem}}
