@@ -99,7 +99,7 @@ describe("DiscoverPage: the command bar", () => {
     server(() => ({ items: [], total: 0 }));
     renderPage();
     expect(screen.queryByRole("link", { name: "For restaurant owners" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Plan an event" }).getAttribute("href")).toBe("/events");
+    expect(screen.getByRole("link", { name: "Events" }).getAttribute("href")).toBe("/events");
     await screen.findByText("No restaurants match");
   });
   it("moves the only card and pin highlight to the hovered result without restoring a prior selection", async () => {

@@ -24,8 +24,11 @@ export function PublicHeaderActions() {
         Menu
       </button>
       <div id="site-nav-links" className={`site-nav-links${open ? " is-open" : ""}`}>
+        <Link to="/venues" className="btn btn-ghost" onClick={close}>
+          Venues
+        </Link>
         <Link to="/events" className="btn btn-ghost" onClick={close}>
-          Plan an event
+          Events
         </Link>
       </div>
       {/* One account for bookings and work (plan 2026-11-18): either session means signed in. */}
