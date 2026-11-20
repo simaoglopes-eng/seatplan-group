@@ -24,7 +24,7 @@ export function PublicHeaderActions() {
         Menu
       </button>
       <div id="site-nav-links" className={`site-nav-links${open ? " is-open" : ""}`}>
-        <Link to="/venues" className="btn btn-ghost" onClick={close}>
+        <Link to="/directory" className="btn btn-ghost" onClick={close}>
           Venues
         </Link>
         <Link to="/events" className="btn btn-ghost" onClick={close}>

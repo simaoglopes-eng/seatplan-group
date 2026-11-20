@@ -47,6 +47,7 @@ from app.routers import (
     public_events,
     restaurants,
     staff,
+    venue_directory,
     venues,
     visitor,
 )
@@ -162,6 +163,7 @@ def _register_routers(app: FastAPI) -> None:
         restaurants,
         discovery,
         public_events,
+        venue_directory,
         diners,
         menus,
         owner_payments,

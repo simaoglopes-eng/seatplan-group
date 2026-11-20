@@ -37,6 +37,8 @@ export interface EventVenueCard {
   capacity: number;
   event_types: string[];
   upcoming_count: number;
+  /** A made-up venue that ships with the demo, not a real place. */
+  is_demo?: boolean;
 }
 
 export interface EventVenue {

@@ -73,7 +73,7 @@ export default function Login({ defaultNext = "/organiser" }: { defaultNext?: st
             Sign in
           </Button>
         </form>
-        {!isStaff && <p>New to SeatPlan? <Link to="/organiser/register">Create an organiser account</Link>.</p>}
+        {!isStaff && <p>New to SeatPlan? <Link to={params.get("next") ? `/organiser/register?next=${encodeURIComponent(safeNextPath(params.get("next")))}` : "/organiser/register"}>Create an organiser account</Link>.</p>}
       </div>
       </AuthLayout>
     </PageShell>

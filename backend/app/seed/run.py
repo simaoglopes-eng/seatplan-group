@@ -27,6 +27,7 @@ from app.seed import (
     demo_member,
     demo_restaurant,
     demo_showcase,
+    venue_directory,
 )
 
 DEMO_ORGANISER_EMAIL = "organiser@example.com"
@@ -101,6 +102,8 @@ def seed_all(session: Session, settings: Settings, actor: str) -> dict[str, str]
         **demo_event_venues.seed(session),
     }
     demo_member.seed(session, demo_password("DEMO_MEMBER_PASSWORD", settings))
+    # Real venues (OpenStreetMap snapshot), not demo data: loaded with the seed so a fresh database has them.
+    venue_directory.load(session)
     session.execute(delete(DemoLink))
     session.add_all(DemoLink(name=name, path=path) for name, path in links.items())
     audit.record(

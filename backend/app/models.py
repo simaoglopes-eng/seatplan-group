@@ -765,3 +765,35 @@ class PaymentEvent(Base):
     event_id: Mapped[str] = mapped_column(String(255))
     type: Mapped[str] = mapped_column(String(60))
     received_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
+
+
+class VenueListing(Base):
+    """A real venue in the public directory (events_service/directory.py).
+
+    Read-only reference data from OpenStreetMap (ODbL), loaded from a dated
+    snapshot by seed/venue_directory.py. Not a SeatPlan venue: no owner, no
+    floor plan, no events. Upserted by source_ref; never edited by users.
+    """
+
+    __tablename__ = "venue_listings"
+    __table_args__ = (
+        UniqueConstraint("source", "source_ref", name="uq_venue_listings_source_ref"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    source: Mapped[str] = mapped_column(String(20))
+    # "node/123" or "way/456" for OpenStreetMap.
+    source_ref: Mapped[str] = mapped_column(String(40))
+    name: Mapped[str] = mapped_column(String(120))
+    # "estate" (inferred from the name), "hall" or "conference".
+    kind: Mapped[str] = mapped_column(String(20), index=True)
+    country: Mapped[str] = mapped_column(String(2), index=True)
+    city: Mapped[str | None] = mapped_column(String(120))
+    # True when the city is the nearest named place, not an address tag.
+    city_inferred: Mapped[bool] = mapped_column(Boolean, default=False)
+    street: Mapped[str | None] = mapped_column(String(200))
+    postcode: Mapped[str | None] = mapped_column(String(20))
+    lat: Mapped[float] = mapped_column(Float)
+    lng: Mapped[float] = mapped_column(Float)
+    website: Mapped[str | None] = mapped_column(String(200))
+    snapshot: Mapped[str] = mapped_column(String(20))

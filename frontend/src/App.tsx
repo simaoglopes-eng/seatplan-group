@@ -20,6 +20,7 @@ import YourAccountPage from "./pages/your-account/YourAccountPage";
 import TeamPage from "./pages/owner/TeamPage";
 import VenuePage from "./pages/events-public/VenuePage";
 import VenuesPage from "./pages/events-public/VenuesPage";
+import DirectoryPage from "./pages/directory/DirectoryPage";
 import Home from "./pages/Home";
 import DemoHome from "./pages/DemoHome";
 import ParticipantStartPage from "./pages/ParticipantStartPage";
@@ -46,6 +47,7 @@ export default function App() {
       <Route path="/events/staff" element={<EventStaffPage />} />
       <Route path="/staff" element={<Navigate to="/events/staff" replace />} />
       <Route path="/venues" element={<VenuesPage />} />
+      <Route path="/directory" element={<DirectoryPage />} />
       <Route path="/venues/:slug" element={<VenuePage />} />
       {/* Events: personal attendee link, organiser workspace */}
       <Route path="/e/:token" element={<AttendeePage />} />

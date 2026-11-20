@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { request, setSessionToken } from "../api/client";
 import { AuthLayout, Button, Field, PageShell } from "../design/components";
+import { safeNextPath } from "./Login";
 import "./login.css";
 
 type CodeResponse = { signup_id: string; sent_to: string };
@@ -9,6 +10,7 @@ type SessionResponse = { token: string };
 
 export default function OrganiserRegister() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +28,7 @@ export default function OrganiserRegister() {
         setPassword("");
       } else {
         const result = await request<SessionResponse>("POST", "/auth/verify", { email: email.trim(), code, signup_id: pending.signup_id }, "none");
-        setSessionToken(result.token); navigate("/organiser");
+        setSessionToken(result.token); navigate(params.get("next") ? safeNextPath(params.get("next")) : "/organiser");
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Something went wrong. Please try again.");

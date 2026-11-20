@@ -1,7 +1,8 @@
-// Route /: the front door. It reads the same public data as /venues and /events, so every
-// tile, count and card is live, and every link lands on a page that honours what it says:
-// a kind tile filters here and its "See all" opens /venues with the same filter; an
-// occasion opens /events?type=; an event card opens its shared link (/j/<token>).
+// Route /: the front door. Every tile, count and card is live data, and every link lands on
+// a page that honours what it says: country and kind filter the real-venue directory here,
+// and "See all" opens /directory with the same filter; "Plan an event here" opens the
+// organiser space with that venue named; an occasion opens /events?type=; an event card
+// opens its shared link (/j/<token>); a demo room opens its page with a seat map.
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getEventTypes, getEventVenues, getPublicEvents } from "../api/eventsPublic";
@@ -11,21 +12,21 @@ import { SeatMap } from "../seatmap/SeatMap";
 import { PublicHeaderActions } from "./discover/PublicHeaderActions";
 import { EventCard } from "./events-public/EventCard";
 import { VenueCard } from "./events-public/VenueCard";
-import { matchesKind, VENUE_KINDS, venuesHref } from "./events-public/eventsModel";
-import type { VenueKind } from "./events-public/eventsModel";
+import { getDirectory, getDirectoryCounts } from "../api/venueDirectory";
+import type { DirectoryCountry, DirectoryKind } from "../api/venueDirectory";
+import { Chip, Chips } from "./discover/Chips";
+import { COUNTRIES, KINDS, directoryHref } from "./directory/directoryModel";
+import { Attribution, ListingCard } from "./directory/ListingCard";
 import { SAMPLE_RECOMMENDED, buildSampleFloor } from "./homeSample";
 import { errorMessage } from "./restaurant/format";
 import { useLoad } from "./restaurant/useLoad";
 import type { Loaded } from "./restaurant/useLoad";
 import "./discover/discover.css";
 import "./events-public/events-public.css";
+import "./directory/directory.css";
 import "./landing.css";
 
 type EventsPage = { items: PublicEvent[]; total: number };
-
-/** Guest counts offered on the slider; 0 means "any size". */
-const GUEST_MAX = 200;
-const GUEST_STEP = 10;
 
 export default function Home() {
   // Three reads, once each: the sections below share them (the public reads share one rate limit).
@@ -47,9 +48,10 @@ export default function Home() {
         }
       >
         <Hero />
-        <FindVenue venues={venues} types={types} />
+        <FindVenue />
         <Occasions types={types} events={events} />
         <ComingUp events={events} />
+        <DemoRooms venues={venues} types={types} />
         <WaysIn />
       </PageShell>
     </div>
@@ -96,77 +98,95 @@ function Hero() {
   );
 }
 
-function FindVenue({ venues, types }: { venues: Loaded<{ items: EventVenueCard[] }>; types: Loaded<EventType[]> }) {
-  const [kind, setKind] = useState<VenueKind | null>(null);
-  const [guests, setGuests] = useState(0);
-  const labels = new Map(types.state.status === "ready" ? types.state.data.map((t) => [t.key, t.label]) : []);
-  const all = venues.state.status === "ready" ? venues.state.data.items : [];
-  const fits = all.filter((venue) => guests === 0 || venue.capacity >= guests);
-  const shown = fits.filter((venue) => matchesKind(venue, kind));
-  const href = venuesHref(kind, guests || null);
-  const kindLabel = VENUE_KINDS.find((k) => k.key === kind)?.label.toLowerCase() ?? "venues";
+function FindVenue() {
+  const [country, setCountry] = useState<DirectoryCountry | null>(null);
+  const [kind, setKind] = useState<DirectoryKind | null>(null);
+  const counts = useLoad(getDirectoryCounts, "directory-counts");
+  const list = useLoad(() => getDirectory({ country, kind, limit: 6 }), `${country ?? ""}|${kind ?? ""}`);
+  const rows = counts.state.status === "ready" ? counts.state.data.items : [];
+  const count = (k: DirectoryKind | null, c: DirectoryCountry | null): number =>
+    rows.filter((r) => (k === null || r.kind === k) && (c === null || r.country === c)).reduce((sum, r) => sum + r.count, 0);
+  const ready = list.state.status === "ready" ? list.state.data : null;
+  const where = COUNTRIES.find((c) => c.key === country)?.label;
+  const what = KINDS.find((k) => k.key === kind)?.label.toLowerCase() ?? "venues";
 
   return (
     <section className="ld-section" aria-labelledby="ld-find-title">
       <div className="ld-section-head">
         <h2 id="ld-find-title">Find the room</h2>
-        <p>Pick a kind of venue and the size of your party. The list changes as you go.</p>
+        <p>Real quintas, event halls and conference centres in Portugal, Belgium and Italy. Choose one and plan your event there.</p>
       </div>
+      <Chips label="Country">
+        <Chip pressed={country === null} onClick={() => setCountry(null)}>
+          All countries{counts.state.status === "ready" ? ` · ${count(null, null)}` : ""}
+        </Chip>
+        {COUNTRIES.map((c) => (
+          <Chip key={c.key} pressed={country === c.key} onClick={() => setCountry(c.key)}>
+            {c.label}
+            {counts.state.status === "ready" ? ` · ${count(null, c.key)}` : ""}
+          </Chip>
+        ))}
+      </Chips>
       <div className="ld-kinds" role="group" aria-label="Kind of venue">
-        {VENUE_KINDS.map((k) => {
-          const count = venues.state.status === "ready" ? fits.filter((venue) => matchesKind(venue, k.key)).length : null;
-          return (
-            <button key={k.key} type="button" className="ld-kind" aria-pressed={kind === k.key} onClick={() => setKind(kind === k.key ? null : k.key)}>
-              <span className="ld-kind-label">{k.label}</span>
-              <span className="ld-kind-blurb">{k.blurb}</span>
-              <span className="ld-kind-count">{count === null ? "…" : `${count} ${count === 1 ? "venue" : "venues"}`}</span>
-            </button>
-          );
-        })}
+        {KINDS.map((k) => (
+          <button key={k.key} type="button" className="ld-kind" aria-pressed={kind === k.key} onClick={() => setKind(kind === k.key ? null : k.key)}>
+            <span className="ld-kind-label">{k.label}</span>
+            <span className="ld-kind-blurb">{k.blurb}</span>
+            <span className="ld-kind-count">{counts.state.status === "ready" ? `${count(k.key, country)} ${where ? `in ${where}` : "venues"}` : "…"}</span>
+          </button>
+        ))}
       </div>
-      <div className="ld-guests">
-        <label htmlFor="ld-guests-range">Guests</label>
-        <input
-          id="ld-guests-range"
-          type="range"
-          min={0}
-          max={GUEST_MAX}
-          step={GUEST_STEP}
-          value={guests}
-          aria-valuetext={guests === 0 ? "Any number" : `${guests} or more`}
-          onChange={(event) => setGuests(Number(event.target.value))}
-        />
-        <output htmlFor="ld-guests-range">{guests === 0 ? "Any number" : `${guests} or more`}</output>
-      </div>
-      <div aria-live="polite" aria-busy={venues.state.status === "loading"}>
-        {venues.state.status === "loading" && <Skeleton lines={4} label="Finding venues" />}
-        {venues.state.status === "error" && <ErrorState message={errorMessage(venues.state.error, "We could not load the venues. Please try again.")} onRetry={() => venues.reload()} />}
-        {venues.state.status === "ready" &&
-          (shown.length === 0 ? (
-            <EmptyState title={all.length === 0 ? "No venues published yet" : "Nothing that size here yet"}>
-              <p>{all.length === 0 ? "Run a quinta or a hall? Create an account and publish your room." : "Try fewer guests or another kind of venue."}</p>
-              {all.length === 0 && (
-                <Link className="btn btn-primary" to="/organiser/register">
-                  Add your venue
-                </Link>
-              )}
+      <div aria-live="polite" aria-busy={list.state.status === "loading"}>
+        {list.state.status === "loading" && <Skeleton lines={4} label="Finding venues" />}
+        {list.state.status === "error" && <ErrorState message={errorMessage(list.state.error, "We could not load the venues. Please try again.")} onRetry={() => list.reload()} />}
+        {ready &&
+          (ready.items.length === 0 ? (
+            <EmptyState title="No venues listed here yet">
+              <p>Run a quinta or a hall? Create an account and draw your room.</p>
+              <Link className="btn btn-primary" to="/organiser/register">
+                Add your venue
+              </Link>
             </EmptyState>
           ) : (
             <>
-              <div className="ep-venue-grid">
-                {shown.slice(0, 3).map((venue) => (
-                  <VenueCard key={venue.slug} venue={venue} typeLabels={labels} />
+              <div className="dir-grid">
+                {ready.items.map((listing) => (
+                  <ListingCard key={listing.id} listing={listing} />
                 ))}
               </div>
               <p className="ld-more">
-                <Link to={href}>
-                  See all {shown.length} {kind ? kindLabel : shown.length === 1 ? "venue" : "venues"}
-                  {guests ? ` for ${guests} guests or more` : ""} <span aria-hidden="true">→</span>
+                <Link to={directoryHref(country, kind)}>
+                  See all {ready.total} {what}
+                  {where ? ` in ${where}` : ""} <span aria-hidden="true">→</span>
                 </Link>
               </p>
+              <Attribution />
             </>
           ))}
       </div>
+    </section>
+  );
+}
+
+function DemoRooms({ venues, types }: { venues: Loaded<{ items: EventVenueCard[] }>; types: Loaded<EventType[]> }) {
+  if (venues.state.status !== "ready" || venues.state.data.items.length === 0) return null;
+  const labels = new Map(types.state.status === "ready" ? types.state.data.map((t) => [t.key, t.label]) : []);
+  return (
+    <section className="ld-section" aria-labelledby="ld-demo-title">
+      <div className="ld-section-head">
+        <h2 id="ld-demo-title">Try a room that is already drawn</h2>
+        <p>Demo venues with every table and seat in place. Open one to see its events and choose a seat.</p>
+      </div>
+      <div className="ep-venue-grid">
+        {venues.state.data.items.slice(0, 3).map((venue) => (
+          <VenueCard key={venue.slug} venue={venue} typeLabels={labels} />
+        ))}
+      </div>
+      <p className="ld-more">
+        <Link to="/venues">
+          All {venues.state.data.items.length} demo rooms <span aria-hidden="true">→</span>
+        </Link>
+      </p>
     </section>
   );
 }

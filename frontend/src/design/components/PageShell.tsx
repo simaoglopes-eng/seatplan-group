@@ -77,7 +77,7 @@ export function PageShell({ title, children, width = "normal", headerActions, he
       </main>
       <footer className="shell-footer">
         <div className={`shell-inner shell-${width}`}>
-          <p>SeatPlan, a student project at Nova SBE. Demo data only: every person here is invented.</p>
+          <p>SeatPlan, a student project at Nova SBE. Events, guests and seat maps are demo data and every person is invented; the venue directory lists real places from OpenStreetMap.</p>
           {footerContent}
         </div>
       </footer>

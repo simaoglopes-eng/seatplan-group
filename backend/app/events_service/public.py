@@ -160,6 +160,7 @@ def event_venues(session: Session, venue_type: str | None) -> dict[str, Any]:
                 "capacity": _capacity(session, venue),
                 "event_types": _types_in_order(events),
                 "upcoming_count": len(events),
+                "is_demo": venue.is_demo,
             }
         )
     return {"items": items}
@@ -194,6 +195,7 @@ def venue_page(session: Session, slug: str) -> dict[str, Any]:
         "website": venue.website,
         "instagram": venue.instagram,
         "maps_url": maps_url(venue),
+        "is_demo": venue.is_demo,
         "timezone": venue.timezone,
         "photos": [
             {"url": _photo_url(p), "alt": p.alt_text, "is_cover": p.is_cover} for p in gallery

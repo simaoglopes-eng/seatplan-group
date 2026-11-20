@@ -86,7 +86,7 @@ describe("Home header", () => {
     const nav = screen.getByRole("navigation", { name: "Main" });
     expect(within(nav).getByRole("link", { name: "Log in" }).getAttribute("href")).toBe("/account");
     expect(within(nav).getByRole("link", { name: "Events" }).getAttribute("href")).toBe("/events");
-    expect(within(nav).getByRole("link", { name: "Venues" }).getAttribute("href")).toBe("/venues");
+    expect(within(nav).getByRole("link", { name: "Venues" }).getAttribute("href")).toBe("/directory");
     expect(screen.queryByRole("link", { name: "Organiser sign in" })).toBeNull();
   });
 });

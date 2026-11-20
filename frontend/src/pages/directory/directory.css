@@ -1,0 +1,22 @@
+/* The venue directory (/directory) and its cards on the home page. Tokens only. */
+.dir-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: var(--space-4); }
+.dir-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--space-4);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-border);
+  border-radius: var(--radius-lg);
+}
+.dir-card h3 { margin: 0 0 var(--space-1); overflow-wrap: anywhere; }
+.dir-place { margin: 0; color: var(--c-text); }
+.dir-street { margin: var(--space-1) 0 0; color: var(--c-text-muted); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.dir-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); margin-top: auto; padding-top: var(--space-4); }
+.dir-link { display: inline-flex; align-items: center; min-height: 2.75rem; gap: var(--space-1); }
+.dir-search { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-3); max-width: 24rem; }
+.dir-search label { font-weight: var(--fw-bold); }
+.dir-search input { min-height: 2.75rem; padding: 0 var(--space-3); font: inherit; color: var(--c-text); background: var(--c-surface); border: var(--border-width) solid var(--c-border-strong); border-radius: var(--radius-md); }
+.dir-search input:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.dir-more { margin: var(--space-5) 0 0; text-align: center; }
+.dir-attribution { margin: var(--space-6) 0 0; color: var(--c-text-muted); font-size: var(--fs-sm); }

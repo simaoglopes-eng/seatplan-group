@@ -19,7 +19,7 @@ export function VenueCard({ venue, typeLabels }: { venue: EventVenueCard; typeLa
         )}
       </Link>
       <div className="ep-venue-body">
-        <p className="ep-type">{[venue.venue_type_label, area].filter(Boolean).join(" · ")}</p>
+        <p className="ep-type">{[venue.is_demo ? "Demo venue" : null, venue.venue_type_label, area].filter(Boolean).join(" · ")}</p>
         <h3 id={`venue-${venue.slug}`}>
           <Link to={href}>{venue.name}</Link>
         </h3>

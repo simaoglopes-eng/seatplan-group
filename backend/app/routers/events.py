@@ -15,8 +15,8 @@ from app import db
 from app.core import audit, live
 from app.core.errors import ApiError
 from app.core.holds import commit_or_seat_taken
-from app.core.text import PlainText
 from app.core.parent_venue import shown_venue, shown_venue_of
+from app.core.text import PlainText
 from app.events_service import (
     chart,
     csv_io,
