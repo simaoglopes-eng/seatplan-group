@@ -19,7 +19,7 @@
    every seat glyph keeps its checked contrast. */
 .home-hero-map {
   padding: var(--space-2);
-  border-radius: calc(var(--radius-lg) + var(--space-2));
+  border-radius: var(--radius-lg);
   background: var(--glass-fill);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
@@ -47,11 +47,11 @@
 
 .home-eyebrow {
   margin: 0 0 var(--space-2);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-eyebrow);
   text-transform: uppercase;
-  color: var(--c-accent);
+  color: var(--c-text-muted);
 }
 
 .home-lede {
@@ -83,7 +83,7 @@
 
 .home-card {
   padding: var(--space-6) var(--space-5) var(--space-5);
-  border-radius: calc(var(--radius-lg) + var(--space-2));
+  border-radius: var(--radius-lg);
   background: var(--glass-fill);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
@@ -191,11 +191,13 @@
 
 /* Big numerals, like a printed programme: the order is the point (see, choose, hold). */
 .home-steps li::before {
-  content: counter(step);
+  content: counter(step, decimal-leading-zero);
   display: block;
   font-family: var(--font-display);
-  font-size: 3.5rem;
-  color: var(--c-accent);
+  font-size: 0.8125rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--c-text-muted);
   line-height: 1;
   margin-bottom: var(--space-3);
 }

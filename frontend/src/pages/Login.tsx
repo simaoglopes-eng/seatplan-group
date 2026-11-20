@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, login } from "../api/client";
 import { AuthLayout, Button, Field, PageShell, useToast } from "../design/components";
+import { PublicHeaderActions } from "./discover/PublicHeaderActions";
 import "./login.css";
 
 /** Only allow in-app paths after login, so a link cannot send people to another site. */
@@ -50,7 +51,7 @@ export default function Login({ defaultNext = "/organiser" }: { defaultNext?: st
   };
 
   return (
-    <PageShell title="Sign in">
+    <PageShell title="Sign in" headerActions={<PublicHeaderActions />}>
       <AuthLayout eyebrow={isStaff ? "STAFF ACCESS" : "FOR ORGANISERS"} headline="Plan the details. Enjoy the moment." description="Bring your event together with a seating plan that feels effortless to manage.">
       <div className="login">
         <h1>{isStaff ? "Staff sign in" : "Organiser sign in"}</h1>

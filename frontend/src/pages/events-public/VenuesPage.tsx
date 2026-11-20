@@ -11,6 +11,7 @@ import { useLoad } from "../restaurant/useLoad";
 import { guestsFrom, kindFrom, matchesKind, VENUE_KINDS } from "./eventsModel";
 import type { VenueKind } from "./eventsModel";
 import { VenueCard } from "./VenueCard";
+import { PageBand, countText } from "./PageBand";
 import "../discover/discover.css";
 import "./events-public.css";
 
@@ -56,15 +57,19 @@ export default function VenuesPage() {
   const filtered = kind !== null || guests !== null;
 
   return (
-    <div className="discover-route">
-      <PageShell title="Venues" width="wide" headerActions={<PublicHeaderActions />}>
+    <div className="discover-route pg-route">
+      <PageShell title="Venues" headerActions={<PublicHeaderActions />}>
+        <PageBand
+          id="venues-heading"
+          eyebrow="Halls and quintas"
+          title="Quintas, halls and conference rooms"
+          count={countText(venues.state.status === "ready" ? venues.state.data.items.length : venues.state.status === "error" ? undefined : null, "venue with a seat map", "venues with a seat map")}
+        >
+          Quintas in the country for weddings and family days, halls in the city for dinners and galas, rooms for talks and training. Every room is drawn seat by seat.
+        </PageBand>
         <Link className="rp-back ep-back" to="/">
           ← Back to home
         </Link>
-        <section className="discover-top" aria-labelledby="venues-heading">
-          <h1 id="venues-heading">Quintas, halls and conference rooms</h1>
-          <p>Quintas in the country for weddings and family days, halls in the city for dinners and galas, rooms for talks and training. Every room is drawn seat by seat.</p>
-        </section>
         <Chips label="Kind of venue">
           <Chip pressed={kind === null} onClick={() => choose(null)}>
             All

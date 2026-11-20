@@ -1,12 +1,9 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { FEATURED_VENUES, VENUE_PHOTOS } from "../data/venuePhotos";
 import Home from "./Home";
 
-const DEMO = [
-  { slug: "q1", name: "Quinta Um", venue_type: "quinta", venue_type_label: "Quinta", description: "", address: "Rua 1, Sintra", lat: null, lng: null, cover_url: null, cover_alt: null, capacity: 80, event_types: ["wedding"], upcoming_count: 1, is_demo: true },
-];
-const TYPES = [{ key: "wedding", label: "Wedding" }, { key: "conference", label: "Conference" }];
 const COUNTS = {
   items: [
     { country: "PT", kind: "estate", count: 92 },
@@ -15,11 +12,25 @@ const COUNTS = {
   ],
   countries: [], kinds: [], attribution: "© OpenStreetMap contributors",
 };
-const listing = (id: string, name: string, country: string, kind: string) => ({ id, name, kind, kind_label: kind === "estate" ? "Quinta or estate" : "Conference centre", country, country_label: country === "PT" ? "Portugal" : "Italy", city: "Sintra", city_inferred: true, street: null, postcode: null, lat: 0, lng: 0, website: "https://example.org", source_url: "https://www.openstreetmap.org/way/1" });
+const NAMES: Record<string, string> = {
+  r5424595: "Palácio da Bolsa",
+  w142509065: "Kasteel van Groenenberg",
+  r10379191: "Villa Andrea Ponti",
+  r10794433: "Convento de São Francisco",
+  w144502504: "Square Brussels Convention Centre",
+  w43664624: "Roma Convention Center La Nuvola",
+};
+const listing = (id: string) => ({
+  id, name: NAMES[id], kind: "conference", kind_label: "Conference centre", country: "PT", country_label: "Portugal",
+  city: "Porto", city_inferred: false, street: null, postcode: null, lat: 0, lng: 0,
+  // Every other venue has no website, so its card links to the map instead.
+  website: id.startsWith("r") ? "https://example.org" : null, source_url: `https://www.openstreetmap.org/x/${id}`,
+});
 
-type Mode = "ok" | "empty" | "fail";
+type Mode = "ok" | "fail";
 const calls: string[] = [];
-function stub(mode: Mode = "ok") {
+/** `missing`: listing ids that answer 404, as if they had left the directory. */
+function stub(mode: Mode = "ok", missing: string[] = []) {
   calls.length = 0;
   vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
@@ -27,23 +38,33 @@ function stub(mode: Mode = "ok") {
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
     if (url.includes("/venue-directory/counts")) {
       if (mode === "fail") return json({ code: "server_error", message: "Down" }, 500);
-      return json(mode === "empty" ? { ...COUNTS, items: [] } : COUNTS);
+      return json(COUNTS);
     }
-    if (url.includes("/venue-directory")) {
-      if (mode === "fail") return json({ code: "server_error", message: "Down" }, 500);
-      if (mode === "empty") return json({ items: [], total: 0, attribution: "" });
-      const q = new URL(url, "http://x").searchParams;
-      const all = [listing("w1", "Quinta da Lua", "PT", "estate"), listing("w2", "Centro de Congressos", "PT", "conference"), listing("w3", "Villa Sole", "IT", "estate")];
-      const items = all.filter((l) => (!q.get("country") || l.country === q.get("country")) && (!q.get("kind") || l.kind === q.get("kind")));
-      return json({ items, total: items.length, attribution: "" });
+    const one = /\/venue-directory\/([^/?]+)$/.exec(url);
+    if (one) {
+      const id = decodeURIComponent(one[1]);
+      if (mode === "fail" || missing.includes(id) || !NAMES[id]) return json({ code: "not_found", message: "Gone" }, 404);
+      return json(listing(id));
     }
-    if (url.includes("/event-venues")) return json({ items: DEMO });
-    if (url.includes("/event-types")) return json(TYPES);
     return json({ items: [], total: 0 });
   }));
 }
 
-afterEach(() => vi.unstubAllGlobals());
+function motion(reduce: boolean) {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: reduce && query.includes("reduce"),
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
+}
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  // Back to jsdom's own getter (the slide test shadows it on the instance).
+  delete (document as { visibilityState?: unknown }).visibilityState;
+});
 
 function Where() {
   const location = useLocation();
@@ -60,19 +81,27 @@ const renderHome = () =>
   );
 
 describe("Home", () => {
-  it("opens on the hero with the live venue total and real ways in", async () => {
+  it("opens on the hero with the live venue total, real ways in and decorative slides", async () => {
     stub();
     renderHome();
     expect(screen.getByRole("heading", { level: 1, name: "Venues for events that matter." })).toBeTruthy();
     expect(screen.getByText("Portugal · Belgium · Italy")).toBeTruthy();
-    expect(screen.queryByText(/Quintas · Event halls · Conference rooms/)).toBeNull();
-    // Live total from the counts endpoint, formatted the same everywhere.
-    expect(await screen.findByText(/^1,287 quintas, halls and conference centres\./)).toBeTruthy();
+    // The live total is its own element (it counts up), so the whole sentence is read from the paragraph.
+    await waitFor(() => expect(document.querySelector(".ld-lede")?.textContent).toMatch(/^1,287 quintas, halls and conference centres\. Choose/));
     expect(screen.getByRole("link", { name: "Find a venue" }).getAttribute("href")).toBe("/directory");
-    expect(screen.getByRole("link", { name: "I have an invitation" }).getAttribute("href")).toBe("/participant");
-    expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/login");
-    // The hero photo carries a real description; the room tiles repeat their text, so theirs are decorative.
-    expect(screen.getByRole("img", { name: /cinema hall/ }).getAttribute("loading")).toBeNull();
+    const hero = screen.getByRole("region", { name: "Venues for events that matter." });
+    expect(within(hero).getByRole("link", { name: "I have an invitation" }).getAttribute("href")).toBe("/participant");
+    // Three slides: decorative (empty alt), sized, only the first one loads eagerly.
+    const slides = hero.querySelectorAll(".ld-slides img");
+    expect(slides).toHaveLength(3);
+    slides.forEach((img, i) => {
+      expect(img.getAttribute("alt")).toBe("");
+      expect(img.getAttribute("width")).toBeTruthy();
+      expect(img.getAttribute("loading")).toBe(i === 0 ? null : "lazy");
+    });
+    // The search sits inside the hero, without a guests field.
+    const search = within(hero).getByRole("search", { name: "Find a venue" });
+    expect(within(search).queryByLabelText(/guests/i)).toBeNull();
   });
 
   it("searches the directory with the chosen country and kind", async () => {
@@ -84,19 +113,18 @@ describe("Home", () => {
     // The kind list counts what is in the chosen country.
     expect(within(search).getByRole("option", { name: "Quintas and estates (92)" })).toBeTruthy();
     fireEvent.change(within(search).getByLabelText("Kind of venue"), { target: { value: "estate" } });
-    const submit = within(search).getByRole("button", { name: "Search 92 venues" });
-    fireEvent.click(submit);
+    fireEvent.click(within(search).getByRole("button", { name: "Search 92 venues" }));
     expect(screen.getByTestId("where").textContent).toBe("/directory?country=PT&kind=estate");
   });
 
-  it("searches everything when nothing is chosen, and still works without counts", async () => {
+  it("searches everything without counts, and never shows 0 or NaN", async () => {
     stub("fail");
     renderHome();
     const search = screen.getByRole("search", { name: "Find a venue" });
-    // No number while the counts are missing: never "0" or "NaN".
     await waitFor(() => expect(calls.some((u) => u.includes("/venue-directory/counts"))).toBe(true));
     expect(within(search).getByRole("button", { name: "Search venues" })).toBeTruthy();
     expect(screen.queryByText(/NaN/)).toBeNull();
+    expect(screen.queryByText(/\b0 venues/)).toBeNull();
     expect(screen.getByText(/^Quintas, halls and conference centres\./)).toBeTruthy();
     fireEvent.click(within(search).getByRole("button", { name: "Search venues" }));
     expect(screen.getByTestId("where").textContent).toBe("/directory");
@@ -116,18 +144,108 @@ describe("Home", () => {
     }
   });
 
-  it("shows three real venues, as in the mock, and See all opens the whole directory", async () => {
+  it("shows the featured venues that load, each with its own photo, and skips the ones that fail", async () => {
+    stub("ok", ["w142509065"]);
+    renderHome();
+    const strip = screen.getByRole("region", { name: "Start with a room you can visit." });
+    await within(strip).findByText("Roma Convention Center La Nuvola");
+    const cards = within(strip).getAllByRole("article");
+    // Five of six answered; the order of FEATURED_VENUES is kept.
+    const shown = FEATURED_VENUES.filter((id) => id !== "w142509065");
+    expect(cards).toHaveLength(shown.length);
+    expect(within(strip).queryByText("Kasteel van Groenenberg")).toBeNull();
+    cards.forEach((card, i) => {
+      const id = shown[i];
+      expect(within(card).getByRole("heading", { level: 3 }).textContent).toBe(NAMES[id]);
+      const img = within(card).getByRole("img");
+      expect(img.getAttribute("src")).toBe(VENUE_PHOTOS[id].src);
+      expect(img.getAttribute("alt")).toBe(VENUE_PHOTOS[id].alt);
+      expect(img.getAttribute("loading")).toBe("lazy");
+      expect(within(card).getByText("Conference centre · Portugal")).toBeTruthy();
+      expect(within(card).getByText("Porto, Portugal")).toBeTruthy();
+      expect(within(card).getByRole("link", { name: `Plan an event here: ${NAMES[id]}` }).getAttribute("href")).toBe(`/organiser?at=${id}`);
+      const out = within(card).getByRole("link", { name: id.startsWith("r") ? /^Website/ : /^Map/ });
+      expect(out.getAttribute("href")).toBe(id.startsWith("r") ? "https://example.org" : `https://www.openstreetmap.org/x/${id}`);
+      expect(out.getAttribute("target")).toBe("_blank");
+      expect(out.getAttribute("rel")).toBe("noopener noreferrer");
+    });
+    expect(within(strip).getByRole("link", { name: /See all 1,287 venues/ }).getAttribute("href")).toBe("/directory");
+  });
+
+  it("disables the strip arrows at either end", async () => {
     stub();
     renderHome();
-    const listing = screen.getByRole("region", { name: "Start with a room you can visit." });
-    await within(listing).findByText("Villa Sole");
-    // Three cards, no country chips (the search bar above already filters by country).
-    expect(within(listing).getAllByRole("article")).toHaveLength(3);
-    expect(within(listing).queryByRole("button", { name: /Portugal/ })).toBeNull();
-    expect(calls.some((u) => u.includes("/venue-directory?") && u.includes("limit=3"))).toBe(true);
-    expect(within(listing).getByRole("link", { name: /See all 3 venues/ }).getAttribute("href")).toBe("/directory");
-    expect(within(listing).getByRole("link", { name: /Plan an event here: Quinta da Lua/ }).getAttribute("href")).toBe("/organiser?at=w1");
-    expect(within(listing).getByRole("link", { name: /OpenStreetMap contributors/ })).toBeTruthy();
+    const strip = screen.getByRole("region", { name: "Start with a room you can visit." });
+    const list = await within(strip).findByRole("list", { name: "Featured venues" });
+    const prev = within(strip).getByRole("button", { name: "Previous venues" }) as HTMLButtonElement;
+    const next = within(strip).getByRole("button", { name: "Next venues" }) as HTMLButtonElement;
+    Object.defineProperty(list, "scrollWidth", { configurable: true, value: 1200 });
+    Object.defineProperty(list, "clientWidth", { configurable: true, value: 400 });
+    list.scrollLeft = 0;
+    fireEvent.scroll(list);
+    expect(prev.disabled).toBe(true);
+    expect(next.disabled).toBe(false);
+    list.scrollLeft = 400;
+    fireEvent.scroll(list);
+    expect(prev.disabled).toBe(false);
+    expect(next.disabled).toBe(false);
+    list.scrollLeft = 800;
+    fireEvent.scroll(list);
+    expect(prev.disabled).toBe(false);
+    expect(next.disabled).toBe(true);
+  });
+
+  it("says so, with a way on, when no featured venue loads", async () => {
+    stub("fail");
+    renderHome();
+    const strip = screen.getByRole("region", { name: "Start with a room you can visit." });
+    expect(await within(strip).findByText(/could not be loaded/)).toBeTruthy();
+    expect(within(strip).queryByRole("article")).toBeNull();
+    expect(within(strip).queryByRole("button", { name: "Next venues" })).toBeNull();
+    expect(within(strip).getByRole("link", { name: "See all venues" }).getAttribute("href")).toBe("/directory");
+  });
+
+  it("changes slide every 6.5 s, and a dot picks one", async () => {
+    motion(false);
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    stub();
+    renderHome();
+    const dots = within(screen.getByRole("group", { name: "Background photos" })).getAllByRole("button");
+    expect(dots.map((d) => d.getAttribute("aria-pressed"))).toEqual(["true", "false", "false"]);
+    act(() => {
+      vi.advanceTimersByTime(6500);
+    });
+    expect(dots.map((d) => d.getAttribute("aria-pressed"))).toEqual(["false", "true", "false"]);
+    fireEvent.click(dots[2]);
+    expect(dots[2].getAttribute("aria-pressed")).toBe("true");
+    // A pause while the tab is hidden.
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
+    fireEvent(document, new Event("visibilitychange"));
+    act(() => {
+      vi.advanceTimersByTime(20000);
+    });
+    expect(dots[2].getAttribute("aria-pressed")).toBe("true");
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" });
+    fireEvent(document, new Event("visibilitychange"));
+    act(() => {
+      vi.advanceTimersByTime(6500);
+    });
+    expect(dots[0].getAttribute("aria-pressed")).toBe("true");
+    await screen.findByText("Roma Convention Center La Nuvola");
+  });
+
+  it("keeps the first slide still under reduced motion", async () => {
+    motion(true);
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    stub();
+    renderHome();
+    const dots = within(screen.getByRole("group", { name: "Background photos" })).getAllByRole("button");
+    act(() => {
+      vi.advanceTimersByTime(30000);
+    });
+    expect(dots.map((d) => d.getAttribute("aria-pressed"))).toEqual(["true", "false", "false"]);
+    expect(vi.getTimerCount()).toBe(0);
+    await screen.findByText("Roma Convention Center La Nuvola");
   });
 
   it("puts the credited Palazzo Vecchio photo in the organisers band, next to the way to plan", () => {
@@ -135,17 +253,25 @@ describe("Home", () => {
     renderHome();
     const band = screen.getByRole("region", { name: "Every guest, in the right seat." });
     expect(within(band).getByRole("img", { name: /Palazzo Vecchio/ }).getAttribute("src")).toBe("/images/photos/palazzo-hall.jpg");
-    // The interactive sample room lives on /demo now, not on the front door.
-    expect(within(band).queryByRole("listbox")).toBeNull();
     expect(within(band).getByRole("list").querySelectorAll("li")).toHaveLength(3);
     expect(within(band).getByRole("link", { name: "Plan an event" }).getAttribute("href")).toBe("/organiser/register");
+  });
+
+  it("lets the visitor try the sample seat map, with the way to the live demo", () => {
+    stub();
+    renderHome();
+    const tryIt = screen.getByRole("region", { name: "Try choosing a seat." });
+    expect(within(tryIt).getByRole("listbox", { name: "Sample seat map, try choosing a seat" })).toBeTruthy();
+    expect(within(tryIt).getByText("No seat chosen yet.")).toBeTruthy();
+    expect(within(tryIt).getByRole("link", { name: "Open the live demo" }).getAttribute("href")).toBe("/demo");
+    expect(within(tryIt).getByRole("link", { name: "I have an invitation" }).getAttribute("href")).toBe("/participant");
   });
 
   it("follows the mock's order and keeps events, demo rooms, staff and credits one click away", () => {
     stub();
     renderHome();
     const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    expect(headings).toEqual(["Three kinds of room, one way to seat it.", "Start with a room you can visit.", "Every guest, in the right seat."]);
+    expect(headings).toEqual(["Three kinds of room, one way to seat it.", "Start with a room you can visit.", "Every guest, in the right seat.", "Try choosing a seat."]);
     const footer = screen.getByRole("contentinfo");
     expect(within(footer).getByRole("link", { name: "Demo rooms" }).getAttribute("href")).toBe("/venues");
     expect(within(footer).getByRole("link", { name: "Live demo" }).getAttribute("href")).toBe("/demo");
@@ -153,17 +279,5 @@ describe("Home", () => {
     expect(within(footer).getByRole("link", { name: "Photo credits" }).getAttribute("href")).toBe("/credits");
     expect(within(footer).getByRole("link", { name: /OpenStreetMap contributors/ }).getAttribute("href")).toBe("https://www.openstreetmap.org/copyright");
     expect(screen.getByRole("navigation", { name: "Main" }).querySelector('a[href="/events"]')).toBeTruthy();
-  });
-
-  it("still offers a way in when nothing is listed or the list fails", async () => {
-    stub("empty");
-    const first = renderHome();
-    expect(await screen.findByText("No venues listed here yet")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Add your venue" }).getAttribute("href")).toBe("/organiser/register");
-    first.unmount();
-    stub("fail");
-    renderHome();
-    expect(await screen.findByRole("button", { name: /try again/i })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Find a venue" })).toBeTruthy();
   });
 });

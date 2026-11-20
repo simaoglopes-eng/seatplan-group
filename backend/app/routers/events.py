@@ -125,6 +125,10 @@ class NewEventIn(BaseModel):
     name: PlainText = Field(min_length=1, max_length=120)
     starts_at: AwareDatetime
     ends_at: AwareDatetime
+    # Where it happens. Any place, listed in the directory or not: it is stored only on
+    # this organiser's own private floor (no slug), never added to the public directory.
+    venue_name: PlainText | None = Field(default=None, max_length=120)
+    venue_address: PlainText | None = Field(default=None, max_length=200)
 
 
 @router.post("/events/create-with-venue", status_code=201)
@@ -135,7 +139,13 @@ def create_event_with_venue(
     if body.ends_at <= body.starts_at:
         raise ApiError(422, "validation", "The event must end after it starts.")
     venue = Venue(
-        organiser_id=user.id, kind="event", name=body.name, timezone="UTC", width=1000, height=800
+        organiser_id=user.id,
+        kind="event",
+        name=(body.venue_name or "").strip() or body.name,
+        address=(body.venue_address or "").strip(),
+        timezone="UTC",
+        width=1000,
+        height=800,
     )
     session.add(venue)
     session.flush()

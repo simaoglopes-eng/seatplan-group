@@ -13,6 +13,7 @@ import { errorMessage } from "../restaurant/format";
 import { useLoad } from "../restaurant/useLoad";
 import { EventCard } from "./EventCard";
 import { eventTypeFrom } from "./eventsModel";
+import { PageBand, countText } from "./PageBand";
 import { VenueCard } from "./VenueCard";
 import "../discover/discover.css";
 import "./events-public.css";
@@ -70,12 +71,16 @@ export default function EventsPage() {
       : "Finding events";
 
   return (
-    <div className="discover-route">
-      <PageShell title="Event booking" width="wide" headerActions={<PublicHeaderActions />}>
-        <section className="discover-top" aria-labelledby="events-heading">
-          <h1 id="events-heading">Choose your seat at an event.</h1>
-          <p>Weddings, conferences and dinners at halls and quintas. Pick an event, see the room and choose where you’ll sit.</p>
-        </section>
+    <div className="discover-route pg-route">
+      <PageShell title="Event booking" headerActions={<PublicHeaderActions />}>
+        <PageBand
+          id="events-heading"
+          eyebrow="Upcoming events"
+          title="Choose your seat at an event."
+          count={countText(results.status === "ready" ? results.total : results.status === "error" ? undefined : null, "upcoming event", "upcoming events")}
+        >
+          Weddings, conferences and dinners at halls and quintas. Pick an event, see the room and choose where you’ll sit.
+        </PageBand>
         {types.state.status === "error" && <ErrorState title="We could not load the event types" message={errorMessage(types.state.error)} onRetry={() => types.reload()} />}
         {types.state.status === "loading" && <Skeleton lines={1} label="Loading event types" />}
         {types.state.status === "ready" && (

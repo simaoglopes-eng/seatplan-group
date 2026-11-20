@@ -1,5 +1,5 @@
-/* Restaurant discovery only. Palette and type remain owned by the theme. */
-.discover-route .shell-inner { max-width:75rem; width:calc(100% - 2rem); padding-inline:0; }
+/* Restaurant discovery and the public event pages. Palette and type remain owned by the theme.
+   The page width is the shared frame (PageShell); nothing here narrows .shell-inner. */
 .discover-route .shell-main { padding-top:1.5rem; }
 .discover-route .shell-header { height:4rem; }
 .site-nav { display:flex;align-items:center;position:relative;gap:var(--space-2); }
@@ -69,11 +69,13 @@
 .discover-search-field input { width:100%;min-width:0;background:transparent;border:0;outline-offset:4px;font:inherit;font-size:.875rem;color:var(--c-text); }
 .discover-search-field > button { background:none;border:0;color:var(--c-text);min-width:2.75rem;min-height:2.75rem;cursor:pointer;font:inherit; }
 .discover-quick,.discover-chips { display:flex;flex-wrap:wrap;gap:.5rem;align-items:center; }
-.discover-chip { min-height:2.75rem;border:1px solid var(--glass-edge);background:var(--glass-fill-soft);box-shadow:var(--glass-highlight),var(--shadow-sm);color:var(--c-text);border-radius:var(--radius-pill);padding:.5rem .875rem;font:inherit;font-size:.875rem;font-weight:600;cursor:pointer;max-width:100%;overflow-wrap:anywhere;
-  transition:background-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out),transform var(--dur-instant) var(--ease-out); }
-.discover-chip:hover { background:var(--glass-fill-hover);box-shadow:var(--glass-highlight),var(--shadow-md); }
-.discover-chip:active { transform:translateY(1px);box-shadow:var(--glass-highlight); }
-.discover-chip.is-on { background:var(--c-primary-soft);border-color:var(--c-primary);color:var(--c-primary); }
+/* A filter group: the label is an uppercase eyebrow on its own line, and each group keeps air under it. */
+.discover-route .discover-chips { margin:0 0 var(--space-5); }
+.discover-route .discover-chips-label { width:100%;margin:0 0 var(--space-1);color:var(--c-text-muted);font-size:.6875rem;font-weight:var(--fw-medium);letter-spacing:var(--ls-eyebrow);text-transform:uppercase; }
+.discover-chip { min-height:2.75rem;border:1px solid var(--c-border-strong);background:var(--c-surface);box-shadow:none;color:var(--c-text);border-radius:var(--radius-sm);padding:.5rem .875rem;font:inherit;font-size:.875rem;font-weight:var(--fw-medium);cursor:pointer;max-width:100%;overflow-wrap:anywhere;
+  transition:background-color var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out); }
+.discover-chip:hover { border-color:var(--c-text); }
+.discover-chip.is-on { background:var(--c-primary);border-color:var(--c-primary);color:var(--c-on-primary); }
 .discover-more { border:0;background:none;color:var(--c-primary);font:inherit;min-height:2.75rem;cursor:pointer; }
 .discover-summary { display:none; }
 .discover-active { display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1rem; }
@@ -94,13 +96,12 @@
    showing crisp behind the text; it is the cheapest blur that does that. */
 .discover-card {
   display:grid;grid-template-columns:10rem minmax(0,1fr);gap:.25rem;padding:.5rem;min-width:0;
-  background:var(--glass-fill);border:1px solid var(--glass-edge);border-radius:1.375rem;
-  -webkit-backdrop-filter:var(--glass-blur-soft);backdrop-filter:var(--glass-blur-soft);
-  box-shadow:var(--glass-highlight),var(--shadow-glass);
-  transition:transform 180ms ease-out,box-shadow var(--dur-base) var(--ease-out),background-color var(--dur-base) var(--ease-out);
+  background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius-lg);
+  box-shadow:none;
+  transition:border-color var(--dur-base) var(--ease-out);
 }
-@media (hover:hover) { .discover-card:hover { background:var(--glass-fill-hover);box-shadow:var(--glass-highlight),var(--shadow-glass-hover); } }
-.discover-card-photo { position:relative;display:block;overflow:hidden;min-height:8.25rem;border-radius:.9375rem;background:var(--c-surface-sunk); }
+@media (hover:hover) { .discover-card:hover { border-color:var(--c-border-strong); } }
+.discover-card-photo { position:relative;display:block;overflow:hidden;min-height:8.25rem;border-radius:var(--radius-sm);background:var(--c-surface-sunk); }
 .discover-card-photo img,.discover-card-nophoto { position:absolute;inset:0;width:100%;height:100%; }
 .discover-card-photo img { display:block;object-fit:cover; }
 .discover-card-nophoto { display:flex;align-items:center;justify-content:center;height:100%;color:var(--c-text-muted);font-size:.8125rem; }
@@ -116,13 +117,7 @@
 .discover-time.is-requested { background:var(--c-primary-soft);border-color:var(--c-primary); }
 .discover-times-label,.discover-card-more { font-size:.8125rem;color:var(--c-text-muted); }
 .discover-card.is-highlighted { border-color:var(--c-primary); }
-.discover-card.is-selected { border-color:var(--c-primary);box-shadow:var(--glass-highlight),0 0 0 1px var(--c-primary),var(--shadow-glass-hover); }
-@media (prefers-reduced-motion:no-preference) {
- .discover-card:not(.is-compact).is-selected { transform:scale(1.012); }
- @media (hover:hover) {
-  .discover-card:not(.is-compact).is-highlighted { transform:scale(1.012); }
- }
-}
+.discover-card.is-selected { border-color:var(--c-primary);box-shadow:0 0 0 1px var(--c-primary); }
 @media (prefers-reduced-motion:reduce) { .discover-card { transition:none; } }
 .discover-map-column { position:sticky;top:5.5rem;height:30rem;min-width:0;isolation:isolate; }
 /* The map stays solid (labels and pins need it); a glass frame holds it. */
@@ -154,7 +149,6 @@
 .discover-filter-selects summary strong { display:block;border:1px solid var(--c-border);border-radius:var(--radius-md);padding:.75rem;font-size:.875rem;background:var(--c-surface); }
 .discover-route button:focus-visible,.discover-route a:focus-visible,.discover-route input:focus-visible,.discover-route select:focus-visible { outline:3px solid var(--c-focus);outline-offset:3px; }
 @media(max-width:63.99rem){
- .discover-route .shell-inner { width:calc(100% - 2rem); }
  .discover-route .shell-header { height:auto;min-height:3.125rem;position:static; }
  .discover-route .shell-main { padding-top:.75rem; }
  .discover-top { margin-bottom:1rem; }

@@ -1,25 +1,26 @@
-// Route /: the front door, in the order of the approved mock: photo hero with the
-// search bar, the three photo tiles, three real venues, the organisers band, footer.
-// Every count is live data and every link lands on a page that honours what it says:
-// the search bar and the three room tiles open the real-venue directory with that
-// country and kind; "See all" opens the directory; "Plan an event here" opens the
-// organiser space with that venue named. Events, demo rooms, the live demo and the
-// staff area stay one click away in the header and the footer.
-import { useState } from "react";
+// Route /: the front door, direction A "corporate" of the approved mock. Every block
+// fills one screen: the photo hero with the search at its foot, the three room tiles,
+// six real venues from the directory, the organisers band, and the sample seat map
+// to try. Every count is live data and every link lands on a page that honours what
+// it says: the search and the room tiles open the directory with that country and
+// kind; "See all" opens the directory; "Plan an event here" opens the organiser
+// space with that venue named. Motion is gentle and stops under reduced motion.
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { EmptyState, ErrorState, PageShell, Skeleton } from "../design/components";
+import { Legend, PageShell } from "../design/components";
+import { SeatMap } from "../seatmap/SeatMap";
 import { PublicHeaderActions } from "./discover/PublicHeaderActions";
-import { getDirectory, getDirectoryCounts } from "../api/venueDirectory";
+import { getDirectoryCounts } from "../api/venueDirectory";
 import type { DirectoryCountry, DirectoryCounts, DirectoryKind } from "../api/venueDirectory";
 import { COUNTRIES, KINDS, countryFrom, directoryHref, kindFrom } from "./directory/directoryModel";
-import { Attribution, ListingCard } from "./directory/ListingCard";
-import { ROOM_TILES, formatCount } from "./homeSample";
-import { errorMessage } from "./restaurant/format";
+import { ROOM_TILES, SAMPLE_RECOMMENDED, buildSampleFloor, formatCount } from "./homeSample";
 import { useLoad } from "./restaurant/useLoad";
 import type { Loaded } from "./restaurant/useLoad";
-import "./events-public/events-public.css";
-import "./directory/directory.css";
+import { CountUp } from "./home/CountUp";
+import { HeroDots, HeroPhotos, useSlides, HERO_SLIDES } from "./home/HeroSlides";
+import { useReveal } from "./home/useMotion";
+import { VenueStrip } from "./home/VenueStrip";
 import "./landing.css";
 
 /** Live venue counts, or null while they load or when they failed (the copy then drops the number). */
@@ -53,38 +54,47 @@ export default function Home() {
         }
       >
         <Hero count={count} />
-        <SearchBar count={count} />
         <Rooms count={count} />
-        <FindVenue />
+        <Directory count={count} />
         <Organisers />
+        <TrySeat />
       </PageShell>
     </div>
   );
 }
 
 function Hero({ count }: { count: CountFn }) {
+  const { index, go } = useSlides(HERO_SLIDES.length);
   const total = count ? count(null, null) : 0;
   return (
-    <section className="ld-hero" aria-labelledby="ld-hero-title">
-      <img className="ld-hero-photo" src="/images/photos/hero-auditorium.jpg" width={2000} height={1334} alt="A cinema hall with rows of red seats facing the stage" />
-      <div className="ld-wrap ld-hero-copy">
-        <p className="ld-eyebrow">Portugal · Belgium · Italy</p>
-        <h1 id="ld-hero-title">Venues for events that matter.</h1>
-        <p className="ld-lede">
-          {total > 0 ? `${formatCount(total)} quintas, halls and conference centres.` : "Quintas, halls and conference centres."} Choose the room, draw the tables and let every guest choose a seat.
-        </p>
-        <div className="ld-hero-actions">
-          <Link className="btn ld-btn-light" to="/directory">
-            Find a venue
-          </Link>
-          <Link className="btn ld-btn-line" to="/participant">
-            I have an invitation
-          </Link>
+    <section className="ld-hero ld-block" aria-labelledby="ld-hero-title">
+      <HeroPhotos index={index} />
+      <div className="ld-hero-copy">
+        <div className="ld-wrap">
+          <p className="ld-eyebrow">Portugal · Belgium · Italy</p>
+          <h1 id="ld-hero-title">Venues for events that matter.</h1>
+          <p className="ld-lede">
+            {total > 0 ? (
+              <>
+                <CountUp value={total} /> quintas, halls and conference centres.
+              </>
+            ) : (
+              "Quintas, halls and conference centres."
+            )}{" "}
+            Choose the room, draw the tables and let every guest choose a seat.
+          </p>
+          <div className="ld-hero-actions">
+            <Link className="btn ld-btn-light" to="/directory">
+              Find a venue
+            </Link>
+            <Link className="btn ld-btn-line" to="/participant">
+              I have an invitation
+            </Link>
+          </div>
+          <HeroDots index={index} go={go} />
         </div>
-        <p className="ld-hero-note">
-          Already organising? <Link to="/login">Sign in</Link>
-        </p>
       </div>
+      <SearchBar count={count} />
     </section>
   );
 }
@@ -134,75 +144,50 @@ function SearchBar({ count }: { count: CountFn }) {
 }
 
 function Rooms({ count }: { count: CountFn }) {
+  const reveal = useReveal<HTMLDivElement>();
   return (
-    <section className="ld-wrap ld-section" aria-labelledby="ld-rooms-title">
-      <div className="ld-head">
-        <div>
-          <p className="ld-eyebrow">The rooms</p>
-          <h2 id="ld-rooms-title">Three kinds of room, one way to seat it.</h2>
+    <section className="ld-block ld-section" aria-labelledby="ld-rooms-title">
+      <div className="ld-wrap ld-drift" ref={reveal}>
+        <div className="ld-head">
+          <div>
+            <p className="ld-eyebrow">The rooms</p>
+            <h2 id="ld-rooms-title">Three kinds of room, one way to seat it.</h2>
+          </div>
+          <p>Real venues from OpenStreetMap across three countries. Open one and start planning there.</p>
         </div>
-        <p>Real venues from OpenStreetMap across three countries. Open one and start planning there.</p>
+        <ul className="ld-tiles">
+          {ROOM_TILES.map((tile) => {
+            const label = KINDS.find((k) => k.key === tile.kind)?.label ?? tile.kind;
+            const n = count ? count(tile.kind, null) : 0;
+            return (
+              <li key={tile.kind}>
+                <Link className="ld-tile" to={directoryHref(null, tile.kind)}>
+                  <img src={tile.photo} width={1400} height={933} alt="" loading="lazy" decoding="async" />
+                  <span className="ld-tile-text">
+                    <span className="ld-tile-count">{n > 0 ? <><CountUp value={n} /> venues</> : "Venues"}</span>
+                    <span className="ld-tile-title">{label}</span>
+                    <span className="ld-tile-blurb">{tile.blurb}</span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="ld-swipe" aria-hidden="true">
+          Swipe for more kinds →
+        </p>
       </div>
-      <ul className="ld-tiles">
-        {ROOM_TILES.map((tile) => {
-          const label = KINDS.find((k) => k.key === tile.kind)?.label ?? tile.kind;
-          return (
-            <li key={tile.kind}>
-              <Link className="ld-tile" to={directoryHref(null, tile.kind)}>
-                <img src={tile.photo} width={1400} height={933} alt="" loading="lazy" decoding="async" />
-                <span className="ld-tile-text">
-                  <span className="ld-tile-count">{count ? `${formatCount(count(tile.kind, null))} venues` : "Venues"}</span>
-                  <span className="ld-tile-title">{label}</span>
-                  <span className="ld-tile-blurb">{tile.blurb}</span>
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
     </section>
   );
 }
 
-/** Three real venues, as in the mock. The directory has no photos of them, so the cards stay text. */
-function FindVenue() {
-  const list = useLoad(() => getDirectory({ limit: 3 }), "landing-directory");
-  const ready = list.state.status === "ready" ? list.state.data : null;
-
+function Directory({ count }: { count: CountFn }) {
+  const reveal = useReveal<HTMLDivElement>();
+  const total = count ? count(null, null) : 0;
   return (
-    <section className="ld-wrap ld-section ld-directory" aria-labelledby="ld-find-title">
-      <div className="ld-head">
-        <div>
-          <p className="ld-eyebrow">In the directory</p>
-          <h2 id="ld-find-title">Start with a room you can visit.</h2>
-        </div>
-        <p className="ld-more">
-          <Link to="/directory">
-            {ready && ready.total > 0 ? `See all ${formatCount(ready.total)} venues` : "See all venues"} <span aria-hidden="true">→</span>
-          </Link>
-        </p>
-      </div>
-      <div aria-live="polite" aria-busy={list.state.status === "loading"}>
-        {list.state.status === "loading" && <Skeleton lines={4} label="Finding venues" />}
-        {list.state.status === "error" && <ErrorState message={errorMessage(list.state.error, "We could not load the venues. Please try again.")} onRetry={() => list.reload()} />}
-        {ready &&
-          (ready.items.length === 0 ? (
-            <EmptyState title="No venues listed here yet">
-              <p>Run a quinta or a hall? Create an account and draw your room.</p>
-              <Link className="btn btn-primary" to="/organiser/register">
-                Add your venue
-              </Link>
-            </EmptyState>
-          ) : (
-            <>
-              <div className="dir-grid">
-                {ready.items.slice(0, 3).map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} />
-                ))}
-              </div>
-              <Attribution />
-            </>
-          ))}
+    <section className="ld-block ld-section" aria-labelledby="ld-find-title">
+      <div className="ld-wrap ld-drift" ref={reveal}>
+        <VenueStrip titleId="ld-find-title" total={total > 0 ? <>See all <CountUp value={total} /> venues</> : "See all venues"} />
       </div>
     </section>
   );
@@ -211,9 +196,10 @@ function FindVenue() {
 const STEPS = ["Choose the venue and draw the floor plan.", "Invite guests with a single link or code.", "Check guests in at the door on the day."];
 
 function Organisers() {
+  const reveal = useReveal<HTMLDivElement>();
   return (
-    <section className="ld-band" aria-labelledby="ld-band-title">
-      <div className="ld-wrap ld-band-grid">
+    <section className="ld-block ld-band" aria-labelledby="ld-band-title">
+      <div className="ld-wrap ld-band-grid ld-drift" ref={reveal}>
         <div className="ld-band-photo">
           <img
             src="/images/photos/palazzo-hall.jpg"
@@ -239,6 +225,72 @@ function Organisers() {
           <Link className="btn ld-btn-light" to="/organiser/register">
             Plan an event
           </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * On the home page the sample map fills most of its block, so a plain mouse wheel over it
+ * must scroll the page, not zoom the map (the shared map zooms on every wheel turn).
+ * A capture listener on the map's box stops plain wheel events before they reach the map;
+ * nothing calls preventDefault, so the browser scrolls the page. Ctrl or Cmd with the wheel,
+ * and trackpad pinches (which arrive with ctrlKey), still zoom, as do the zoom buttons.
+ */
+function usePageWheel<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const onWheel = (event: WheelEvent): void => {
+      if (!event.ctrlKey && !event.metaKey) event.stopPropagation();
+    };
+    el.addEventListener("wheel", onWheel, { capture: true });
+    return () => el.removeEventListener("wheel", onWheel, { capture: true });
+  }, []);
+  return ref;
+}
+
+/** "Try choosing a seat": the fixed sample floor (homeSample.ts). It never talks to the server. */
+function TrySeat() {
+  const reveal = useReveal<HTMLDivElement>();
+  const floor = useMemo(buildSampleFloor, []);
+  const [selected, setSelected] = useState<number | null>(null);
+  const mapBox = usePageWheel<HTMLDivElement>();
+  return (
+    <section className="ld-block ld-section ld-try" aria-labelledby="ld-try-title">
+      <div className="ld-wrap ld-try-grid ld-drift" ref={reveal}>
+        <div className="ld-try-copy">
+          <p className="ld-eyebrow">Try it</p>
+          <h2 id="ld-try-title">Try choosing a seat.</h2>
+          <p className="ld-try-lede">
+            This is what a guest sees: the room as it is, live. Pick a free seat; the dashed rings mark the ones next to a friend.
+          </p>
+          <p className="ld-try-picked" aria-live="polite">
+            {selected === null
+              ? "No seat chosen yet."
+              : `Seat ${selected % 100} at table ${Math.floor(selected / 100)} is yours in this sample.`}
+          </p>
+          <Legend states={["free", "held", "taken", "friend", "blocked"]} showAccessible showRecommended />
+          <p className="ld-try-links">
+            <Link className="btn ld-btn-dark" to="/demo">
+              Open the live demo
+            </Link>
+            <Link className="ld-text-link" to="/participant">
+              I have an invitation
+            </Link>
+          </p>
+        </div>
+        <div className="ld-try-map" ref={mapBox}>
+          <SeatMap
+            label="Sample seat map, try choosing a seat"
+            tables={floor.tables}
+            seats={floor.seats}
+            highlight={SAMPLE_RECOMMENDED}
+            selectedId={selected}
+            onSelect={setSelected}
+          />
         </div>
       </div>
     </section>

@@ -2,13 +2,21 @@
 // main action opens the organiser space with this venue named.
 import { Link } from "react-router-dom";
 import type { Listing } from "../../api/venueDirectory";
+import { venuePhoto } from "../../data/venuePhotos";
 import { placeLine, planHref, safeWebsite } from "./directoryModel";
 
 export function ListingCard({ listing }: { listing: Listing }) {
   const website = safeWebsite(listing.website);
   const titleId = `listing-${listing.id}`;
+  // Only the venue's own photograph (venuePhotos.ts); a venue without one stays a text card.
+  const photo = venuePhoto(listing.id);
   return (
-    <article className="dir-card" aria-labelledby={titleId}>
+    <article className={photo ? "dir-card has-photo" : "dir-card"} aria-labelledby={titleId}>
+      {photo && (
+        <div className="dir-card-photo">
+          <img src={photo.src} alt={photo.alt} loading="lazy" decoding="async" width={800} height={600} />
+        </div>
+      )}
       <p className="ep-type">{listing.kind_label}</p>
       <h3 id={titleId}>{listing.name}</h3>
       <p className="dir-place">{placeLine(listing)}</p>

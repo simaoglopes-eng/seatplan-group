@@ -1,6 +1,57 @@
 /* Public event pages (/events, /venues, /venues/:slug) and Event staff. Tokens only;
    the card frame, chips and headings come from discover.css so events and restaurants match. */
-.ep-type { margin: 0 0 var(--space-1); color: var(--c-primary); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+/* Card eyebrows ("Quinta or estate", "Demo venue · Quinta · Sintra"): uppercase, tracked, quiet, like the landing. */
+.ep-type { margin: 0 0 var(--space-2); color: var(--c-text-muted); font-size: 0.6875rem; font-weight: var(--fw-medium); line-height: 1.4; letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }
+
+/* ---------- The navy page band (PageBand.tsx) ---------- */
+/* The band sits first in .shell-main, which keeps the frame width; a spread shadow paints the
+   navy out to the window edges and clip-path trims it vertically, so nothing widens the page. */
+.pg-route .shell-main { padding-top: 0; }
+.pg-band {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-5) var(--space-7);
+  margin: 0 0 var(--space-6);
+  padding-block: clamp(2.5rem, 5vw, 4.5rem) clamp(2rem, 4vw, 3.25rem);
+  background: var(--c-band);
+  color: var(--c-on-band);
+  box-shadow: 0 0 0 100vmax var(--c-band);
+  clip-path: inset(0 -100vmax);
+}
+.pg-eyebrow { margin: 0 0 var(--space-3); color: var(--c-on-band-muted); font-size: 0.75rem; font-weight: var(--fw-medium); line-height: 1.3; letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }
+.pg-band h1 { margin: 0 0 var(--space-3); max-width: 22ch; color: var(--c-on-band); font-family: var(--font-display); font-size: clamp(2.125rem, 1.4rem + 2.6vw, 3.5rem); font-weight: var(--fw-bold); line-height: 1.05; letter-spacing: var(--ls-display); text-wrap: balance; }
+.pg-band-lede { margin: 0; max-width: 40rem; color: var(--c-on-band-muted); font-size: 1.0625rem; line-height: 1.55; }
+.pg-band-count { margin: 0; color: var(--c-on-band-muted); font-size: var(--fs-sm); text-align: right; white-space: nowrap; }
+.pg-band-count strong { display: block; color: var(--c-on-band); font-family: var(--font-display); font-size: clamp(2rem, 1.5rem + 1.6vw, 3rem); font-weight: var(--fw-bold); line-height: 1; letter-spacing: var(--ls-display); font-variant-numeric: tabular-nums; }
+.pg-band-count span { letter-spacing: 0.02em; }
+.pg-band a { color: var(--c-on-band); }
+.pg-band :focus-visible { outline-color: var(--c-on-band); }
+@media (prefers-reduced-motion: no-preference) {
+  .pg-band-text > *, .pg-band-count { animation: pg-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .pg-band-text > :nth-child(2) { animation-delay: 0.06s; }
+  .pg-band-text > :nth-child(3) { animation-delay: 0.12s; }
+  .pg-band-count { animation-delay: 0.18s; }
+}
+@keyframes pg-rise { from { transform: translateY(14px); opacity: 0.2; } to { transform: none; opacity: 1; } }
+@media (max-width: 40rem) {
+  .pg-band { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+  .pg-band-lede { font-size: 1rem; }
+  .pg-band-count { text-align: left; white-space: normal; }
+  .pg-band-count strong { display: inline; font-size: 1.75rem; margin-right: var(--space-1); }
+}
+
+/* Section headings on these pages: the system sans at 650, like the landing. */
+.pg-route .discover-results-head h2,
+.ep-section-head h2 { font-family: var(--font-display); font-weight: var(--fw-bold); letter-spacing: var(--ls-display); }
+.pg-route .discover-results-head h2 { font-size: 1.5rem; }
+/* Field labels next to the chips ("Guests", "Search by name or town") are eyebrows too. */
+.pg-route .ep-guests label,
+.pg-route .dir-search label { color: var(--c-text-muted); font-size: 0.6875rem; font-weight: var(--fw-medium); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }
+.pg-route .ep-back { display: inline-flex; align-items: center; min-height: var(--touch-target); margin-bottom: var(--space-3); }
+/* "Show more" sits centred under the list. */
+.pg-route .discover-load-more { display: flex; margin: var(--space-6) auto 0; }
 .ep-muted { color: var(--c-text-muted); margin: 0 0 var(--space-4); }
 .ep-note { margin: var(--space-4) 0 0; color: var(--c-text-muted); font-size: var(--fs-sm); }
 .ep-back { margin-bottom: var(--space-2); }
@@ -8,14 +59,26 @@
 .ep-list { min-width: 0; }
 
 /* /venues: the guest count next to the kind chips. */
-.ep-guests { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3); }
+.ep-guests { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); margin-top: 0; }
 .ep-guests label { font-weight: var(--fw-bold); }
-.ep-guests input { width: 7rem; min-height: 2.75rem; padding: 0 var(--space-3); font: inherit; color: var(--c-text); background: var(--c-surface); border: var(--border-width) solid var(--c-border-strong); border-radius: var(--radius-md); }
+.ep-guests input { width: 7rem; min-height: 2.75rem; padding: 0 var(--space-3); font: inherit; color: var(--c-text); background: var(--c-surface); border: var(--border-width) solid var(--c-border-strong); border-radius: var(--radius-sm); }
 .ep-guests input:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
 
-/* One event: the restaurant card frame, with the action at the bottom of the words. */
-.ep-event-card .discover-card-body { padding: var(--space-3) var(--space-4); }
-.ep-event-card h3 { font-size: 1.5rem; }
+/* One event: a flat, square card with a hairline; the venue photo runs flush to its left edge. */
+.ep-event-card { padding: 0; gap: 0; grid-template-columns: 13rem minmax(0, 1fr); overflow: hidden; }
+.ep-event-card .discover-card-photo { border-radius: 0; min-height: 10rem; }
+.ep-event-card .discover-card-body { padding: var(--space-4) var(--space-5); }
+.ep-event-card h3 { font-family: var(--font-display); font-size: 1.375rem; font-weight: var(--fw-bold); line-height: 1.2; letter-spacing: var(--ls-display); }
+.ep-event-card .discover-card-line { font-size: var(--fs-sm); }
+.ep-event-card .discover-card-photo img,
+.ep-venue-photo img { transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ep-event-card:hover .discover-card-photo img,
+  .ep-venue-card:hover .ep-venue-photo img { transform: scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ep-event-card .discover-card-photo img, .ep-venue-photo img { transition: none; }
+}
 .ep-event-card .discover-card-main { flex: 1 1 auto; min-width: 0; }
 .ep-card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-3); margin-top: var(--space-2); }
 .ep-places { margin: 0; font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--c-text); }
@@ -24,7 +87,7 @@
 /* Halls and quintas. */
 .ep-teaser { margin-top: var(--space-7); padding-top: var(--space-5); border-top: var(--border-width) solid var(--c-border); }
 .ep-section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-4); }
-.ep-section-head h2 { font-family: var(--font-display); font-weight: 400; font-size: 2rem; margin: 0 0 var(--space-2); }
+.ep-section-head h2 { font-size: 2rem; margin: 0 0 var(--space-2); }
 .ep-section-head a { display: inline-flex; align-items: center; min-height: var(--touch-target); }
 .ep-venue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: var(--space-4); }
 .ep-venue-card { display: flex; flex-direction: column; min-width: 0; background: var(--c-surface); border: var(--border-width) solid var(--c-border); border-radius: var(--radius-lg); overflow: hidden; }
@@ -32,7 +95,7 @@
 .ep-venue-photo img, .ep-venue-photo .discover-card-nophoto { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ep-venue-photo img { display: block; object-fit: cover; }
 .ep-venue-body { padding: var(--space-3) var(--space-4) var(--space-4); min-width: 0; overflow-wrap: anywhere; }
-.ep-venue-body h3 { font-family: var(--font-display); font-weight: 400; font-size: 1.5rem; line-height: 1.15; margin: 0 0 var(--space-1); }
+.ep-venue-body h3 { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: 1.3125rem; line-height: 1.2; letter-spacing: var(--ls-display); margin: 0 0 var(--space-1); }
 .ep-venue-body h3 a { color: var(--c-text); text-decoration: none; }
 .ep-venue-body h3 a:hover { text-decoration: underline; }
 .ep-tags { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
@@ -41,11 +104,22 @@
 
 /* A venue's page: the upcoming events sit where a restaurant has its booking. */
 .ep-venue-page .rp-hero-layout { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+/* About / Find us use the same two columns and gap as photos / upcoming events, so "Find us" starts on the card's left edge. */
+.ep-venue-page .rp-columns { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1.5rem; }
+/* Square like the rest of direction A: the map's zoom buttons and the venue pin. */
+.ep-venue-page .discover-map-zoom button,
+.ep-venue-page .restaurant-location-pin { border-radius: var(--radius-sm); }
+/* The venue page uses the shared frame width, so its edges line up with the header. */
+.rp.ep-venue-page { max-width: none; }
+.rp.ep-venue-page .rp-back { min-height: var(--touch-target); }
+.rp.ep-venue-page .ep-tags a { min-height: var(--touch-target); padding-inline: var(--space-2); }
+.rp.ep-venue-page .ep-tags li:has(a) { padding: 0; }
 .ep-upcoming .discover-card { grid-template-columns: minmax(0, 1fr); }
 .ep-upcoming .discover-card-photo { display: none; }
 .ep-small-title { font-size: var(--fs-md); margin: var(--space-4) 0 0; }
 @media (max-width: 60rem) {
-  .ep-venue-page .rp-hero-layout { grid-template-columns: minmax(0, 1fr); }
+  .ep-venue-page .rp-hero-layout,
+  .ep-venue-page .rp-columns { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Phones: the card photo sits on top, like a restaurant result on a phone. */
@@ -63,7 +137,7 @@
 .ep-staff-row h3 { margin: 0 0 var(--space-1); font-size: 1.125rem; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .ep-staff-row p { margin: 0; color: var(--c-text-muted); font-size: var(--fs-sm); }
 .ep-staff-section { margin-top: var(--space-6); }
-.ep-staff-section > h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.75rem; margin: 0 0 var(--space-3); }
+.ep-staff-section > h2 { font-family: var(--font-display); font-weight: var(--fw-bold); font-size: 1.75rem; margin: 0 0 var(--space-3); }
 .ep-signin { max-width: 28rem; }
 .ep-staff-row .ep-type { color: var(--c-primary); margin-bottom: var(--space-1); }
 .ep-signin { display: flex; flex-direction: column; gap: var(--space-3); }

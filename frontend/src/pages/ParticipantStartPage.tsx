@@ -2,9 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { Wordmark } from "../design/components";
-import LiquidGlassPanel from "./LiquidGlassPanel";
 import { invitationPath } from "./join/invitationPath";
-import { seatPlanBackgroundStyle, useSeatPlanBackground } from "./useSeatPlanBackground";
 import "./home.css";
 
 const INVITATION_KEY = "seatplan.participant-entry.invitation";
@@ -22,7 +20,6 @@ export default function ParticipantStartPage() {
   const [error, setError] = useState("");
   const [lookingUpCode, setLookingUpCode] = useState(false);
   const navigate = useNavigate();
-  const backgroundImage = useSeatPlanBackground();
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -69,28 +66,31 @@ export default function ParticipantStartPage() {
   }
 
   return (
-    <div className="welcome-page welcome-page-participant" style={seatPlanBackgroundStyle(backgroundImage)}>
-      <a className="welcome-skip-link" href="#main">Skip to main content</a>
-      <header className="welcome-header">
-        <Link className="welcome-header-link" to="/">Back to home</Link>
+    <div className="pt-page">
+      {/* The auditorium photo is credited on /credits (photoCredits.ts); it is decoration here. */}
+      <img className="pt-photo" src="/images/photos/hero-auditorium.jpg" alt="" />
+      <a className="skip-link" href="#main">Skip to main content</a>
+      <header className="pt-header">
+        <div className="pt-wrap">
+          <Wordmark />
+          <Link className="pt-header-link" to="/">Back to home</Link>
+        </div>
       </header>
 
-      <main className="welcome-main" id="main">
-        <div className="welcome-content participant-content">
-          <div className="welcome-center-brand"><Wordmark /></div>
-          <LiquidGlassPanel className="participant-panel" aria-labelledby="participant-title">
-            <Link className="participant-back" to="/">
-              <span aria-hidden="true">←</span> Choose another path
-            </Link>
-            <div className="welcome-intro participant-intro">
-              <p className="welcome-eyebrow">YOUR PLACE IS WAITING</p>
-              <h1 id="participant-title">Find your place.</h1>
-              <p>Enter the invitation link or code you received to open your event.</p>
-            </div>
+      <main className="pt-main" id="main" tabIndex={-1}>
+        <div className="pt-wrap pt-grid">
+          <div className="pt-copy">
+            <p className="pt-eyebrow">Your place is waiting</p>
+            <h1 id="participant-title">Find your place.</h1>
+            <p className="pt-lede">Open the event you were invited to, see the room and choose the seat next to the people you know.</p>
+          </div>
+          <section className="pt-card" aria-labelledby="participant-card-title">
+            <h2 id="participant-card-title">Open your invitation</h2>
+            <p className="pt-card-lede">Enter the invitation link or code you received to open your event.</p>
 
-            <form className="participant-invitation-form" onSubmit={openInvitation}>
+            <form className="pt-form" onSubmit={openInvitation}>
               <label htmlFor="participant-invitation">Invitation link or code</label>
-              <div className="participant-input-wrap">
+              <div>
                 <input
                   id="participant-invitation"
                   name="invitation"
@@ -108,26 +108,28 @@ export default function ParticipantStartPage() {
                   aria-invalid={Boolean(error)}
                   required
                 />
-                <button type="submit" disabled={lookingUpCode}>{lookingUpCode ? "Looking up code…" : <>Open invitation <span aria-hidden="true">↗</span></>}</button>
+                <button className="btn btn-primary" type="submit" disabled={lookingUpCode}>{lookingUpCode ? "Looking up code…" : <>Open invitation <span aria-hidden="true">→</span></>}</button>
               </div>
-              <p className="participant-form-hint" id="participant-invitation-hint">
+              <p className="pt-hint" id="participant-invitation-hint">
                 Use the invite link or the code shared by the organiser.
               </p>
-              {error && <p className="participant-form-error" id="participant-invitation-error" role="alert">{error}</p>}
+              {error && <p className="pt-error" id="participant-invitation-error" role="alert">{error}</p>}
             </form>
 
-            <div className="participant-account-links">
+            <div className="pt-account">
               <span>New to SeatPlan?</span>
               <Link to="/my/register">Create a participant account</Link>
-              <span className="participant-link-divider" aria-hidden="true">·</span>
               <Link to="/my/sign-in">Participant sign in</Link>
             </div>
-          </LiquidGlassPanel>
+          </section>
         </div>
       </main>
 
-      <footer className="welcome-footer">
-        <Link to="/staff">Staff area</Link>
+      <footer className="pt-footer">
+        <div className="pt-wrap">
+          <p><span className="pt-credit-text">Photo: Lichtburg, Essen, by Tuxyso, CC BY-SA 4.0. </span><Link to="/credits">Photo credits</Link></p>
+          <Link to="/staff">Staff area</Link>
+        </div>
       </footer>
     </div>
   );

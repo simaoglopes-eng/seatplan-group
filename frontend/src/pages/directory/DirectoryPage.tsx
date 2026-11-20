@@ -12,6 +12,7 @@ import { errorMessage } from "../restaurant/format";
 import { useLoad } from "../restaurant/useLoad";
 import { COUNTRIES, KINDS, countryFrom, kindFrom } from "./directoryModel";
 import { Attribution, ListingCard } from "./ListingCard";
+import { PageBand, countText } from "../events-public/PageBand";
 import "../discover/discover.css";
 import "../events-public/events-public.css";
 import "./directory.css";
@@ -58,15 +59,14 @@ export default function DirectoryPage() {
   }
 
   return (
-    <div className="discover-route">
-      <PageShell title="Venue directory" width="wide" headerActions={<PublicHeaderActions />}>
+    <div className="discover-route pg-route dir-page">
+      <PageShell title="Venue directory" headerActions={<PublicHeaderActions />}>
+        <PageBand id="dir-heading" eyebrow="Portugal · Belgium · Italy" title="Venues in Portugal, Belgium and Italy" count={countText(ready ? ready.total : list.state.status === "error" ? undefined : null, "venue", "venues")}>
+          Real quintas, event halls and conference centres. Pick one and plan your event there: draw its tables and invite your guests.
+        </PageBand>
         <Link className="rp-back ep-back" to="/">
           ← Back to home
         </Link>
-        <section className="discover-top" aria-labelledby="dir-heading">
-          <h1 id="dir-heading">Venues in Portugal, Belgium and Italy</h1>
-          <p>Real quintas, event halls and conference centres. Pick one and plan your event there: draw its tables and invite your guests.</p>
-        </section>
         <Chips label="Country">
           <Chip pressed={country === null} onClick={() => set("country", null)}>
             All countries
@@ -92,7 +92,7 @@ export default function DirectoryPage() {
           <input id="dir-q" type="search" maxLength={60} value={text} placeholder="e.g. Lisboa, Quinta, Gent, Roma" onChange={(event) => setText(event.target.value)} />
         </div>
         <div className="discover-results-head ep-results-head">
-          <h2 aria-live="polite">{ready ? `${ready.total} ${ready.total === 1 ? "venue" : "venues"}` : "Finding venues"}</h2>
+          <h2 aria-live="polite">{ready ? `${ready.total.toLocaleString("en-GB")} ${ready.total === 1 ? "venue" : "venues"}` : "Finding venues"}</h2>
         </div>
         <section aria-label="Venues" aria-busy={list.state.status === "loading"}>
           {list.state.status === "loading" && <Skeleton lines={6} label="Finding venues" />}

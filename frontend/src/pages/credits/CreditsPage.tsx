@@ -13,7 +13,7 @@ export default function CreditsPage() {
         <p className="cr-eyebrow">Credits</p>
         <h1>Photographs and data</h1>
         <p className="cr-lede">
-          The photographs are illustrations from Wikimedia Commons, used under the licence each author chose. They are not photos of the venues listed in the directory.
+          The photographs come from Wikimedia Commons, used under the licence each author chose. A photo marked "Venue photo" shows that venue from the directory. The others illustrate kinds of room and are not presented as any listed venue.
         </p>
 
         <h2>Photographs</h2>

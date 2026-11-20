@@ -8,15 +8,29 @@
   background: var(--c-surface);
   border: var(--border-width) solid var(--c-border);
   border-radius: var(--radius-lg);
+  transition: border-color var(--dur-base) var(--ease-out);
 }
-.dir-card h3 { margin: 0 0 var(--space-1); overflow-wrap: anywhere; }
+@media (hover: hover) { .dir-page .dir-card:hover { border-color: var(--c-border-strong); } }
+.dir-card h3 { margin: 0 0 var(--space-1); overflow-wrap: anywhere; font-size: 1.1875rem; line-height: 1.25; letter-spacing: var(--ls-display); }
 .dir-place { margin: 0; color: var(--c-text); }
 .dir-street { margin: var(--space-1) 0 0; color: var(--c-text-muted); font-size: var(--fs-sm); overflow-wrap: anywhere; }
 .dir-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); margin-top: auto; padding-top: var(--space-4); }
 .dir-link { display: inline-flex; align-items: center; min-height: 2.75rem; gap: var(--space-1); }
-.dir-search { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-3); max-width: 24rem; }
+
+/* A venue with its own photograph (venuePhotos.ts): the photo on top at 4:3, a slow zoom on hover. */
+.dir-card-photo { position: relative; aspect-ratio: 4 / 3; margin: 0 0 var(--space-4); overflow: hidden; border-radius: var(--radius-sm); background: var(--c-surface-sunk); }
+.dir-card-photo img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .dir-card:hover .dir-card-photo img { transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) { .dir-card-photo img { transition: none; } }
+/* On /directory the photo runs flush to the card's edges. */
+.dir-page .dir-card.has-photo { overflow: hidden; }.dir-page .dir-card-photo { margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-4); border-radius: 0; }
+
+.dir-search { display: flex; flex-direction: column; gap: var(--space-1); margin-top: 0; max-width: 24rem; }
 .dir-search label { font-weight: var(--fw-bold); }
-.dir-search input { min-height: 2.75rem; padding: 0 var(--space-3); font: inherit; color: var(--c-text); background: var(--c-surface); border: var(--border-width) solid var(--c-border-strong); border-radius: var(--radius-md); }
+.dir-search input { min-height: 2.75rem; padding: 0 var(--space-3); font: inherit; color: var(--c-text); background: var(--c-surface); border: var(--border-width) solid var(--c-border-strong); border-radius: var(--radius-sm); }
 .dir-search input:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
-.dir-more { margin: var(--space-5) 0 0; text-align: center; }
+/* "Show more" is centred under the grid (the paragraph drops the global 65ch cap). */
+.dir-more { display: flex; justify-content: center; max-width: none; margin: var(--space-6) 0 0; }
 .dir-attribution { margin: var(--space-6) 0 0; color: var(--c-text-muted); font-size: var(--fs-sm); }

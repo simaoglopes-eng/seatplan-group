@@ -2,6 +2,8 @@
 // state: title, author, licence and a link to the source. /credits lists this array.
 // To add a photo (for example a venue photo), append one entry; the page needs no change.
 
+import { VENUE_PHOTOS } from "./venuePhotos";
+
 export interface PhotoCredit {
   /** Path of the file as served, e.g. /images/photos/ballroom.jpg. */
   file: string;
@@ -30,7 +32,7 @@ export const PHOTO_CREDITS: PhotoCredit[] = [
     licence: "CC BY-SA 4.0",
     licenceUrl: CC_BY_SA_4,
     sourceUrl: "https://commons.wikimedia.org/wiki/File:Lichtburg-Essen-Kinosaal-2025.jpg",
-    usedFor: "Home page, top",
+    usedFor: "Home page, top; background of the invitation page (/participant)",
   },
   {
     file: "/images/photos/palazzo-hall.jpg",
@@ -68,4 +70,27 @@ export const PHOTO_CREDITS: PhotoCredit[] = [
     sourceUrl: "https://commons.wikimedia.org/wiki/File:EBACE_2019,_Le_Grand-Saconnex_(EB190648).jpg",
     usedFor: "Home page, conference centres",
   },
+  {
+    file: "/images/photos/hero-ballroom.jpg",
+    title: "Parkhotel Schönbrunn, Ballsaal",
+    author: "P e z i",
+    licence: "CC BY-SA 3.0 AT",
+    licenceUrl: CC_BY_SA_3_AT,
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Parkhotel_Schoenbrunn_Ballsaal_DSC_5115w.jpg",
+    usedFor: "Home page, top (second photo)",
+  },
+  {
+    file: "/images/photos/hero-square-brussels.jpg",
+    title: "Square, Brussels Meeting Centre 3",
+    author: "AGC Glass Europe",
+    licence: "CC BY 2.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/2.0/",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Square_-_Brussels_Meeting_Centre_3_-_Brussels,_Belgium.jpg",
+    usedFor: "Home page, top (third photo)",
+  },
+  // One entry per venue photo, built from venuePhotos.ts so the two never drift apart.
+  // The venue's name is the part of the alt text before the first comma.
+  ...Object.values(VENUE_PHOTOS).map(
+    (photo): PhotoCredit => ({ ...photo.credit, file: photo.src, usedFor: `Venue photo: ${photo.alt.split(",")[0]}` }),
+  ),
 ];

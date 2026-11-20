@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { request, setSessionToken } from "../api/client";
 import { AuthLayout, Button, Field, PageShell } from "../design/components";
 import { safeNextPath } from "./Login";
+import { PublicHeaderActions } from "./discover/PublicHeaderActions";
 import "./login.css";
 
 type CodeResponse = { signup_id: string; sent_to: string };
@@ -34,7 +35,7 @@ export default function OrganiserRegister() {
       setError(caught instanceof Error ? caught.message : "Something went wrong. Please try again.");
     } finally { setBusy(false); }
   }
-  return <PageShell title="Create an organiser account"><AuthLayout eyebrow="FOR ORGANISERS" headline="A place for every detail." description="Set up your event, shape the room and make it easy for everyone to find their seat."><div className="login">
+  return <PageShell title="Create an organiser account" headerActions={<PublicHeaderActions />}><AuthLayout eyebrow="FOR ORGANISERS" headline="A place for every detail." description="Set up your event, shape the room and make it easy for everyone to find their seat."><div className="login">
     <h1>{pending ? "Check your email" : "Create your organiser account"}</h1>
     <p className="login-lede">{pending ? `If this address can be registered, a verification code will be sent to ${pending.sent_to}. Email delivery must be configured for the code to arrive.` : "Create an account to plan and manage your events."}</p>
     <form onSubmit={submit}>

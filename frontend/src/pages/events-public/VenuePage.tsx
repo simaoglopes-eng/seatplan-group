@@ -30,7 +30,7 @@ export default function VenuePage() {
   const title = state.status === "ready" ? state.data.name : "Venue";
   const hasMap = state.status === "ready" && state.data.lat !== null && state.data.lng !== null;
   return (
-    <PageShell title={title} width="wide" headerActions={<PublicHeaderActions />} footerContent={hasMap && <MapCredits />}>
+    <PageShell title={title} headerActions={<PublicHeaderActions />} footerContent={hasMap && <MapCredits />}>
       {state.status === "loading" && <Skeleton lines={6} label="Loading the venue" />}
       {state.status === "error" && <LoadError error={state.error} onRetry={() => reload()} />}
       {state.status === "ready" && <Page data={state.data} />}
