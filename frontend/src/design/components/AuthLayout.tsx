@@ -5,12 +5,14 @@ interface AuthLayoutProps {
   headline: string;
   description: string;
   children: ReactNode;
+  /** A short phone version: the story above the form is hidden so a sign-up form fits one screen. */
+  compact?: boolean;
 }
 
 /** A consistent, calm frame for the account journeys. */
-export function AuthLayout({ eyebrow, headline, description, children }: AuthLayoutProps) {
+export function AuthLayout({ eyebrow, headline, description, children, compact = false }: AuthLayoutProps) {
   return (
-    <section className="auth-layout" aria-label={`${eyebrow} account`}>
+    <section className={`auth-layout${compact ? " auth-layout-compact" : ""}`} aria-label={`${eyebrow} account`}>
       <aside className="auth-story">
         <p className="auth-eyebrow">{eyebrow}</p>
         <h2>{headline}</h2>

@@ -20,14 +20,14 @@ seat. To choose a seat they create a guest account, or sign in to one.
 |---|---|
 | `JoinPage.tsx` | Loads `GET /j/{token}` (no session sent), shows every state: loading, open, full (with "I was invited: create my account"), deadline passed, link off (403), link wrong (404), too many requests (429), network error. Refreshes with `useLive`; a failed refresh says "The map may be out of date" |
 | `JoinPanel.tsx` | Opens under the map when a free seat is picked. It never holds the seat; its heading takes focus and Escape closes it |
-| `RegisterPage.tsx` | Step 1 `POST /j/{token}/register`, step 2 `POST /guest/verify` with the `signup_id` the register answer gave (the code works only with it). `validateRegister` checks the form first; errors sit next to each field and in a focused summary box. `demo_code` may be missing even in the demo |
+| `RegisterPage.tsx` | Step 1 `POST /j/{token}/register`, step 2 `POST /guest/verify` with the `signup_id` the register answer gave (the code works only with it). The form and code step are the shared `SignUpForm` (`pages/signup/`); this page adds the "I need an accessible seat" field and `joinOutcome`. `demo_code` may be missing even in the demo |
 | `JoinSignInPage.tsx` | The shared sign-in form, then the join call |
 | `joinOutcome.ts` | Pure: after a join, which page to open and what to say (`joined`, `linked`, `already_member`, `event_full`, `link_closed`, `deadline_passed`, `removed`; a 403 `forbidden` from the join call means `removed`) |
 | `wantedSeat.ts` | Keeps the seat a visitor picked (sessionStorage, per event), so the seat page can offer it after sign-up |
 | `join.css` | Layout of the status panel and the seat panel; colours and sizes from `tokens.css` |
 
 Shared pieces live in `pages/account/` (sign-in form, problem box, privacy
-text, password toggle) and `pages/events/` (event header, map frame).
+text, sign-up form in `pages/signup/`) and `pages/events/` (event header, map frame).
 
 ## Data flow
 

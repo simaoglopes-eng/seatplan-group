@@ -887,3 +887,43 @@
   .btn.btn-glass-green { background: var(--glass-green-solid); }
   .btn.btn-glass-brass { background: var(--glass-brass-solid); }
 }
+/* ---------- A control inside an input (PasswordField's eye) ----------
+   The input keeps room on the right for a 44px tap target, so typed text never runs under it. */
+.field-control { position: relative; display: flex; }
+.field-control .field-input { flex: 1 1 auto; min-width: 0; padding-inline-end: 2.9rem; }
+.field-eye {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-input);
+  background: none;
+  color: var(--c-text-muted);
+  cursor: pointer;
+}
+.field-eye:hover { color: var(--c-text); }
+.field-eye:focus-visible { outline: var(--focus-width) solid var(--c-focus); outline-offset: -4px; }
+.field-eye[aria-pressed="true"] { color: var(--c-primary); }
+.field-eye-icon { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Autofill and a revealed password stay readable ----------
+   Browsers paint an autofilled field with their own fill (pale yellow or blue) and, in a dark
+   colour scheme, their own text colour (white), which left the typed or revealed text unreadable.
+   Painting the field's own fill as an inset shadow and fixing the text colour makes the ink
+   always the theme's. One rule per pseudo-class: a browser that does not know one drops the whole
+   rule, so the two must not share a selector list. */
+.field-input:-webkit-autofill {
+  -webkit-text-fill-color: var(--c-text);
+  caret-color: var(--c-text);
+  box-shadow: 0 0 0 100vmax var(--c-surface) inset;
+}
+.field-input:autofill {
+  -webkit-text-fill-color: var(--c-text);
+  caret-color: var(--c-text);
+  box-shadow: 0 0 0 100vmax var(--c-surface) inset;
+}

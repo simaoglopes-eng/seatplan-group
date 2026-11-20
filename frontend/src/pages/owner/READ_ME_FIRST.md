@@ -1,6 +1,6 @@
 # Restaurant owners
 
-OwnerSignUpPage handles the emailed-code registration flow. The session is
+OwnerSignUpPage handles the emailed-code registration flow with the shared SignUpForm (pages/signup/). The session is
 stored only after verification succeeds. OwnerHomePage loads private cards
 through api/owner.ts. Owner sign-in reuses Login with /owner as its default
 destination. Existing event and staff login destinations retain their defaults.

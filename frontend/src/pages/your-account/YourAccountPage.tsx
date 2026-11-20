@@ -65,14 +65,14 @@ export default function YourAccountPage() {
   // Signed out, the forms sit in a glass panel over the terrace photo (direction E, like /login).
   const Frame = anySession ? PlainFrame : AuthPhoto;
   return (
-    <Frame>
+    <Frame compact={create}>
     <div className="discover-route">
       <PageShell title={anySession ? "My account" : create ? "Create your account" : "Sign in"} width="wide" variant={anySession ? "default" : "overlay"} headerActions={<PublicHeaderActions />}>
         <div className="ya-page">
           {!anySession ? (
             <div className="ya-signed-out auth-content acc-solo">
-              <h1 className="acc-title">{create ? "Create your SeatPlan account" : "Sign in to SeatPlan"}</h1>
-              <p className="acc-lede">One account for booking tables and event seats, and for the work you do at restaurants and venues.</p>
+              <h1 className="acc-title">{create ? "Create your account" : "Sign in to SeatPlan"}</h1>
+              <p className="acc-lede">One account for bookings and for work.</p>
               <div className="discover-view-switch ya-switch" role="group" aria-label="Sign in or create an account">
                 <Button variant={!create ? "primary" : "secondary"} aria-pressed={!create} onClick={() => setParam("mode", null)}>
                   Sign in
@@ -135,7 +135,8 @@ export default function YourAccountPage() {
   );
 }
 
-function PlainFrame({ children }: { children: ReactNode }) {
+// `compact` (the sign-up view) only matters on the photo: its page chrome is tighter there, so the whole form fits one screen.
+function PlainFrame({ children }: { children: ReactNode; compact?: boolean }) {
   return <>{children}</>;
 }
 

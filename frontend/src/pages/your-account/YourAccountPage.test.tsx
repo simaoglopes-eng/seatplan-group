@@ -46,6 +46,18 @@ function bookingRoutes(server: ReturnType<typeof startFakeServer>): void {
 }
 
 describe("/account signed out", () => {
+  it("has the eye inside the sign-in password field", () => {
+    startFakeServer();
+    renderAt("/account");
+    const form = screen.getByRole("form", { name: "Sign in" });
+    const input = within(form).getByLabelText("Password") as HTMLInputElement;
+    const eye = within(form).getByRole("button", { name: "Show password" });
+    expect(input.parentElement?.contains(eye)).toBe(true);
+    fireEvent.click(eye);
+    expect(input.type).toBe("text");
+    expect(within(form).getByRole("button", { name: "Hide password" }).getAttribute("aria-pressed")).toBe("true");
+  });
+
   it("signs in with one password and keeps both sessions", async () => {
     const server = startFakeServer();
     bookingRoutes(server);
@@ -67,7 +79,8 @@ describe("/account signed out", () => {
     server.routes.set("POST /account/register", () => ({ status: 202, body: { status: "code_sent", sent_to: "ri***@example.com", expires_in_seconds: 900, signup_id: "s1", demo_code: "123456" } }));
     server.routes.set("POST /guest/verify", () => ({ status: 201, body: { token: "g.1.0.9.sig", account: ACCOUNT, join: { status: "account_only", event_id: null }, work: { token: "3.9.sig", user: WORK.user } } }));
     renderAt("/account?mode=create");
-    fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Rita Rossi" } });
+    fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Rita" } });
+    fireEvent.change(screen.getByLabelText("Last name"), { target: { value: "Rossi" } });
     fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: "rita@example.com" } });
     fireEvent.change(screen.getByLabelText(/^Password/), { target: { value: "a long password" } });
     fireEvent.click(screen.getByLabelText(/I agree/));

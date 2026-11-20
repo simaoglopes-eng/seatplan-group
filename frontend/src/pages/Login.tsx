@@ -92,10 +92,11 @@ export default function Login({ defaultNext = "/organiser" }: { defaultNext?: st
  * window behind the page (photoCredits.ts), under the dark veil, and the form sits in a glass
  * panel (login.css, .ap-route). Only these two pages use it: StaffAccess and the participant
  * register share .login but have no photo, so they keep the linen card.
+ * `compact` is for the sign-up pages (pages/signup/): tighter page chrome so a whole form fits a phone screen.
  */
-export function AuthPhoto({ children }: { children: ReactNode }) {
+export function AuthPhoto({ children, compact = false }: { children: ReactNode; compact?: boolean }) {
   return (
-    <div className="ap-route">
+    <div className={compact ? "ap-route ap-compact" : "ap-route"}>
       <div className="ap-photo" aria-hidden="true">
         <img src="/images/photos/hero-terrace-assisi.jpg" alt="" />
       </div>

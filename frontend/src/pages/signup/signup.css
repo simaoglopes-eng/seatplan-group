@@ -1,0 +1,79 @@
+/* The sign-up form (SignUpForm.tsx), the same on every page that creates an account.
+   Compact on purpose: the whole form, with the code step behind it, has to fit one phone screen.
+   Colours come from the page around it: account.css's glass rules list .su beside .acc-page and
+   .ya-signed-out, so on the terrace photo it is glass with light inputs; elsewhere it is plain. */
+.su { display: flex; flex-direction: column; gap: var(--space-3); width: 100%; min-width: 0; }
+.su > .acc-title.acc-title {
+  max-width: none;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  font-size: clamp(1.6rem, 5vw, 2.25rem);
+  letter-spacing: var(--ls-display);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.su > .acc-title.acc-title.su-h2 { font-size: var(--fs-xl); }
+.su > .acc-lede.acc-lede, .su > .su-text { margin: 0; line-height: 1.45; }
+.su .su-form { display: flex; flex-direction: column; gap: var(--space-3); }
+.su-form .field { gap: 4px; margin-bottom: 0; min-width: 0; }
+.su-form .field-label { font-size: var(--fs-sm); line-height: 1.25; }
+.su-form .field-hint { font-size: var(--fs-xs); line-height: 1.3; }
+.su-form .field-input { min-height: var(--touch-target); }
+.su-form .field-error { font-size: var(--fs-xs); }
+/* Who sees the name (invitation page): reads as the hint of the two name fields above it. */
+.su-form .su-name-hint { margin: -2px 0 0; }
+/* First and last name share a row when they fit (two columns of at least 8.5rem), else stack. */
+.su-names { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: var(--space-3); }
+.su-form .checkbox { margin-bottom: 0; gap: var(--space-2); }
+.su-form .checkbox-label { font-size: var(--fs-sm); line-height: 1.35; }
+.su-form .acc-consent { gap: 0; }
+/* "What we store": a small inline disclosure that is still a 44px target. */
+.su-form .acc-details summary { display: inline-flex; min-height: var(--touch-target); font-size: var(--fs-sm); text-decoration: underline; text-underline-offset: 3px; }
+.su-form .acc-details[open] summary { margin-bottom: var(--space-1); }
+.su .acc-privacy { padding: var(--space-3); border-radius: var(--radius-input); background: var(--c-surface-sunk); line-height: 1.5; }
+.su-form .login-resend { margin-top: 0; }
+.su-form .login-resend-actions { gap: 0 var(--space-4); }
+.su-form .login-linkbtn { font-size: var(--fs-sm); }
+.su-form .login-resend-status { min-height: 0; }
+.su-form .acc-links { gap: 0 var(--space-4); }
+.su .badge { align-self: flex-start; }
+
+/* Inside AuthLayout's panel the form fills it up to a reading width (premium.css does the same for .login). */
+.auth-content > .su { max-width: 34rem; margin-inline: auto; }
+
+@media (max-width: 40rem) {
+  .su, .su .su-form { gap: 6px; }
+  .su-names { gap: var(--space-2); }
+}
+
+/* ---------- Page chrome for sign-up pages over the photo (AuthPhoto compact) ----------
+   Only the sign-up pages carry .ap-compact, so /login, the sign-in pages, forgot and reset keep
+   their roomier frame. The goal: header, the whole form and the footer inside one phone screen.
+   The footer keeps every word and both links (map and photo credits); it only gets smaller type. */
+.ap-route.ap-compact .shell-overlay .shell-main { padding-top: calc(4.5rem + var(--space-3)); padding-bottom: var(--space-4); }
+.ap-compact .auth-layout { min-height: 0; margin: 0 auto; }
+.ap-compact .auth-content { padding: clamp(1rem, 3vw, 1.75rem); }
+.ap-compact .shell-footer { padding-block: 0; font-size: 0.75rem; line-height: 1.35; }
+.ap-compact .shell-footer :is(p, a) { font-size: inherit; line-height: inherit; }
+.ap-compact .shell-footer .shell-inner { gap: 0 var(--space-4); }
+/* /account (create): the panel and its switch, tighter. */
+.ap-compact .ya-page { margin-top: 0; }
+.ap-compact .ya-signed-out { gap: var(--space-2); margin-top: 0; align-items: stretch; }
+.ap-compact .acc-solo { margin-block: 0; }
+.ap-compact .ya-signed-out > .acc-title.acc-title { font-size: clamp(1.6rem, 5vw, 2.25rem); }
+.ap-compact .ya-signed-out > .acc-lede { margin: 0; line-height: 1.45; }
+
+@media (max-width: 680px) {
+  .ap-route.ap-compact .shell-overlay .shell-main { padding-top: calc(3.9rem + var(--space-2)); padding-bottom: var(--space-3); }
+  /* The story above the form repeats the page heading: on a phone the form goes first. */
+  .ap-compact .auth-layout-compact .auth-story { display: none; }
+  .ap-compact .auth-content { padding: var(--space-3) var(--space-4); }
+}
+
+/* The owner sign-up is not on the photo, but its page chrome gets the same tighter fit (:has finds the page). */
+.shell:has(.owner-auth .su) .shell-main { padding-block: var(--space-3) var(--space-4); }
+.shell:has(.owner-auth .su) .shell-footer { padding-block: 0; font-size: 0.75rem; line-height: 1.35; }
+.shell:has(.owner-auth .su) .shell-footer :is(p, a) { font-size: inherit; line-height: inherit; }
+.shell:has(.owner-auth .su) .shell-footer .shell-inner { gap: 0 var(--space-4); }
+.owner-auth > .su { gap: var(--space-2); }

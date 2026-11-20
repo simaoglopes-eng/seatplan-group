@@ -4,13 +4,12 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword } from "../../api/guest";
-import { Badge, Button, Field, PageShell, useToast } from "../../design/components";
+import { Badge, Button, Field, PageShell, PasswordField, useToast } from "../../design/components";
 import { PublicHeaderActions } from "../discover/PublicHeaderActions";
 import { AuthPhoto } from "../Login";
 import type { ResetState } from "./ForgotPage";
 import { ProblemBox, asApiError, listErrors, looksLikeEmail, splitFieldMessage } from "./FormProblem";
 import type { FieldErrors } from "./FormProblem";
-import { PasswordToggle } from "./PasswordToggle";
 import { MY_HOME } from "./safeNext";
 import "./account.css";
 
@@ -33,7 +32,6 @@ export default function ResetPage() {
   const [email, setEmail] = useState(params.get("email") ?? "");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [problem, setProblem] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -86,22 +84,18 @@ export default function ResetPage() {
             error={errors.code}
             onChange={(e) => setCode(e.target.value.replace(/\s/g, ""))}
           />
-          <div className="acc-password">
-            <Field
-              id="reset-password"
-              label="New password"
-              hint={`At least ${MIN_PASSWORD} characters.`}
-              type={showPassword ? "text" : "password"}
-              name="new_password"
-              autoComplete="new-password"
-              required
-              maxLength={200}
-              value={password}
-              error={errors.new_password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <PasswordToggle shown={showPassword} controls="reset-password" onToggle={() => setShowPassword((v) => !v)} />
-          </div>
+          <PasswordField
+            id="reset-password"
+            label="New password"
+            hint={`At least ${MIN_PASSWORD} characters.`}
+            name="new_password"
+            autoComplete="new-password"
+            required
+            maxLength={200}
+            value={password}
+            error={errors.new_password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
           <Button type="submit" busy={busy} className="acc-submit">
             Save and sign in
           </Button>
