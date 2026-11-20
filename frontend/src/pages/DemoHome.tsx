@@ -54,7 +54,7 @@ function Hero() {
   return (
     <section className="home-hero" aria-labelledby="hero-heading">
       <div className="home-hero-text">
-        <p className="home-eyebrow">Events and restaurants</p>
+        <p className="home-eyebrow">Weddings, dinners and conferences</p>
         <h1 id="hero-heading">Pick your own seat, next to the people you know.</h1>
         <p className="home-lede">
           SeatPlan shows the room as it really is, live. Guests choose a seat or a table themselves; a planner suggests the best
@@ -141,7 +141,7 @@ function DemoCard({ title, blurb, links, browse }: { title: string; blurb: strin
 const STEPS = [
   { title: "See the room", body: "A live map of tables and seats. Changes from other people appear within a second or two." },
   { title: "Get a suggestion", body: "The planner recommends seats near people you know, and tells you why in plain words." },
-  { title: "Hold, then confirm", body: "Your seat is held for five minutes while you decide. Nobody else can take it meanwhile." },
+  { title: "Confirm, and it is yours", body: "Choosing a seat reserves nothing: the first person to confirm gets it, and the database never gives a seat out twice." },
 ];
 
 function HowItWorks() {

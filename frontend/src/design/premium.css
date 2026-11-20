@@ -285,7 +285,7 @@ textarea:focus {
 .auth-story::before { width: 23rem; right: -10rem; bottom: -9rem; }
 .auth-story::after { width: 16rem; right: -6.5rem; bottom: -5.5rem; }
 .auth-eyebrow { margin: 0 0 2rem; color: #c9d9cd; font-size: .68rem; font-weight: 700; letter-spacing: .16em; }
-.auth-story h2 { max-width: 10ch; margin: 0; font: 400 clamp(2.2rem, 4vw, 3.4rem)/1.04 var(--font-display); letter-spacing: -.045em; }
+.auth-story h2 { max-width: 10ch; margin: 0; color: inherit; font: 400 clamp(2.2rem, 4vw, 3.4rem)/1.04 var(--font-display); letter-spacing: -.045em; }
 .auth-description { max-width: 30ch; margin: 1rem 0 0; color: #d2ded4; line-height: 1.65; }
 .auth-illustration { width: min(100%, 17rem); height: auto; margin: auto 0 1rem; color: #e3eee5; }
 .auth-note { display: flex; gap: .65rem; align-items: center; margin: 0; color: #d2ded4; font-size: .8rem; }

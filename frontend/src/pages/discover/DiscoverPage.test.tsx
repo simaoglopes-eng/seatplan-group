@@ -98,7 +98,7 @@ describe("DiscoverPage: the command bar", () => {
   it("links the header to the owners page and to Event booking", async () => {
     server(() => ({ items: [], total: 0 }));
     renderPage();
-    expect(screen.getByRole("link", { name: "For restaurant owners" }).getAttribute("href")).toBe("/owner/sign-in");
+    expect(screen.queryByRole("link", { name: "For restaurant owners" })).toBeNull();
     expect(screen.getByRole("link", { name: "Plan an event" }).getAttribute("href")).toBe("/events");
     await screen.findByText("No restaurants match");
   });

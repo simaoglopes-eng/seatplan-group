@@ -1,5 +1,5 @@
 // The account link stays visible in the public header and opens /account. On phones the
-// owner and event links sit behind Menu.
+// event link sits behind Menu. Events only: no restaurant-owner link.
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getGuestToken, getSessionToken } from "../../api/client";
@@ -18,16 +18,12 @@ export function PublicHeaderActions() {
     document.addEventListener("pointerdown", outside);
     return () => { document.removeEventListener("keydown", escape); document.removeEventListener("pointerdown", outside); };
   }, [open]);
-  const owners = getSessionToken() ? "/owner" : "/owner/sign-in";
   return (
     <nav ref={nav} className="site-nav" aria-label="Main" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}>
       <button ref={button} type="button" className="btn btn-ghost site-nav-toggle" aria-expanded={open} aria-controls="site-nav-links" onClick={() => setOpen((v) => !v)}>
         Menu
       </button>
       <div id="site-nav-links" className={`site-nav-links${open ? " is-open" : ""}`}>
-        <Link to={owners} className="btn btn-ghost" onClick={close}>
-          For restaurant owners
-        </Link>
         <Link to="/events" className="btn btn-ghost" onClick={close}>
           Plan an event
         </Link>
