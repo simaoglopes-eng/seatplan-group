@@ -16,10 +16,9 @@ from datetime import datetime, timedelta
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
-from app.core.parent_venue import shown_venue_of
 from app.mail import templates
 from app.mail.outbox import enqueue
-from app.models import EmailOutbox, Event, Guest, utc_now
+from app.models import EmailOutbox, Event, Guest, Venue, utc_now
 
 KIND = "event_reminder"
 # Rows still waiting to go out. "skipped" is a reminder we cancelled earlier;
@@ -66,7 +65,7 @@ def _cancel(session: Session, key: str) -> None:
 def _parts(
     session: Session, event: Event, guest: Guest, seat_label: str, link: str
 ) -> templates.EmailParts:
-    venue = shown_venue_of(session, event.venue_id)  # an event's setup copy names its hall
+    venue = session.get(Venue, event.venue_id)
     timezone = venue.timezone if venue else "UTC"
     return templates.event_reminder(
         guest.name,

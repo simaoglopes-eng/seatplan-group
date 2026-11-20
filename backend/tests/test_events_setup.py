@@ -122,6 +122,8 @@ def add_guest(client: TestClient, setup: EventSetup, guest: dict[str, Any]) -> i
 def choose(client: TestClient, setup: EventSetup, name: str, seat_id: int) -> None:
     """The attendee holds and confirms a seat themselves."""
     token = setup.tokens[name]
+    held = client.post(f"/api/a/{token}/hold", json={"seat_id": seat_id})
+    assert held.status_code == 200, held.text
     confirmed = client.post(f"/api/a/{token}/confirm", json={"seat_id": seat_id})
     assert confirmed.status_code == 200, confirmed.text
 

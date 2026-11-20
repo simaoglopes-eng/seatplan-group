@@ -65,9 +65,12 @@ function SeatScreen({ eventId }: { eventId: string }) {
       </PageShell>
     );
   }
+  const note = email
+    ? `We are emailing your seat and a picture of the room to ${email}. It can take up to 15 minutes.`
+    : "We are emailing your seat and a picture of the room. It can take up to 15 minutes.";
   return (
     <PageShell title={state.load.view.event.name}>
-      <AttendeeJourney state={state} top={bar} />
+      <AttendeeJourney state={state} top={bar} doneEmailNote={note} />
     </PageShell>
   );
 }

@@ -24,6 +24,8 @@ interface TargetFlags {
   selectable: boolean;
   selected: boolean;
   active: boolean;
+  dropTarget: boolean;
+  dropAllowed: boolean;
   highlighted: boolean;
   /** The second highlight, for example "changed by preview". */
   marked: boolean;
@@ -38,6 +40,7 @@ function targetClass(flags: TargetFlags, state: SeatState): string {
   if (flags.selectable) classes.push("is-selectable");
   if (flags.selected) classes.push("is-selected");
   if (flags.active) classes.push("is-active");
+  if (flags.dropTarget) classes.push(flags.dropAllowed ? "is-drop-allowed" : "is-drop-blocked");
   if (flags.highlighted) classes.push("is-highlighted");
   if (flags.marked) classes.push("is-marked");
   return classes.join(" ");
@@ -114,13 +117,6 @@ export const TableNode = memo(function TableNode({ table, seats, ...flags }: Tab
         <g className="target-inner" data-motion={flags.motion}>
           <Rings radius={radius} flags={flags} />
         </g>
-        {/* A tick on the top-left of a table that is selected but not yet held ("mine" draws its own tick). */}
-        {flags.selected && state !== "mine" && (
-          <g transform={`translate(${-radius * 0.75} ${-radius * 0.75})`} className="selected-tick" aria-hidden="true">
-            <circle r="7" className="selected-tick-disc" />
-            <path d="M-3.2 0.2 L-1 2.6 L3.4 -2.4" className="selected-tick-mark" />
-          </g>
-        )}
       </g>
       <TableShape table={table} className={`glyph-${state} glyph-body`} fill={bodyFill(state, flags.prefix)} />
       <g transform={`translate(${centre.x} ${centre.y - 7}) scale(1.2)`}>
@@ -156,6 +152,7 @@ export interface TargetsLayerProps {
   isSelectable: (id: number) => boolean;
   selectedId: number | null;
   activeId: number | null;
+  dropTargetId: number | null;
   highlight: ReadonlySet<number>;
   marked: ReadonlySet<number>;
   markedLabel: string;
@@ -188,6 +185,8 @@ export const TargetsLayer = memo(function TargetsLayer(p: TargetsLayerProps) {
       selectable: p.isSelectable(id),
       selected: id === p.selectedId,
       active: id === p.activeId,
+      dropTarget: id === p.dropTargetId,
+      dropAllowed: p.isSelectable(id),
       highlighted: p.highlight.has(id),
       marked: p.marked.has(id),
       motion: p.motion.get(id),

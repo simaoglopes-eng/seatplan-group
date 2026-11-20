@@ -3,15 +3,14 @@
 The look and the rules every screen shares. Code lives in `frontend/src/design/`
 (tokens and components) and `frontend/src/seatmap/` (the map and its glyphs).
 
-## 1. Identity: warm paper and forest green
+## 1. Identity: linen and bottle green
 
 A seating plan is traditionally printed on card and pinned up at the door of
-a dining room. SeatPlan keeps that warmth while using the hierarchy, restraint
-and interaction polish of a modern product. The interface does not copy
-proprietary Apple pages or controls:
+a dining room. SeatPlan borrows that calm instead of the usual blue-on-white
+software look:
 
-- **Warm paper** background, **ink** text and white surfaces for focused tasks.
-- **Forest green** means "yours": your seat, primary buttons, confirmations.
+- **Linen** paper background, **ink** text.
+- **Bottle green** means "yours": your seat, primary buttons, confirmations.
 - **Brass** means "pay attention": recommended seats and seats on hold.
 - **Plum** marks friends; **brick** marks errors; **slate** marks accessibility.
 - A **rust** focus ring, used for nothing else, so keyboard focus is never
@@ -27,11 +26,9 @@ Type pairing, all system fonts (no download, works offline):
 
 ## 2. Tokens
 
-`frontend/src/design/tokens.css` defines the shared palette, type, spacing,
-radii, shadows and motion. Page styles use these tokens and add layouts for
-their specific tasks. `premium.css` is imported after the page styles so the
-shared product language stays consistent across the home, account entry,
-organiser workspace, editor, participant journey and account pages.
+`frontend/src/design/tokens.css` is the ONLY file that defines raw values.
+Every stylesheet reads `var(--...)`, so a change of colour, spacing or speed is
+a one-line edit there.
 
 | Group | Tokens | Notes |
 |---|---|---|

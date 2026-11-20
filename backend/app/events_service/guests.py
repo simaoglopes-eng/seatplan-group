@@ -116,8 +116,6 @@ def update_guest(
     lock_event(session, event)  # before any other write, see seating.py
     if "group" in changes:
         guest.group_id = group_id_for(session, event, changes.pop("group"), False)
-    if "name" in changes:
-        guest.first_name = guest.last_name = None
     for name, value in changes.items():
         setattr(guest, name, value)
     if guest.rsvp == "no":
@@ -154,14 +152,11 @@ def erase_guest(session: Session, event: Event, guest: Guest, actor: str) -> Non
             or_(Acquaintance.guest_id == guest.id, Acquaintance.knows_guest_id == guest.id)
         )
     )
-    guest.first_name = guest.last_name = None
     guest.name = ERASED_NAME
     guest.dietary_note = None
     guest.needs_accessible = False
     guest.reserved_tag = None
     guest.wants_anonymous = True
-    guest.birth_date = None
-    guest.share_age = False
     guest.group_id = None
     guest.rsvp = "no"
     # A random hash nobody holds the token for: the old link can never match.

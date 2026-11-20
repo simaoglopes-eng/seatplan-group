@@ -125,7 +125,7 @@ so records cannot be enumerated. Secret tokens are stored as SHA-256 hashes.
 All timestamps are UTC, timezone-aware.
 
 Shared
-- `organisers` id, email (unique), name, password_hash (scrypt), role (`organiser` or `staff`), session_version (signed into the session token)
+- `organisers` id, email (unique), name, password_hash (scrypt), role (`organiser` or `staff`)
 - `venues` id, public_id, organiser_id, kind (`event` or `restaurant`), name, timezone, width, height
 - `zones` id, venue_id, name, kind (`general`, `window`, `terrace`, `bar`, `quiet`, `vip`, `accessible`, `stage`), x, y, w, h
 - `tables` id, venue_id, zone_id, label, shape (`round`, `rect`, `row`), x, y, w, h, rotation, min_party, max_party, is_accessible, high_chair_ok, combine_group (nullable text: tables with the same value may be combined)
@@ -234,12 +234,10 @@ Types: `frontend/src/api/types.ts`.
 Restaurants, diner (`/r/{venue_public_id}`)
 - `GET /r/{vid}` restaurant, zones, schedule summary, `max_party` (the largest party one table or allowed combination and the covers cap can seat, at most 30; a bigger party gets 422 on slots, map, hold, change and waitlist)
 - `GET /r/{vid}/slots?date=&party=` -> time slots with `available`, `limited`, `full`
-- `GET /r/{vid}/map?date=&time=&party=&prefs=` -> tables with state for that slot, recommended table and reasons. `prefs` is a comma list of wishes (`sun`, `shade`, `view`, `quiet`, `away_from_wc`; at most 5, never `sun` with `shade`, else 422). Added to the old fields: `rooms` (outline, openings, fixtures, `sun`, `sun_patches`, `night`) and on every table `room_id`, `is_active`, `ambience`. Tables switched off are not sent
-- `GET /r/{vid}/ambience?date=&time=&party=&moment=` -> `{rooms: [{id, sun_patches, night}], tables: [{id, light, phrases}], sun, located, time, stay_start, stay_end}` for the diner's time cursor; no personal data, same read limit as the map
-- `POST /r/{vid}/hold` `{date, time, party, table_id?, prefs?}` (no table: optimiser picks, following `prefs`) -> `{hold_id, table, expires_at}`. 429 `rate_limited` when one client already holds 3 tables for that date, or when live holds would block more than half the tables of a slot (minimum allowance one table, so a one-table restaurant is bookable)
+- `GET /r/{vid}/map?date=&time=&party=` -> tables with state for that slot, recommended table and reasons
+- `POST /r/{vid}/hold` `{date, time, party, table_id?}` (no table: optimiser picks) -> `{hold_id, table, expires_at}`. 429 `rate_limited` when one client already holds 3 tables for that date, or when live holds would block more than half the tables of a slot
 - `DELETE /r/{vid}/hold/{hold_id}` gives a held table back -> 204, or 404 for an unknown hold
-- `POST /r/{vid}/bookings` `{hold_id, name, email, prefs?, seat_id?, ...}` (`seat_id` is the diner's optional chair: it must be a chair of one of the held tables and not blocked, else 422; it is only a wish, the booking stays per table; booking descriptions carry `seat: {id, label, table_id, phrase?} | null` and `prefs`) (`prefs` are stored on the booking and shown to the staff) -> confirmation with manage link. 429 `rate_limited` when this mailbox already has 4 upcoming diner bookings at this restaurant (capitals and a `+tag` count as the same mailbox), or this client address (an IPv6 address by its /64) has made 10 booking attempts here today (UTC); a refused booking keeps its hold (`restaurant_service/booking_caps.py`)
-- `GET /r/{vid}/seats?table_ids=1,2` -> `{tables: [{id, label, shape, x, y, w, h, rotation}], seats: [{id, table_id, label, x, y, state: free|blocked, accessible, phrase}]}` for up to 3 active tables (404 for any other table, 422 for none or more than 3); feeds the optional chair step; no personal data, same read limit
+- `POST /r/{vid}/bookings` `{hold_id, name, email, ...}` -> confirmation with manage link. 429 `rate_limited` when this mailbox already has 4 upcoming diner bookings at this restaurant (capitals and a `+tag` count as the same mailbox), or this client address (an IPv6 address by its /64) has made 10 booking attempts here today (UTC); a refused booking keeps its hold (`restaurant_service/booking_caps.py`)
 - `POST /r/{vid}/waitlist` -> position and estimated wait
 - `GET /b/{manage_token}` (includes the venue's `max_party`), `PATCH /b/{manage_token}`, `DELETE /b/{manage_token}`
 
@@ -358,110 +356,3 @@ missing columns and indexes named in its own fixed lists (`NEW_COLUMNS`,
 SQLite and Postgres. No new environment variable is needed for guest
 accounts; `EMAIL_ALLOWLIST` still decides who really receives email,
 including sign-up codes (`docs/guest-accounts.md`, D7).
-
-
-## 10. Restaurant platform extension (approved 2026-11-13)
-
-The detailed restaurant specification is docs/superpowers/specs/2026-11-13-restaurantes-plataforma-design.md. Existing event contracts remain the compatibility baseline. New restaurant routes live under /api/owner, /api/restaurants and /api/photos. Owner identity uses organisers with role organiser and the existing signed session. Missing and inaccessible resources use the same 404.
-
-Room coordinates are centimetres, x right and y down. Table x/y remain the unrotated bounding box origin, with rotation around its centre. Each outline has 3-60 points and each point carries the signed sagitta of its outgoing circular side. Clockwise screen winding is canonical. Reverse winding remaps opening side and arc offset as well as curve signs. Geometry polygon approximation uses 16 segments per curved side for validation. Each room holds up to 200 tables, 1000 seats, 60 openings, 100 fixtures and 50 zones. A venue holds at most five rooms.
-
-GET/PUT owner rooms use the nested payload of specification 6.10 with stable ids and temporary keys. PUT uses base_version against venues.layout_version in one conditional write and transaction. Success returns version, rooms and problems. A stale write returns HTTP 409 with error.code stale_layout. Structurally valid drafts may carry geometric problems. Invalid references, cross-owner ids and malformed numeric input are refused. Publication repeats validation. Layout persistence preserves table and seat ids referenced by bookings.
-
-The map retains width, height, zones, tables, seats, recommended and slot_status. Additive restaurant fields include rooms and table room_id/is_active/ambience. Room drawing fields include outline, openings, fixtures, sun, sun_patches and night. Inactive tables are excluded from public availability and new assignment, while historical staff display remains possible. Existing rooms with null room_id are exposed as one implicit rectangular Main room until first save.
-
-Ambience inputs are frozen dataclasses and have no database or network dependencies. Public results follow specification 7.5. Computation samples the half-open stay interval every 15 minutes. Missing location or north never produces an affirmative sunlight claim. Date conversion uses the venue time zone and UTC-aware instants. The editor previews the last saved draft through the server endpoint. Instant browser solar calculation is optional and deferred.
-
-New JSON bodies reject unknown fields and constrain free text with PlainText. Existing error envelope error/code/message remains mandatory. Publication may add problems containing code/message/fix_url to that envelope. Room version conflicts may add problem details without replacing the existing envelope. Public responses carry no diner names, email addresses or notes.
-
-Only leaflet@1.9.4 and @types/leaflet are allowed additions. Shared file edits are serial. The overnight plan and report record task dependencies, verification results and conservative deviations.
-
-Final integration checks: rooms with area outside 4–5000 m² carry an
-outline_invalid error; malformed opening clocks/references/spans are structural
-422 errors. Counterclockwise winding is normalized before persistence, including
-curves and opening positions. Combine groups are scoped by room in the adapter.
-GET/PUT rooms include read-only status. Invalid edits of explicitly published
-venues atomically return them to draft; existing management links survive.
-Legacy default-published venues retain compatibility until explicit publication.
-Published slugs remain fixed after unpublish. Discovery/by-slug pages and the
-restaurant mail integration remain planned interfaces, not completed features.
-
-Owner profiles: POST /api/owner/restaurants {name} creates an owned draft at
-1000x700 cm and returns public_id/slug. GET/PATCH
-/api/owner/restaurants/{vid}/profile reads or partially updates identity and
-location (the canonical read URL is /api/owner/restaurants/{vid}; /profile is
-also accepted for reads). Coordinates are supplied as a pair; known timezones and 1–3 distinct
-fixed-list cuisines are required when supplied. Conflicting slugs and attempts
-to change a published slug return 409. Missing and inaccessible profiles return
-the same 404. Unknown fields return 422. Setup uses these persisted values.
-Geolocation permission is self-only; camera/microphone remain disabled. Image
-CSP permits self, OSM tiles and data images used internally by Leaflet when
-cancelling tiles. No script or style policy relaxation is required.
-
-Owner rooms: GET/PUT /api/owner/restaurants/{vid}/rooms read and replace the whole
-layout in one transaction ({base_version, rooms: [{id, key, name, is_outdoor, north_deg,
-outline, position, openings, fixtures, zones, tables: [{..., seats}]}]}). Objects are
-matched by id (404 for an id that is not this restaurant's) and inserted by key; what is
-missing is deleted. The version moves atomically: a stale base_version is 409
-stale_layout and nothing changes. A table that has (or had) bookings, a live hold or a
-chosen chair cannot be deleted: 409 with {error: {tables: [{id, label}]}}; the owner sets
-is_active false instead. Chair neighbours are rebuilt on every save. A restaurant whose
-tables have no room is shown as one implicit "Main room" (id null) and the first save
-creates it. The answer carries the new version, real ids and `problems` (spec 6.9).
-Drafts with problems can be saved; publishing is where errors stop. GET
-/api/owner/restaurants/{vid}/ambience-preview?date=&time=&moment=&party= answers the
-saved rooms' light for the editor's Light tool (the diner route's shape plus per-table
-detail), for the owner only.
-
-Publishing: GET /api/owner/restaurants/{vid}/publish-check -> {name, slug, status, ready, problems, tips}
-(read only). POST .../publish re-checks everything on the server and answers 200
-{status: "published", url: "/restaurants/<slug>"} or 422 {error: {code, message, problems}, problems}
-where each problem is {code, message, fix_url} (codes: identity, location, hours, no_tables, no_north and the
-room editor's own error codes). Publishing twice changes nothing; `published_at` is set once. POST .../unpublish
-goes back to a draft (200 {status: "draft"}): off the search, no new bookings, existing bookings untouched.
-Diner routes under /api/r/{vid} answer 404 for a restaurant that is not published; manage links (/b/{token}) keep
-working. `venues.features` ({sun, view, accessible, terrace}) is recomputed whenever rooms are saved and on publish.
-
-Discovery (public, same read limit as /r/*): GET /api/restaurants?q=&cuisine=&price=&features=&lat=&lng=&date=&time=&party=&available=&limit=&offset=
--> {items, total}. Text ignores accents and capitals and looks at name and cuisines (never a pattern); cuisine, price
-and features repeat, cuisines/prices are "any of", features are "all of" (sun, view, accessible, terrace). lat and lng
-come together (422 otherwise) and sort nearest first with `distance_m`; restaurants without a pin go last; without a
-location the order is by name. date, time and party also come together; each card then has `next_times`, the three
-seatings closest to the time that still have a table (nearest first), and `available=true` keeps only restaurants with
-one within 60 minutes. Limit 1 to 50 (default 20). A card is {slug, public_id, name, cuisines, price_level, cover_url,
-cover_alt, address, lat, lng, distance_m, features, next_times}; only published restaurants appear.
-GET /api/restaurants/{slug} is the public page: the card's fields plus description, phone, website, instagram,
-timezone, rooms_summary, photos [{url, alt, is_cover}], max_party, schedule, book_url ("/r/<public_id>") and maps_url.
-A draft answers 404 to everyone except its own organiser, who gets it with `preview: true`.
-
-GET /api/r/{vid} also carries `slug` (null for a restaurant without a public page); the frontend forwards /r/<id> to
-/restaurants/<slug> when there is one, keeping ?date=&time=&party=. PATCH /api/b/{token} accepts `seat_id` (a chair at the
-booking's own tables, or null to take the wish away) on its own: with date, time or party_size it is 422. A chair at
-another table or a blocked one is 422; a booking that can no longer change is 409. The booking, its tables and its
-emails do not change (the chair is only a wish, spec 9.4).
-
-GET /api/staff/{vid}/floor: in `seats`, the chair a guest asked for (a booking owning its table at that time) has state "mine" and
-the other chairs of a booked table "taken"; no name is on any chair.
-
-Owner photos use JSON {kind, opening_key?, content_type, data_base64, alt_text}.
-POST /owner/restaurants/{vid}/photos returns metadata including id/public_id,
-url, actual content_type, width/height, opening_id, position and is_cover.
-GET on the same path lists metadata only. PATCH /{photo_id} changes alt_text;
-PUT /order requires the exact gallery photo_ids list and cover_id; DELETE
-/{photo_id} removes a photo and preserves a cover if any gallery photos remain.
-All routes require the owner, with 404 for foreign restaurants/photos. Uploads
-are limited to 60/hour/owner, 10 gallery photos and one view per saved window.
-Decoded bytes are at most 800000, dimensions 1–1600 px; the declared media type
-does not determine storage. Header checks cover PNG/JPEG/WebP, without a full
-pixel decoder. GET /photos/{public_id} serves draft bytes only to the owner,
-private/no-store; published bytes use public,max-age=31536000,immutable.
-img-src also permits blob: for authenticated previews and local resizing.
-
-Layout validation returns {code, level: error|warning|info, message, room_key,
-table_keys, opening_key?, fixture_key?}. Global no_tables uses room_key=null.
-Codes follow spec 6.9. no_north and no_tables are publication-only. Geometry
-errors remain saveable as drafts; malformed values and invalid references are
-handled separately. Join-group penetration tolerance is 2 cm, actual boundary
-touch has zero overlap, and passage footprints expand tables by 45 cm. Inactive
-tables remain physical for passage/fixture warnings. Browser/server reference
-cases cover curves, rotations, true circles, concavity and publication mode.

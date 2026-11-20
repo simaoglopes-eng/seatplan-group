@@ -31,7 +31,7 @@ export function SeatNotice({ notice, seats, tables, busy, onHold, onDismiss }: S
               {next.reasons.length > 0 && <>: {next.reasons.join(", ")}</>}.
             </p>
             <Button busy={busy} onClick={() => onHold(next.seat_id)}>
-              Select {name(next.seat_id)}
+              Hold {name(next.seat_id)}
             </Button>
           </>
         ) : (

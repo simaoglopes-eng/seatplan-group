@@ -30,6 +30,7 @@ def _account_holder(client: TestClient, organiser: Organiser) -> tuple:
 
 def _confirm(client: TestClient, eid: str, headers: dict, seat: int) -> None:
     base = f"/api/guest/events/{eid}"
+    assert client.post(f"{base}/hold", headers=headers, json={"seat_id": seat}).status_code == 200
     assert (
         client.post(f"{base}/confirm", headers=headers, json={"seat_id": seat}).status_code == 200
     )

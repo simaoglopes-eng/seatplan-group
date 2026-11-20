@@ -71,25 +71,25 @@ function ShareControls({ org, share, onSaved }: ControlsProps) {
     org.run(name, done, async () => onSaved(await call()));
 
   const toggle = (enabled: boolean): void => {
-    const done = enabled ? "The shared link is on. Copy it or the code and send it to your guests." : "The link is off. Nobody new can join with it.";
+    const done = enabled ? "The shared link is on. Copy it and send it to your guests." : "The shared link is off. Nobody new can join with it.";
     void save("share", done, () => eventsApi.patchShare(org.eventId, { enabled }));
   };
 
   const regenerate = (): void => {
-    void save("share-new", "New invitation link and code made. The old ones no longer work.", () => eventsApi.regenerateShare(org.eventId)).then(() => setAsking(false));
+    void save("share-new", "New link made. The old link no longer works.", () => eventsApi.regenerateShare(org.eventId)).then(() => setAsking(false));
   };
 
   return (
     <>
       <Checkbox
         label="Allow people to join with the shared link"
-        hint="Anyone with the link or code sees the seat map, with names shown as set above. To choose a seat they create an account with a checked email address. Your invited guests keep their personal links."
+        hint="Anyone with the link sees the seat map, with names shown as set above. To choose a seat they create an account with a checked email address. Your invited guests keep their personal links."
         checked={share.enabled}
         disabled={org.busy === "share"}
         onChange={(e) => toggle(e.target.checked)}
       />
       {share.enabled ? (
-        <LinkBox share={share} code={share.code} onNewLink={() => setAsking(true)} />
+        <LinkBox share={share} onNewLink={() => setAsking(true)} />
       ) : (
         <p className="ev-muted">The link is off. Nobody new can join with it. People who already joined keep their seats and can still sign in.</p>
       )}
@@ -111,14 +111,14 @@ function ShareControls({ org, share, onSaved }: ControlsProps) {
           </>
         }
       >
-        <p>The current link stops working at once, and its code does too. People who already joined keep their places.</p>
+        <p>The current link stops working at once. People who already joined keep their places.</p>
       </Dialog>
     </>
   );
 }
 
 /** The link itself, Copy, and Make a new link. */
-function LinkBox({ share, code, onNewLink }: { share: ShareSettings; code?: string | null; onNewLink: () => void }) {
+function LinkBox({ share, onNewLink }: { share: ShareSettings; onNewLink: () => void }) {
   const [status, setStatus] = useState("");
   const box = useRef<HTMLDivElement>(null);
 
@@ -153,14 +153,10 @@ function LinkBox({ share, code, onNewLink }: { share: ShareSettings; code?: stri
         <Button variant="secondary" onClick={() => void copy()}>
           Copy link
         </Button>
-        {code && <Button variant="secondary" onClick={() => void copyText(code).then((copied) => setStatus(copied ? "Invitation code copied" : `Invitation code: ${code}`))}>
-          Copy invitation code
-        </Button>}
         <Button variant="ghost" onClick={onNewLink}>
           Make a new link
         </Button>
       </div>
-      {code && <p className="ev-muted">Or share this code: <strong>{code}</strong></p>}
       <p className="ev-muted" role="status" aria-live="polite">
         {status}
       </p>

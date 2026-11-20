@@ -33,7 +33,7 @@ export function DoneStep({ state, view, moved, emailNote }: DoneStepProps) {
         You are all set
       </StepTitle>
       <p className="ev-seat-big">{label}</p>
-      <p>{emailNote ?? "Your seat is confirmed."} You can close this page.</p>
+      <p>{emailNote ?? "A confirmation email with a calendar invite is on its way to you."} You can close this page.</p>
       <div className="ev-map">
         <SeatMap label={`Your seat on the map, ${label}`} zones={map.zones} tables={map.tables} seats={map.seats} selectedId={seatId} selectable={NOTHING_SELECTABLE} />
       </div>

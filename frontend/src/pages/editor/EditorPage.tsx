@@ -168,7 +168,7 @@ function EditorWorkspace({ venue, history, selection, setSelection, dirty, savin
     <EditorFrame title={`Edit ${venue.name}`}>
       <div className="editor" onKeyDown={onKeyDown}>
         <div className="editor-head">
-          <div className="editor-heading"><p className="editor-eyebrow">YOUR FLOOR PLAN</p><h1 className="editor-title">{venue.name}</h1><p>Arrange tables and seats for your event.</p></div>
+          <h1 className="editor-title">{venue.name}</h1>
           <EditorToolbar onAddTable={addTable} onAddZone={addZone} onUndo={history.undo} onRedo={history.redo} onSave={onSave}
             canUndo={history.canUndo} canRedo={history.canRedo} saving={saving} dirty={dirty} />
         </div>

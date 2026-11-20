@@ -8,7 +8,7 @@ confirm: read the hold -> check it still fits -> consume the hold -> insert
 """
 
 from dataclasses import dataclass
-from datetime import date, time, timedelta
+from datetime import date, time
 
 from sqlalchemy.orm import Session
 
@@ -16,20 +16,8 @@ from app.core.errors import ApiError, SeatTaken
 from app.core.holds import commit_or_seat_taken
 from app.models import Booking, Venue
 from app.optimiser.restaurant_assign import recommend_table
-from app.restaurant_service import (
-    booking_payments,
-    booking_rows,
-    chosen_seat,
-    emails,
-    occupancy,
-    schedule,
-)
-from app.restaurant_service.availability import (
-    PREF_KEYS,
-    PartyNeeds,
-    check_covers_cap,
-    table_specs_for,
-)
+from app.restaurant_service import booking_rows, emails, occupancy, schedule
+from app.restaurant_service.availability import PartyNeeds, check_covers_cap, table_specs_for
 from app.restaurant_service.changes import record_change
 from app.restaurant_service.clock import time_of_slot
 from app.restaurant_service.holding import (
@@ -55,20 +43,16 @@ class Contact:
     email: str
     phone: str | None
     notes: str
-    occasion: str | None = None
-    dietary_requirements: str = ""
-    allergies: str = ""
 
 
 def _auto_choices(
-    session: Session, venue: Venue, day: date, at: time, window: tuple[int, int], needs: PartyNeeds
+    session: Session, venue: Venue, day: date, window: tuple[int, int], needs: PartyNeeds
 ) -> list[tuple[int, ...]]:
     """The optimiser's top picks among tables nobody has booked or held."""
     busy = occupancy.merge(
         occupancy.booked_slots(session, venue, day), occupancy.held_slots(session, venue, day)
     )
-    specs = table_specs_for(session, venue, needs, day, at)
-    picks = recommend_table(specs, busy, needs.spec(window), top=3)
+    picks = recommend_table(table_specs_for(session, venue), busy, needs.spec(window), top=3)
     return [pick.table_ids for pick in picks]
 
 
@@ -88,7 +72,7 @@ def _options(
 ) -> tuple[list[tuple[int, ...]], str]:
     """The table choices to try in order, and whether the diner chose them."""
     if not request.table_ids:
-        return _auto_choices(session, venue, request.day, request.at, window, request.needs), "auto"
+        return _auto_choices(session, venue, request.day, window, request.needs), "auto"
     booking_rows.check_tables(session, venue, request.table_ids, request.needs)
     # Holds do not know about confirmed bookings, so check those first.
     booked = occupancy.booked_slots(session, venue, request.day)
@@ -144,26 +128,14 @@ def _check_hold_fits(session: Session, venue: Venue, held: HeldTables, needs: Pa
 
 
 def confirm_booking(
-    session: Session,
-    venue: Venue,
-    held: HeldTables,
-    needs: PartyNeeds,
-    contact: Contact,
-    seat_id: int | None = None,
-    deposit: booking_payments.Deposit | None = None,
+    session: Session, venue: Venue, held: HeldTables, needs: PartyNeeds, contact: Contact
 ) -> tuple[Booking, str]:
     """Turn a hold (see holding.read_hold) into a booking.
 
     Returns (booking, manage token). Raises SeatTaken if the database refuses
-    the table_slots rows, HoldExpired if the hold ran out. With a `deposit` the
-    booking is saved as "pending", keeps its table, and is confirmed only once
-    the deposit is paid (booking_payments.py); its confirmation email waits too.
+    the table_slots rows, HoldExpired if the hold ran out.
     """
     _check_hold_fits(session, venue, held, needs)
-    # Checked before the hold is used up, so a bad chair keeps the diner's table.
-    seat = None
-    if seat_id is not None:
-        seat = chosen_seat.check_chosen_seat(session, venue, seat_id, held.table_ids)
     consume_hold(session, venue, held)
     token = new_token()
     booking = Booking(
@@ -173,30 +145,18 @@ def confirm_booking(
         email=contact.email,
         phone=contact.phone,
         notes=contact.notes,
-        occasion=contact.occasion,
-        dietary_requirements=contact.dietary_requirements,
-        allergies=contact.allergies,
         needs_accessible=needs.needs_accessible,
         high_chairs=needs.high_chairs,
-        status="pending" if deposit else "confirmed",
+        status="confirmed",
         source="diner",
         table_choice=held.table_choice,
         manage_token_hash=hash_token(token),
-        prefs=sorted(needs.prefs, key=PREF_KEYS.index),
-        chosen_seat_id=seat.id if seat else None,
     )
     booking_rows.set_times(venue, booking, held.day, held.window)
     session.add(booking)
     session.flush()  # gives the booking its id for the table_slots rows
     booking_rows.write_slots(session, booking, held.table_ids, held.window)
-    if deposit:
-        payment = booking_payments.create_pending(session, venue, booking, deposit)
-        # Parked three days ahead as a safety net: it is released the moment the
-        # deposit is paid, and dropped when the wait ends without one.
-        parked = payment.expires_at + timedelta(days=3)
-        emails.queue_confirmation(session, venue, booking, token, hold_until=parked)
-    else:
-        emails.queue_confirmation(session, venue, booking, token)
+    emails.queue_confirmation(session, venue, booking, token)
     record_change(
         session,
         venue,

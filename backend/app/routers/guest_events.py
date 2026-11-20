@@ -17,14 +17,7 @@ from app.core.errors import ApiError
 from app.events_service import attendee_view
 from app.events_service.attendee_view import event_of
 from app.events_service.recommend import recommendations
-from app.events_service.schemas import (
-    AgeProfileIn,
-    KnowsIn,
-    NameProfileIn,
-    PrivacyIn,
-    RsvpIn,
-    SeatChoice,
-)
+from app.events_service.schemas import KnowsIn, PrivacyIn, RsvpIn, SeatChoice
 from app.events_service.seating import confirm_seat, hold_seat, release_seat
 from app.models import Event, Guest
 from app.security import CurrentGuestAccount, client_ip, rate_limit
@@ -85,16 +78,6 @@ def set_knows(body: KnowsIn, me: AccountGuest, session: db.SessionDep) -> dict[s
 @router.post("/privacy")
 def set_privacy(body: PrivacyIn, me: AccountGuest, session: db.SessionDep) -> dict[str, Any]:
     return attendee_view.set_privacy(session, me, body.wants_anonymous)
-
-
-@router.post("/name-profile")
-def name_profile(body: NameProfileIn, me: AccountGuest, session: db.SessionDep) -> dict[str, Any]:
-    return attendee_view.set_name_profile(session, me, body.first_name, body.last_name)
-
-
-@router.post("/age-profile")
-def age_profile(body: AgeProfileIn, me: AccountGuest, session: db.SessionDep) -> dict[str, Any]:
-    return attendee_view.set_age_profile(session, me, body.birth_date, body.share_age)
 
 
 @router.get("/recommendations")

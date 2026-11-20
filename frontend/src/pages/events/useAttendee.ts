@@ -1,4 +1,4 @@
-// Everything the attendee can do, in one hook: select, confirm, release,
+// Everything the attendee can do, in one hook: hold, confirm, release,
 // RSVP, "people I know", privacy, plus the seat on hold, the seat being
 // looked at, and friendly notices when something goes wrong.
 // The data itself (loading, live updates) comes from useAttendeeData.
@@ -13,6 +13,7 @@ import type { ActiveHold } from "./attendeeRules";
 import { seatName } from "./format";
 import { asApiError, useAttendeeData } from "./useAttendeeData";
 import type { Fresh } from "./useAttendeeData";
+import { useCountdown } from "./useCountdown";
 
 export type Notice =
   | { kind: "conflict"; seatId: number; suggestion: SeatRecommendation | null }
@@ -29,7 +30,7 @@ export function useAttendee(attendeeApi: AttendeeApi) {
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [changingSeat, setChangingSeat] = useState(false);
-  const secondsLeft = 0;
+  const secondsLeft = useCountdown(hold?.expires_at ?? null);
 
   // Refs let the live callback read the newest hold without reconnecting.
   const holdRef = useRef(hold);
@@ -50,7 +51,27 @@ export function useAttendee(attendeeApi: AttendeeApi) {
 
   const { load, setLoad, recs, recsFailed, fetchAll, firstLoad } = useAttendeeData(attendeeApi, checkForLoss);
 
-  useEffect(() => { void firstLoad(); }, [firstLoad]);
+  useEffect(() => {
+    void firstLoad().then((view) => {
+      // A hold from before a page reload: the server sends its end time, so
+      // the countdown simply carries on.
+      if (view && view.me.held_seat_id !== null && view.me.held_until !== null) {
+        setHold({ seat_id: view.me.held_seat_id, expires_at: view.me.held_until });
+        setLookingAt(view.me.held_seat_id);
+      }
+    });
+  }, [firstLoad]);
+
+  // The countdown is only a display; when it reaches zero we stop pretending.
+  useEffect(() => {
+    if (!hold || secondsLeft > 0) return;
+    setHold(null);
+    setNotice({ kind: "expired", seatId: hold.seat_id });
+  }, [hold, secondsLeft]);
+
+  useEffect(() => {
+    if (hold && secondsLeft === 60) setMessage("One minute left to confirm your seat.");
+  }, [hold, secondsLeft]);
 
   const nameOf = (seatId: number): string =>
     load.status === "ready" ? seatName(seatId, load.view.map.seats, load.view.map.tables) : "this seat";
@@ -124,12 +145,15 @@ export function useAttendee(attendeeApi: AttendeeApi) {
         const fresh = await fetchAll();
         setMessage(knowsSavedMessage(ids, fresh.view.people));
       }),
-    hold: (seatId: number) => {
-      setHold({ seat_id: seatId, expires_at: "" });
-      setLookingAt(seatId);
-      setNotice(null);
-      setMessage(`${nameOf(seatId)} selected. Confirm to claim it; it remains available until then.`);
-    },
+    hold: (seatId: number) =>
+      run("hold", seatId, async () => {
+        const answer = await attendeeApi.hold(seatId);
+        setHold({ seat_id: seatId, expires_at: answer.expires_at });
+        setLookingAt(seatId);
+        setNotice(null);
+        setMessage(`${nameOf(seatId)} is held for you for 5 minutes. Confirm to keep it.`);
+        await fetchAll();
+      }),
     confirm: () => {
       const seatId = holdRef.current?.seat_id ?? null;
       if (seatId === null) return Promise.resolve();
@@ -148,18 +172,6 @@ export function useAttendee(attendeeApi: AttendeeApi) {
         await attendeeApi.release();
         setChangingSeat(false);
         setMessage("Your seat is free again. You can choose a new one at any time before the deadline.");
-        await fetchAll();
-      }),
-    saveNameProfile: (firstName: string, lastName: string) =>
-      run("name", null, async () => {
-        await attendeeApi.nameProfile(firstName, lastName);
-        setMessage("Your name was saved.");
-        await fetchAll();
-      }),
-    saveAgeProfile: (birthDate: string | null, shareAge: boolean) =>
-      run("age", null, async () => {
-        await attendeeApi.ageProfile(birthDate, shareAge);
-        setMessage("Your age preferences were saved.");
         await fetchAll();
       }),
     setAnonymous: (value: boolean) =>

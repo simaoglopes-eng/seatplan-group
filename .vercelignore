@@ -1,8 +1,0 @@
-# Keep local agent state and browser QA artifacts out of deployments.
-.claude-flow/
-.swarm/
-.snapshots/
-.playwright-cli/
-frontend/.playwright-cli/
-output/
-docs/

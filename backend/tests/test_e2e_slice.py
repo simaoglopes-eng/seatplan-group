@@ -82,11 +82,12 @@ def test_events_slice(client: TestClient, session: Session, links: dict[str, str
 
     # Hold, then confirm that seat.
     seat_id = best["seat_id"]
+    assert client.post(f"/api/a/{me_token}/hold", json={"seat_id": seat_id}).status_code == 200
     confirmed = client.post(f"/api/a/{me_token}/confirm", json={"seat_id": seat_id})
     assert confirmed.status_code == 200 and confirmed.json()["seat_id"] == seat_id
 
     # A second attendee cannot have the same seat.
-    clash = client.post(f"/api/a/{other_token}/confirm", json={"seat_id": seat_id})
+    clash = client.post(f"/api/a/{other_token}/hold", json={"seat_id": seat_id})
     assert clash.status_code == 409
     assert clash.json()["error"]["code"] == "seat_taken"
 

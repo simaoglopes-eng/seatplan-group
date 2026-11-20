@@ -33,6 +33,7 @@ def test_the_full_flow_through_an_account(client: TestClient, organiser: Organis
     assert client.get(f"{base}/people?q=bru", headers=headers).json()[0]["id"] == bruno
     assert client.get(f"{base}/recommendations", headers=headers).status_code == 200
     seat = setup.seats[0][0]
+    assert client.post(f"{base}/hold", headers=headers, json={"seat_id": seat}).status_code == 200
     confirmed = client.post(f"{base}/confirm", headers=headers, json={"seat_id": seat})
     assert confirmed.json() == {"seat_id": seat, "source": "self"}
     assert _seat_state(client.get(base, headers=headers).json(), seat) == "mine"
@@ -42,7 +43,7 @@ def test_the_full_flow_through_an_account(client: TestClient, organiser: Organis
     assert client.post(f"{base}/rsvp", headers=headers, json={"rsvp": "no"}).json() == {
         "rsvp": "no"
     }
-    refused = client.post(f"{base}/confirm", headers=headers, json={"seat_id": seat})
+    refused = client.post(f"{base}/hold", headers=headers, json={"seat_id": seat})
     assert refused.status_code == 409
 
 
@@ -78,6 +79,7 @@ def test_one_account_on_two_events(
     assert joined.json()["status"] == "joined"
     for setup, seat in ((first, first.seats[0][1]), (second, second.seats[1][2])):
         base = f"/api/guest/events/{setup.eid}"
+        client.post(f"{base}/hold", headers=headers, json={"seat_id": seat})
         assert (
             client.post(f"{base}/confirm", headers=headers, json={"seat_id": seat}).status_code
             == 200
@@ -100,6 +102,11 @@ def test_two_account_holders_race_for_one_seat(client: TestClient, organiser: Or
     def grab(headers: dict[str, str]) -> None:
         start.wait()
         base = f"/api/guest/events/{setup.eid}"
+        held = client.post(f"{base}/hold", headers=headers, json={"seat_id": seat})
+        if held.status_code != 200:
+            codes.append(held.status_code)
+            assert held.json()["error"]["code"] == "seat_taken"
+            return
         codes.append(
             client.post(f"{base}/confirm", headers=headers, json={"seat_id": seat}).status_code
         )

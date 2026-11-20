@@ -20,11 +20,8 @@ import { PeopleStep } from "./PeopleStep";
 import { SeatStep } from "./SeatStep";
 import { useAttendee } from "./useAttendee";
 import type { AttendeeState } from "./useAttendee";
-import { NameProfile } from "./NameProfile";
-import { AgeProfile } from "./AgeProfile";
 import { WelcomeStep } from "./WelcomeStep";
 import "./events.css";
-import "./attendee.css";
 
 const STEPS = ["Reply", "People you know", "Choose seat", "Done"];
 
@@ -70,11 +67,9 @@ export function AttendeeJourney({ state, top, doneEmailNote }: JourneyProps) {
   const view = state.load.view;
   const step = currentStep({ view, peopleDone, changingSeat: state.changingSeat });
   return (
-    <div className="ev-page ev-attendee">
+    <div className="ev-page">
       {top}
       <EventHeader event={view.event} venueName={view.venue.name} />
-      <NameProfile key={`${view.me.first_name ?? ""}-${view.me.last_name ?? ""}`} firstName={view.me.first_name ?? ""} lastName={view.me.last_name ?? ""} currentName={view.me.name} busy={state.busy === "name"} onSave={state.actions.saveNameProfile} />
-      <AgeProfile key={`${view.me.birth_date ?? ""}-${view.me.share_age ?? false}`} birthDate={view.me.birth_date ?? null} shareAge={view.me.share_age ?? false} busy={state.busy === "age"} onSave={state.actions.saveAgeProfile} />
       <Stepper steps={STEPS} current={stepIndex(step)} label="Your progress" />
       {/* One polite live region for the results of everything the person does on this page. */}
       <p className="visually-hidden" role="status" aria-live="polite">

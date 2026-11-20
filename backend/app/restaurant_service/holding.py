@@ -97,9 +97,7 @@ def check_hold_caps(
     table_ids, window = wanted
     for slot in range(*window):
         held = {hold.resource_id for hold in live if hold.slot_key == str(slot)}
-        # A one-table restaurant must still be bookable. For larger venues
-        # retain the existing half-of-tables cap, rounded down.
-        if len(held | set(table_ids)) > max(1, table_count // MAX_HELD_SHARE):
+        if len(held | set(table_ids)) * MAX_HELD_SHARE > table_count:
             raise ApiError(
                 429,
                 "rate_limited",

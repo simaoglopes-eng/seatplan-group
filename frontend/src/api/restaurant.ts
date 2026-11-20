@@ -10,7 +10,7 @@
 //   difference between server and screen is visible in this one file.
 // Field names are snake_case, exactly as the Python backend sends them.
 import { api } from "./client";
-import type { MapRoomSun, MapTable, MapZone, RoomLight, SeatMapPayload, SeatState } from "./types";
+import type { MapTable, MapZone, SeatMapPayload, SeatState } from "./types";
 
 // ---------- Shared small shapes ----------
 
@@ -36,8 +36,6 @@ export interface ServiceSummary {
 /** The restaurant as the booking page uses it. */
 export interface RestaurantInfo {
   public_id: string;
-  /** The public page's address; the booking page forwards there. Null or missing for a restaurant without one. */
-  slug?: string | null;
   name: string;
   timezone: string;
   max_party: number;
@@ -74,8 +72,6 @@ export interface PartyNeeds {
   party: number;
   needs_accessible: boolean;
   high_chairs: number;
-  /** Ambience wishes (sun, shade, view, quiet, away_from_wc). Sent only when there are some. */
-  prefs?: string[];
 }
 
 // ---------- Diner: map and hold ----------
@@ -98,22 +94,6 @@ export interface Recommendation {
 export interface DinerMap extends SeatMapPayload {
   tables: DinerTable[];
   recommended: Recommendation | null;
-  /** The stay, "13:00" to "14:30": where the light cursor starts and ends. */
-  stay_start?: ClockTime;
-  stay_end?: ClockTime;
-}
-
-/** GET /r/{vid}/ambience: only what the light cursor needs to redraw (spec 7.6). */
-export interface AmbienceAnswer {
-  date: IsoDate;
-  time: ClockTime;
-  stay_start: ClockTime;
-  stay_end: ClockTime;
-  /** False when the restaurant has no coordinates: then nothing is said about the sun. */
-  located: boolean;
-  sun: MapRoomSun | null;
-  rooms: { id: number | null; sun_patches: { x: number; y: number }[][]; night: boolean }[];
-  tables: { id: number; light: RoomLight; phrases: string[] }[];
 }
 
 export interface HeldTable {
@@ -125,82 +105,15 @@ export interface HeldTable {
 export interface HoldResponse {
   hold_id: string;
   table: HeldTable;
-  /** Every held table (more than one when the optimiser joined tables). */
-  table_ids: number[];
   expires_at: string; // ISO date-time, UTC
-}
-
-/** A chair the diner may pick (spec 9.4). `blocked` chairs are shown but cannot be chosen. */
-export interface TableSeats {
-  tables: { id: number; label: string; shape: string; x: number; y: number; w: number; h: number; rotation: number }[];
-  seats: { id: number; table_id: number; label: string; x: number; y: number; state: "free" | "blocked"; accessible: boolean; phrase: string | null }[];
-}
-
-/** The chair a booking was made with. `phrase` is only on the diner's own pages. */
-export interface BookingSeat {
-  id: number;
-  label: string;
-  table_id: number;
-  phrase?: string | null;
 }
 
 // ---------- Bookings ----------
 
-export type BookingStatus = "pending" | "confirmed" | "seated" | "finishing" | "completed" | "cancelled" | "no_show";
-
-/** What a deposit's payment is doing. `refund_due` is a refund the server is still retrying. */
-export type PaymentStatus = "pending" | "paid" | "expired" | "refunded" | "kept" | "refund_due";
-
-/** The deposit rule shown before booking (GET /r/{vid}/policy), in words and in cents. */
-export interface DepositTerms {
-  mode: "deposit";
-  per_person_cents: number;
-  total_cents: number;
-  cancel_hours: number;
-  cancel_deadline: string;
-  text: string;
-  accept_text: string;
-  /** "demo": no money moves. "test"/"live": Stripe. */
-  payments_mode: "demo" | "test" | "live";
-}
-
-/** The deposit of one booking, as the diner and the staff see it. No provider ids. */
-export interface PaymentSummary {
-  kind: string;
-  status: PaymentStatus;
-  amount_cents: number;
-  per_person_cents: number;
-  party: number;
-  refunded_cents: number;
-  cancel_hours: number;
-  cancel_deadline: string;
-  /** What cancelling now would do: give it back, keep it, or nothing (not paid). */
-  cancel_outcome: "none" | "refund" | "keep";
-  expires_at: string;
-  policy_text: string;
-  mode: string;
-  /** Only on the diner's manage page. */
-  payment_id?: string;
-}
-
-/** A booking that must be paid for: where to send the diner next. */
-export interface PaymentRequired {
-  payment_id: string;
-  /** A path on this site (demo payment page) or the full address of Stripe's page. */
-  next_url: string;
-  amount_cents: number;
-  expires_at: string;
-}
+export type BookingStatus = "confirmed" | "seated" | "finishing" | "completed" | "cancelled" | "no_show";
 
 /** One booking as the diner sees it (confirmation page and manage page). */
-export interface BookingPreferences {
-  occasion?: string | null;
-  dietary_requirements?: string;
-  allergies?: string;
-  arrival_time?: string | null;
-}
-
-export interface BookingView extends BookingPreferences {
+export interface BookingView {
   public_id: string;
   venue_public_id: string;
   venue_name: string;
@@ -210,19 +123,12 @@ export interface BookingView extends BookingPreferences {
   party_size: number;
   name: string;
   table_labels: string[];
-  /** The tables of the booking; the chair can be picked among their chairs. */
-  table_ids?: number[];
   status: BookingStatus;
   needs_accessible: boolean;
   high_chairs: number;
   notes: string;
-  /** The wishes this booking was made with (sunny table, a view...). */
-  prefs?: string[];
-  seat?: BookingSeat | null;
   /** The biggest party this restaurant can seat. Only GET /b/{token} sends it, so it can be null. */
   max_party: number | null;
-  /** The deposit, when the booking has one. */
-  payment?: PaymentSummary | null;
 }
 
 export interface ContactDetails {
@@ -230,9 +136,6 @@ export interface ContactDetails {
   email: string;
   phone: string;
   notes: string;
-  occasion?: string | null;
-  dietary_requirements?: string;
-  allergies?: string;
 }
 
 /** `manage_url` is a path such as "/b/<token>"; `email` is where the confirmation goes. */
@@ -240,8 +143,6 @@ export interface BookingConfirmation {
   booking: BookingView;
   manage_url: string;
   email: string;
-  /** Present when a deposit is due: the booking is "pending" until it is paid. */
-  payment?: PaymentRequired | null;
 }
 
 /** Body of POST /r/{vid}/waitlist, exactly as the backend reads it. */
@@ -285,7 +186,7 @@ export interface StaffTable extends MapTable {
 
 export type BookingSource = "diner" | "walk_in" | "staff";
 
-export interface StaffBooking extends BookingPreferences {
+export interface StaffBooking {
   id: string; // public_id
   name: string;
   party_size: number;
@@ -298,10 +199,6 @@ export interface StaffBooking extends BookingPreferences {
   needs_accessible: boolean;
   high_chairs: number;
   notes: string;
-  prefs?: string[];
-  seat?: BookingSeat | null;
-  /** The deposit state, when the booking has one. */
-  payment?: PaymentSummary | null;
 }
 
 /** The staff floor. `services` lets the time scrubber know where a service starts and ends. */
@@ -424,7 +321,7 @@ export interface ServicePlan {
   moves: PlanMove[];
   before: PlanScore;
   after: PlanScore;
-  /** Bookings that never move: the diner chose the table or asked for something, or the party is already seated. */
+  /** Bookings that never move: the diner chose the table, or the party is already seated. */
   fixed: number;
   movable: number;
 }
@@ -457,7 +354,6 @@ export interface ServerSchedule {
 /** GET /r/{vid}. */
 export interface ServerRestaurant {
   public_id: string;
-  slug?: string | null;
   name: string;
   timezone: string;
   max_party: number;
@@ -486,8 +382,6 @@ export interface ServerDinerTable extends Omit<DinerTable, "state"> {
 export interface ServerDinerMap extends Omit<SeatMapPayload, "tables"> {
   date: IsoDate;
   time: ClockTime;
-  stay_start?: ClockTime;
-  stay_end?: ClockTime;
   party: number;
   slot_status: SlotStatus;
   tables: ServerDinerTable[];
@@ -503,7 +397,7 @@ export interface ServerHold {
 }
 
 /** One booking (backend restaurant_service/booking_rows.describe). Never the email or the token. */
-export interface ServerBooking extends BookingPreferences {
+export interface ServerBooking {
   id: string;
   restaurant: { public_id: string; name: string };
   date: IsoDate;
@@ -513,9 +407,6 @@ export interface ServerBooking extends BookingPreferences {
   party_size: number;
   name: string;
   notes: string;
-  /** Ambience wishes the diner ticked (sun, view, ...). Absent on old answers. */
-  prefs?: string[];
-  seat?: BookingSeat | null;
   needs_accessible: boolean;
   high_chairs: number;
   status: BookingStatus;
@@ -527,8 +418,6 @@ export interface ServerBooking extends BookingPreferences {
   can_change?: boolean;
   /** Only on GET /b/{token}: the biggest party the restaurant can seat. */
   max_party?: number;
-  /** Only when the booking has a deposit. */
-  payment?: PaymentSummary;
 }
 
 /** POST /r/{vid}/bookings. The token appears only in this one answer. */
@@ -537,8 +426,6 @@ export interface ServerConfirmation {
   manage_token: string;
   manage_path: string;
   manage_link: string;
-  /** Only when a deposit is due. */
-  payment?: PaymentRequired & { required: true };
 }
 
 /** GET /staff/{vid}/floor. */
@@ -581,7 +468,6 @@ export interface ServerDashboard {
 export function toRestaurantInfo(server: ServerRestaurant): RestaurantInfo {
   return {
     public_id: server.public_id,
-    slug: server.slug ?? null,
     name: server.name,
     timezone: server.timezone,
     max_party: server.max_party,
@@ -605,17 +491,11 @@ export function toDinerMap(server: ServerDinerMap): DinerMap {
 
 export function toHold(server: ServerHold): HoldResponse {
   const table = { id: server.table.table_ids[0], label: server.table.labels.join(" + ") };
-  return { hold_id: server.hold_id, table, table_ids: server.table.table_ids, expires_at: server.expires_at };
-}
-
-function bookingPreferences(server: ServerBooking): BookingPreferences {
-  return Object.fromEntries(["occasion", "dietary_requirements", "allergies", "arrival_time"]
-    .filter(key => key in server).map(key => [key, server[key as keyof BookingPreferences]]));
+  return { hold_id: server.hold_id, table, expires_at: server.expires_at };
 }
 
 export function toBookingView(server: ServerBooking): BookingView {
   return {
-    ...bookingPreferences(server),
     public_id: server.id,
     venue_public_id: server.restaurant.public_id,
     venue_name: server.restaurant.name,
@@ -625,21 +505,16 @@ export function toBookingView(server: ServerBooking): BookingView {
     party_size: server.party_size,
     name: server.name,
     table_labels: server.tables,
-    table_ids: server.table_ids ?? [],
     status: server.status,
     needs_accessible: server.needs_accessible,
     high_chairs: server.high_chairs,
     notes: server.notes,
-    prefs: server.prefs ?? [],
-    seat: server.seat ?? null,
     max_party: server.max_party ?? null,
-    payment: server.payment ?? null,
   };
 }
 
 export function toStaffBooking(server: ServerBooking): StaffBooking {
   return {
-    ...bookingPreferences(server),
     id: server.id,
     name: server.name,
     party_size: server.party_size,
@@ -652,9 +527,6 @@ export function toStaffBooking(server: ServerBooking): StaffBooking {
     needs_accessible: server.needs_accessible,
     high_chairs: server.high_chairs,
     notes: server.notes,
-    prefs: server.prefs ?? [],
-    seat: server.seat ?? null,
-    payment: server.payment ?? null,
   };
 }
 
@@ -729,21 +601,13 @@ export async function getSlots(vid: string, date: IsoDate, party: number): Promi
 }
 
 export async function getDinerMap(vid: string, needs: PartyNeeds, time: ClockTime): Promise<DinerMap> {
-  const wishes: Record<string, string> = needs.prefs?.length ? { prefs: needs.prefs.join(",") } : {};
-  const params = query({ date: needs.date, time, party: needs.party, accessible: needs.needs_accessible, high_chairs: needs.high_chairs, ...wishes });
+  const params = query({ date: needs.date, time, party: needs.party, accessible: needs.needs_accessible, high_chairs: needs.high_chairs });
   return toDinerMap(await api.get<ServerDinerMap>(`${diner(vid)}/map?${params}`));
-}
-
-/** The light of every room and table. `moment` is the cursor; `time` stays the start of the stay. */
-export async function getAmbience(vid: string, needs: PartyNeeds, time: ClockTime, moment?: ClockTime): Promise<AmbienceAnswer> {
-  const params = query({ date: needs.date, time, party: needs.party, ...(moment ? { moment } : {}) });
-  return api.get<AmbienceAnswer>(`${diner(vid)}/ambience?${params}`);
 }
 
 /** Without `tableId` the optimiser picks the table ("Choose for me"). */
 export async function holdTable(vid: string, needs: PartyNeeds, time: ClockTime, tableId: number | null): Promise<HoldResponse> {
-  const { prefs, ...rest } = needs;
-  const body = { ...rest, ...(prefs?.length ? { prefs } : {}), time, ...(tableId === null ? {} : { table_id: tableId }) };
+  const body = { ...needs, time, ...(tableId === null ? {} : { table_id: tableId }) };
   return toHold(await api.post<ServerHold>(`${diner(vid)}/hold`, body));
 }
 
@@ -752,31 +616,11 @@ export async function releaseHold(vid: string, holdId: string): Promise<void> {
   await api.delete<null>(`${diner(vid)}/hold/${encodeURIComponent(holdId)}`);
 }
 
-/** The chairs of the held tables, with the sentence about each one's view. */
-export async function getTableSeats(vid: string, tableIds: number[]): Promise<TableSeats> {
-  return api.get<TableSeats>(`${diner(vid)}/seats?${query({ table_ids: tableIds.join(",") })}`);
-}
-
-export async function createBooking(
-  vid: string,
-  holdId: string,
-  contact: ContactDetails,
-  needs: PartyNeeds,
-  seatId: number | null = null,
-  acceptPolicy = false,
-): Promise<BookingConfirmation> {
+export async function createBooking(vid: string, holdId: string, contact: ContactDetails, needs: PartyNeeds): Promise<BookingConfirmation> {
   // The backend checks the party size against the hold, so it is sent again here.
-  const wishes = needs.prefs?.length ? { prefs: needs.prefs } : {};
-  const body = { hold_id: holdId, ...contact, party: needs.party, needs_accessible: needs.needs_accessible, high_chairs: needs.high_chairs, ...wishes, ...(seatId === null ? {} : { seat_id: seatId }), ...(acceptPolicy ? { accept_policy: true } : {}) };
-  // The personal session, when there is one: a booking made signed in, under the account's own address, is that account's at once.
-  const server = await api.post<ServerConfirmation>(`${diner(vid)}/bookings`, body, "guest");
-  return { booking: toBookingView(server.booking), manage_url: server.manage_path, email: contact.email, payment: server.payment ?? null };
-}
-
-/** The deposit this date, time and party would owe, or null when the restaurant asks for none. */
-export async function getDepositTerms(vid: string, date: IsoDate, time: ClockTime, party: number): Promise<DepositTerms | null> {
-  const answer = await api.get<DepositTerms | { mode: "none" }>(`${diner(vid)}/policy?${query({ date, time, party })}`);
-  return answer.mode === "deposit" ? answer : null;
+  const body = { hold_id: holdId, ...contact, party: needs.party, needs_accessible: needs.needs_accessible, high_chairs: needs.high_chairs };
+  const server = await api.post<ServerConfirmation>(`${diner(vid)}/bookings`, body);
+  return { booking: toBookingView(server.booking), manage_url: server.manage_path, email: contact.email };
 }
 
 export function joinWaitlist(vid: string, entry: WaitlistRequest): Promise<WaitlistAnswer> {
@@ -793,17 +637,8 @@ export async function changeBooking(token: string, change: BookingChange): Promi
   return toBookingView(await api.patch<ServerBooking>(manage(token), change));
 }
 
-/** Another chair at the booking's own tables, or none (null). Sent on its own, never with a time change. */
-export async function changeSeat(token: string, seatId: number | null): Promise<BookingView> {
-  return toBookingView(await api.patch<ServerBooking>(manage(token), { seat_id: seatId }));
-}
-
 export async function cancelBooking(token: string): Promise<BookingView> {
   return toBookingView(await api.delete<ServerBooking>(manage(token)));
-}
-
-export async function reportArrival(token: string, delayMinutes: number): Promise<BookingView> {
-  return toBookingView(await api.post<ServerBooking>(`${manage(token)}/arrival`, { delay_minutes: delayMinutes }));
 }
 
 // ---------- Staff calls (need a signed-in session) ----------
@@ -811,15 +646,6 @@ export async function reportArrival(token: string, delayMinutes: number): Promis
 export async function getFloor(vid: string, date: IsoDate, time: ClockTime): Promise<StaffFloor> {
   const server = await api.get<ServerFloor>(`${staff(vid)}/floor?${query({ date, time })}`);
   return { ...server, bookings: server.bookings.map(toStaffBooking) };
-}
-
-export interface CustomerHistory {
-  completed_visits: number;
-  returning_customer: boolean;
-  visits: { date: string; time: string; party_size: number; notes: string; occasion: string | null }[];
-}
-export function getCustomerHistory(vid: string, bookingId: string): Promise<CustomerHistory> {
-  return api.get(`${staff(vid)}/bookings/${encodeURIComponent(bookingId)}/customer`);
 }
 
 export async function seatWalkin(vid: string, walkin: WalkinRequest): Promise<StaffBooking> {

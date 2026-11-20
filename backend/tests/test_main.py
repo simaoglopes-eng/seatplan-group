@@ -6,7 +6,7 @@ import pytest
 from conftest import POSTGRES_SERVER
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import inspect
 from sqlalchemy.exc import OperationalError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -44,26 +44,6 @@ def test_migrate_creates_tables_and_can_run_twice(database_url: str) -> None:
     migrate.main()  # idempotent: the second run changes nothing and does not fail
     tables = set(inspect(db.get_engine()).get_table_names())
     assert {"plan_snapshots", "demo_links", "seat_assignments"} <= tables
-
-
-def test_initial_migration_uses_direct_url_and_refuses_a_nonempty_database(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    url = f"sqlite:///{tmp_path / 'empty-neon-analogue.sqlite'}"
-    monkeypatch.setenv("DATABASE_URL_UNPOOLED", url)
-
-    changes = migrate.apply_schema_migration(only_when_empty=True)
-    assert changes
-    engine = create_engine(url)
-    try:
-        assert {"organisers", "events", "seat_assignments"} <= set(
-            inspect(engine).get_table_names()
-        )
-    finally:
-        engine.dispose()
-
-    with pytest.raises(db.NonEmptyDatabaseError):
-        migrate.apply_schema_migration(only_when_empty=True)
 
 
 def _raise(status: int) -> None:

@@ -199,35 +199,3 @@
 .acc-danger {
   border-left: calc(var(--border-width) * 4) solid var(--c-danger);
 }
-
-/* Account and invitation forms share the event site's calm, readable surfaces. */
-.acc-page { width: 100%; gap: 1.25rem; padding-bottom: 2rem; }
-.acc-page .acc-title {
-  font-family: Georgia, serif;
-  font-size: clamp(2.15rem, 5vw, 3.4rem);
-  font-weight: 400;
-  letter-spacing: -.045em;
-  line-height: 1.08;
-  overflow-wrap: anywhere;
-}
-.acc-page .acc-lede { line-height: 1.65; }
-.acc-page .acc-form { gap: 1rem; padding: clamp(1.25rem, 4vw, 2rem); border-radius: 1rem; }
-.acc-page .acc-bar, .acc-page .acc-event { border-radius: .9rem; }
-.acc-page :focus-visible { outline: 3px solid var(--c-focus); outline-offset: 3px; }
-@media (max-width: 600px) {
-  .acc-page { margin-top: 1rem; gap: 1rem; }
-  .acc-page .acc-bar { align-items: flex-start; }
-  .acc-page .acc-bar-links { width: 100%; }
-  .acc-page .acc-event .btn { width: 100%; }
-}
-
-/* Account areas share the event experience's softer editorial surfaces. */
-.acc-page { gap: 1.35rem; }
-.acc-page .acc-title { font-size: clamp(2.5rem, 5vw, 3.75rem); }
-.acc-page .acc-form { padding: clamp(1.5rem, 4vw, 2.3rem); border-radius: 1.3rem; box-shadow: var(--shadow-md); }
-.acc-page .acc-bar { padding: .75rem 1.1rem; border-radius: 1rem; }
-.acc-page .acc-event { padding: 1.5rem; border-radius: 1.1rem; }
-.acc-page .acc-event h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 400; }
-.acc-page .acc-events { gap: .85rem; }
-.acc-page .acc-privacy { padding: 1rem; border-radius: .8rem; background: var(--c-surface-sunk); line-height: 1.6; }
-@media(max-width:600px) { .acc-page .acc-form { padding: 1.25rem; } }

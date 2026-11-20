@@ -17,12 +17,12 @@
   color-scheme: light dark;
 
   /* ---------- Colour: light theme ---------- */
-  --c-bg: #f6f2ea;            /* linen page */
+  --c-bg: #f4efe6;            /* linen page */
   --c-surface: #fbf8f2;       /* cards, panels */
   --c-surface-sunk: #ebe4d6;  /* the floor under a seat map */
   --c-surface-strong: #dcd2c0;/* tables drawn on the floor */
   --c-text: #1e2724;          /* ink */
-  --c-text-muted: #4b5450;    /* a step darker so it holds 4.5:1 on the brass pool and on clear glass */
+  --c-text-muted: #545d58;
   --c-border: #c9bfae;        /* hairlines, decorative only */
   --c-border-strong: #7d7466; /* input borders: 3:1 against surfaces */
 
@@ -44,38 +44,6 @@
 
   --c-focus: #b0450c;         /* rust focus ring, never used for state */
   --c-overlay: rgb(30 39 36 / 0.45);
-  --c-heading: #17201d;       /* display headings: a shade deeper than the ink */
-
-  /* ---------- Glass ---------- */
-  /* The page is a floor seen from above at dusk: two soft pools of lamp light,
-     and the floor-plan dot grid (the editor's grid) drawn only under the hero,
-     fading out before the content begins. Frosted panels float over it.
-     Each lamp colour is the strongest value its gradient ever paints, and
-     --c-bg-deep repeats the darkest of them, so scripts/contrast.mjs checks the
-     real worst case. --c-glass-floor is --glass-fill composited over that pool,
-     --c-glass-soft-floor the same for --glass-fill-soft (inputs, rows, chips). */
-  --c-lamp-warm: #efdcb2;     /* brass lamp, top right */
-  --c-lamp-cool: #dde8df;     /* sage, light through a window, left */
-  --c-bg-deep: #efdcb2;       /* the darkest pool (the brass one) */
-  --c-glass-floor: #f6ebd5;   /* --glass-fill over --c-bg-deep */
-  --c-glass-soft-floor: #f6ebd2; /* --glass-fill-soft over --c-bg-deep */
-  --glass-fill: rgb(251 248 242 / 0.55);
-  --glass-fill-strong: rgb(251 248 242 / 0.9);  /* header: content scrolls under it */
-  --glass-fill-soft: rgb(255 255 255 / 0.42);   /* rows inside a panel, never blurred again */
-  --glass-fill-hover: rgb(255 255 255 / 0.72);
-  --glass-edge: rgb(255 255 255 / 0.75);
-  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 1px rgb(255 255 255 / 0.35);
-  --glass-blur: blur(18px) saturate(160%);
-  --glass-blur-strong: blur(24px) saturate(180%);
-  --glass-blur-soft: blur(12px) saturate(150%); /* result cards: enough frost to hide the grid */
-  --grid-dot: rgb(30 39 36 / 0.11);
-  --grid-step: 28px;
-  --grid-height: 40rem;       /* the grid covers the top of the page only */
-  --grid-fade: linear-gradient(to bottom, #000 0, #000 10rem, transparent 34rem);
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .025 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --page-lamps:
-    radial-gradient(ellipse 58rem 32rem at 94% -4%, var(--c-lamp-warm) 0, transparent 100%),
-    radial-gradient(ellipse 46rem 30rem at -8% 70%, var(--c-lamp-cool) 0, transparent 100%);
 
   /* Seat states. Colour is a helper only: every state also has a shape,
      icon or pattern (see src/seatmap/glyphs.tsx). */
@@ -96,12 +64,10 @@
   --seat-highlight: #a06a12;
 
   /* ---------- Type ---------- */
-  /* Display: Gloock, a high-contrast serif by the Portuguese designer Duarte
-     Pinto (Google Fonts, one weight: 400, never faux-bolded). It reads like the
-     name painted on a Lisbon restaurant's glass door. Iowan, Charter and Georgia
-     stand in while it loads or offline.
+  /* Display: an old-style book serif that ships with macOS and iOS (Iowan),
+     with Charter, Cambria and Georgia as close fallbacks elsewhere.
      Body: a humanist sans that ships with the platform. No web-font download. */
-  --font-display: "Gloock", "Iowan Old Style", "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  --font-display: "Iowan Old Style", "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
   --font-body: "Avenir Next", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
@@ -153,16 +119,6 @@
   --shadow-sm: 0 1px 2px rgb(30 39 36 / 0.08);
   --shadow-md: 0 4px 14px rgb(30 39 36 / 0.1), 0 1px 3px rgb(30 39 36 / 0.08);
   --shadow-lg: 0 18px 48px rgb(30 39 36 / 0.18);
-  --shadow-glass:
-    0 1px 1px rgb(30 39 36 / 0.03),
-    0 16px 40px -20px rgb(30 39 36 / 0.18);
-  --shadow-glass-hover:
-    0 1px 2px rgb(30 39 36 / 0.06),
-    0 18px 40px -14px rgb(30 39 36 / 0.28),
-    0 40px 80px -30px rgb(31 90 72 / 0.34);
-  --shadow-press: 0 6px 16px -6px rgb(31 90 72 / 0.55);
-  /* A filled button is a pressed key: a lit top edge and a shaded bottom edge. */
-  --btn-sheen: inset 0 1px 0 rgb(255 255 255 / 0.24), inset 0 -1px 0 rgb(0 0 0 / 0.14);
 
   /* ---------- Layers ---------- */
   --z-base: 0;
@@ -215,21 +171,6 @@
 
     --c-focus: #f4a259;
     --c-overlay: rgb(0 0 0 / 0.6);
-    --c-heading: #f4efe4;
-
-    /* Glass at night: emerald and brass embers under smoked glass. */
-    --c-lamp-warm: #3a2c15;
-    --c-lamp-cool: #173a2d;
-    --c-bg-deep: #122a2a;
-    --c-glass-floor: #192b24;   /* the lightest composite: worst for light text */
-    --c-glass-soft-floor: #42341e; /* --glass-fill-soft over the brass ember */
-    --glass-fill: rgb(26 33 30 / 0.62);
-    --glass-fill-strong: rgb(18 23 21 / 0.9);
-    --glass-fill-soft: rgb(255 255 255 / 0.04);
-    --glass-fill-hover: rgb(255 255 255 / 0.08);
-    --glass-edge: rgb(255 255 255 / 0.1);
-    --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.09), inset 0 0 0 1px rgb(255 255 255 / 0.03);
-    --grid-dot: rgb(236 230 218 / 0.06);
 
     --seat-free-fill: #1a211e;
     --seat-free-stroke: #c9c2b4;
@@ -250,9 +191,6 @@
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-md: 0 4px 14px rgb(0 0 0 / 0.45);
     --shadow-lg: 0 18px 48px rgb(0 0 0 / 0.6);
-    --shadow-glass: 0 1px 1px rgb(0 0 0 / 0.3), 0 16px 40px -16px rgb(0 0 0 / 0.7);
-    --shadow-glass-hover: 0 1px 2px rgb(0 0 0 / 0.35), 0 22px 48px -16px rgb(0 0 0 / 0.8);
-    --shadow-press: 0 6px 16px -6px rgb(0 0 0 / 0.7);
   }
 }
 
@@ -266,27 +204,5 @@
     --dur-base: 0.01ms;
     --dur-slow: 0.01ms;
     --dur-pulse: 0.01ms;
-  }
-}
-
-/* ---------- Glass fallback ---------- */
-/* Without backdrop-filter, or when the system asks for less transparency, every
-   panel becomes the solid surface it imitates: same text contrast, no see-through. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root {
-    --glass-fill: var(--c-surface);
-    --glass-fill-strong: var(--c-surface);
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  :root {
-    --glass-fill: var(--c-surface);
-    --glass-fill-strong: var(--c-surface);
-    --glass-fill-soft: var(--c-surface);
-    --glass-fill-hover: var(--c-primary-soft);
-    --glass-blur: none;
-    --glass-blur-strong: none;
-    --glass-blur-soft: none;
   }
 }

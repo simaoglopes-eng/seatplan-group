@@ -9,7 +9,6 @@ What leaves this file about OTHER people is limited to privacy-filtered names
 and seat states.
 """
 
-from datetime import date
 from typing import Any
 
 from sqlalchemy import delete, select
@@ -17,7 +16,6 @@ from sqlalchemy.orm import Session
 
 from app.core import audit
 from app.core.errors import ApiError
-from app.core.parent_venue import shown_venue
 from app.core.privacy import display_name
 from app.events_service.access import (
     deadline_passed,
@@ -26,11 +24,10 @@ from app.events_service.access import (
     load_venue,
     require_before_deadline,
 )
-from app.events_service.age import age_at
 from app.events_service.problem import current_rows, event_guests
 from app.events_service.seating import drop_assignment, lock_event
-from app.events_service.seatmap import attendee_map, known_ids
-from app.models import Acquaintance, Event, Guest
+from app.events_service.seatmap import attendee_map, holder_key, known_ids
+from app.models import Acquaintance, Event, Guest, Hold, utc_now
 
 
 def event_of(session: Session, guest: Guest) -> Event:
@@ -76,6 +73,14 @@ def people(session: Session, event: Event, me: Guest, search: str = "") -> list[
 def me_dict(session: Session, event: Event, me: Guest) -> dict[str, Any]:
     """The attendee's own details. Only their own; never anyone else's."""
     row = current_rows(session, event).get(me.id)
+    # This guest's live hold, if any (one at a time, see seating.hold_seat).
+    hold = session.scalars(
+        select(Hold).where(
+            (Hold.scope == event_scope(event))
+            & (Hold.holder_key == holder_key(me))
+            & (Hold.expires_at > utc_now())
+        )
+    ).first()
     return {
         "id": me.id,
         "name": me.name,
@@ -83,14 +88,10 @@ def me_dict(session: Session, event: Event, me: Guest) -> dict[str, Any]:
         "rsvp": me.rsvp,
         "wants_anonymous": me.wants_anonymous,
         "needs_accessible": me.needs_accessible,
-        "first_name": me.first_name,
-        "last_name": me.last_name,
-        "birth_date": me.birth_date.isoformat() if me.birth_date else None,
-        "share_age": me.share_age,
         "seat_id": row.seat_id if row else None,
-        "held_seat_id": None,
+        "held_seat_id": hold.resource_id if hold else None,
         # The end of the hold, so the page can show the countdown again after a reload.
-        "held_until": None,
+        "held_until": hold.expires_at if hold else None,
         "knows": sorted(known_ids(session, me)),
     }
 
@@ -99,9 +100,8 @@ def page(session: Session, me: Guest) -> dict[str, Any]:
     """The whole attendee page (AttendeeView in the frontend)."""
     event = event_of(session, me)
     venue = load_venue(session, event)
-    shown = shown_venue(session, venue) or venue
     return {
-        "venue": {"name": shown.name},
+        "venue": {"name": venue.name},
         "event": event_summary(event),
         "me": me_dict(session, event, me),
         "map": attendee_map(session, event, venue, me),
@@ -173,40 +173,5 @@ def set_privacy(session: Session, me: Guest, wants_anonymous: bool) -> dict[str,
     session.commit()
     return {
         "wants_anonymous": me.wants_anonymous,
-        "shown_to_others_as": display_name(me.name, event.privacy_mode, me.wants_anonymous),
-    }
-
-
-def set_age_profile(
-    session: Session, me: Guest, born: date | None, share_age: bool
-) -> dict[str, Any]:
-    event = event_of(session, me)
-    today = date.today()
-    if born is not None and (born > today or age_at(born, today) > 120):
-        raise ApiError(422, "validation", "Enter a valid date of birth.")
-    if born is None and share_age:
-        raise ApiError(422, "validation", "Enter a date of birth before sharing your age.")
-    lock_event(session, event)
-    me.birth_date, me.share_age = born, share_age
-    _record(session, me, "guest.age_privacy", {"share_age": share_age})
-    session.commit()
-    return {"birth_date": born.isoformat() if born else None, "share_age": share_age}
-
-
-def set_name_profile(
-    session: Session, me: Guest, first_name: str, last_name: str
-) -> dict[str, Any]:
-    first_name, last_name = first_name.strip(), last_name.strip()
-    if not first_name or not last_name or len(first_name) + len(last_name) + 1 > 120:
-        raise ApiError(422, "validation", "Enter your first and last name.")
-    event = event_of(session, me)
-    lock_event(session, event)
-    me.first_name, me.last_name = first_name, last_name
-    me.name = f"{first_name} {last_name}"
-    _record(session, me, "guest.name", {})
-    session.commit()
-    return {
-        "first_name": first_name,
-        "last_name": last_name,
         "shown_to_others_as": display_name(me.name, event.privacy_mode, me.wants_anonymous),
     }

@@ -4,8 +4,7 @@ Run it from the backend/ folder. It creates a demo organiser and a demo staff
 user, then asks both verticals to seed their own demo data, and prints the
 links to open.
 
-Demo passwords come from DEMO_ORGANISER_PASSWORD, DEMO_STAFF_PASSWORD and
-DEMO_MEMBER_PASSWORD (Rita Rossi, the "one account" demo, seed/demo_member.py). Only
+Demo passwords come from DEMO_ORGANISER_PASSWORD and DEMO_STAFF_PASSWORD. Only
 on a local SQLite database with DEMO_MODE=1 do we fall back to the documented
 defaults below. Any Postgres database is a deployment that others can reach, so
 there the variables are required, demo mode or not.
@@ -21,22 +20,14 @@ from app.config import Settings, get_settings
 from app.core import audit
 from app.models import DemoLink, Organiser
 from app.security import hash_password
-from app.seed import (
-    demo_event_venues,
-    demo_events,
-    demo_member,
-    demo_restaurant,
-    demo_showcase,
-)
+from app.seed import demo_events, demo_restaurant
 
 DEMO_ORGANISER_EMAIL = "organiser@example.com"
 DEMO_STAFF_EMAIL = "staff@example.com"
-DEMO_MEMBER_EMAIL = demo_member.DEMO_MEMBER_EMAIL
 # Public on purpose: these only work locally (see demo_password below).
 DEFAULT_DEMO_PASSWORDS = {
     "DEMO_ORGANISER_PASSWORD": "demo-organiser-2026",
     "DEMO_STAFF_PASSWORD": "demo-staff-2026",
-    "DEMO_MEMBER_PASSWORD": "demo-member-2026",
 }
 
 
@@ -61,7 +52,7 @@ def _ensure_user(session: Session, email: str, name: str, role: str, password: s
 
 
 def ensure_demo_users(session: Session, settings: Settings) -> None:
-    """Make sure the demo organiser, staff and member work accounts exist. Does not commit."""
+    """Make sure the demo organiser and staff accounts exist. Does not commit."""
     _ensure_user(
         session,
         DEMO_ORGANISER_EMAIL,
@@ -76,13 +67,6 @@ def ensure_demo_users(session: Session, settings: Settings) -> None:
         "staff",
         demo_password("DEMO_STAFF_PASSWORD", settings),
     )
-    _ensure_user(
-        session,
-        DEMO_MEMBER_EMAIL,
-        demo_member.DEMO_MEMBER_NAME,
-        "organiser",
-        demo_password("DEMO_MEMBER_PASSWORD", settings),
-    )
     session.flush()
 
 
@@ -94,13 +78,7 @@ def seed_all(session: Session, settings: Settings, actor: str) -> dict[str, str]
     log (core/audit.py).
     """
     ensure_demo_users(session, settings)
-    links = {
-        **demo_events.seed(session),
-        **demo_restaurant.seed(session),
-        **demo_showcase.seed(session),
-        **demo_event_venues.seed(session),
-    }
-    demo_member.seed(session, demo_password("DEMO_MEMBER_PASSWORD", settings))
+    links = {**demo_events.seed(session), **demo_restaurant.seed(session)}
     session.execute(delete(DemoLink))
     session.add_all(DemoLink(name=name, path=path) for name, path in links.items())
     audit.record(

@@ -230,12 +230,7 @@ def _round_table(session: Session, venue: Venue, label: str, cx: float, cy: floa
 
 def _wedding_venue(session: Session, organiser: Organiser) -> Venue:
     venue = Venue(
-        organiser_id=organiser.id,
-        kind="event",
-        name="Quinta do Lago Azul",
-        width=1200,
-        height=800,
-        venue_type="quinta",
+        organiser_id=organiser.id, kind="event", name="Quinta do Lago Azul", width=1200, height=800
     )
     session.add(venue)
     session.flush()
@@ -308,7 +303,6 @@ def _wedding(session: Session, organiser: Organiser, rng: random.Random) -> dict
         ends_at=datetime(2027, 6, 13, 1, 0, tzinfo=UTC),
         privacy_mode="first_initial",
         change_deadline=datetime(2027, 6, 5, 23, 0, tzinfo=UTC),
-        event_type="wedding",
     )
     session.add(event)
     session.flush()
@@ -360,12 +354,7 @@ def _conference_venue(session: Session, organiser: Organiser) -> Venue:
     within their section (the aisles break the row).
     """
     venue = Venue(
-        organiser_id=organiser.id,
-        kind="event",
-        name="Nova Auditorium",
-        width=1300,
-        height=900,
-        venue_type="hall",
+        organiser_id=organiser.id, kind="event", name="Nova Auditorium", width=1300, height=900
     )
     session.add(venue)
     session.flush()
@@ -443,7 +432,6 @@ def _conference(session: Session, organiser: Organiser, rng: random.Random) -> d
         ends_at=datetime(2027, 3, 18, 18, 0, tzinfo=UTC),
         privacy_mode="full_name",
         change_deadline=datetime(2027, 3, 17, 12, 0, tzinfo=UTC),
-        event_type="conference",
     )
     session.add(event)
     session.flush()

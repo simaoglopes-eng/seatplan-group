@@ -17,13 +17,13 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from app import db
 from app.core.errors import ApiError, SeatTaken
 from app.core.text import PlainText
-from app.models import Booking, Venue, utc_now
-from app.restaurant_service import booking_payments, booking_rows, manage_flow, waitlist
+from app.models import Venue
+from app.restaurant_service import booking_rows, manage_flow, waitlist
 from app.restaurant_service.alternatives import conflict_response
 from app.restaurant_service.availability import MAX_ONLINE_PARTY, check_party_size, max_party
 from app.restaurant_service.changes import record_change
 from app.restaurant_service.clock import hhmm, is_past, venue_zone
-from app.restaurant_service.venue_access import load_published
+from app.restaurant_service.venue_access import load_restaurant
 from app.security import client_ip, rate_limit
 
 router = APIRouter(tags=["bookings"])
@@ -41,8 +41,6 @@ class ChangeIn(Strict):
     date: dt.date | None = None
     time: dt.time | None = None
     party_size: int | None = Field(default=None, ge=1, le=MAX_ONLINE_PARTY)
-    # The chair wished for (spec 9.4); null takes the wish away. Sent on its own.
-    seat_id: int | None = Field(default=None, ge=1)
 
 
 class WaitlistIn(Strict):
@@ -51,10 +49,6 @@ class WaitlistIn(Strict):
     party: int = Field(ge=1, le=MAX_ONLINE_PARTY)
     name: PlainText = Field(min_length=1, max_length=120)
     email: EmailStr
-
-
-class ArrivalIn(Strict):
-    delay_minutes: int = Field(ge=0, le=120, strict=True)
 
 
 def _limit(session: db.SessionDep, request: Request, name: str, limit: int) -> None:
@@ -68,24 +62,16 @@ def _venue_of(session: db.SessionDep, venue_id: int) -> Venue:
     return venue
 
 
-def _add_payment(session: db.SessionDep, booking: Booking, detail: dict[str, Any]) -> None:
-    """The deposit, when this booking has one: what was paid and what cancelling would do."""
-    payment = booking_payments.payment_of(session, booking.id)
-    if payment is not None:
-        detail["payment"] = booking_payments.summary(payment, booking)
-
-
 @router.get("/b/{manage_token}")
 def view_booking(manage_token: str, request: Request, session: db.SessionDep) -> dict[str, Any]:
     _limit(session, request, "manage", MANAGE_LIMIT)
     booking = booking_rows.load_by_token(session, manage_token)
     venue = _venue_of(session, booking.venue_id)
-    detail = booking_rows.describe(session, venue, booking, with_phrase=True)
+    detail = booking_rows.describe(session, venue, booking)
     local_start = booking.start_at.astimezone(venue_zone(venue)).time()
     detail["can_change"] = booking.status == "confirmed" and not is_past(
         venue, booking.date, local_start
     )
-    _add_payment(session, booking, detail)
     # The change form offers party sizes up to this, so every choice can fit.
     detail["max_party"] = max_party(session, venue)
     return detail
@@ -99,11 +85,6 @@ def change_booking(
     _limit(session, request, "manage", MANAGE_LIMIT)
     booking = booking_rows.load_by_token(session, manage_token)
     venue = _venue_of(session, booking.venue_id)
-    if "seat_id" in body.model_fields_set:
-        if body.date or body.time or body.party_size:
-            raise ApiError(422, "validation", "Change the seat on its own, not with the time.")
-        manage_flow.change_seat(session, venue, booking, body.seat_id)
-        return booking_rows.describe(session, venue, booking, with_phrase=True)
     if body.party_size is not None:
         check_party_size(session, venue, body.party_size)
     local_start = booking.start_at.astimezone(venue_zone(venue)).time()
@@ -129,9 +110,7 @@ def cancel_booking(manage_token: str, request: Request, session: db.SessionDep) 
         raise ApiError(409, "conflict", "This booking can no longer be cancelled.")
     manage_flow.cancel_booking(session, venue, booking, actor="diner", token=manage_token)
     session.commit()
-    detail = booking_rows.describe(session, venue, booking)
-    _add_payment(session, booking, detail)
-    return detail
+    return booking_rows.describe(session, venue, booking)
 
 
 @router.post("/r/{venue_public_id}/waitlist", status_code=201)
@@ -140,7 +119,7 @@ def join_waitlist(
 ) -> dict[str, Any]:
     """Join the waitlist. Answers with the place in line and an estimated wait."""
     _limit(session, request, "waitlist", WAITLIST_LIMIT)
-    venue = load_published(session, venue_public_id)
+    venue = load_restaurant(session, venue_public_id)
     check_party_size(session, venue, body.party)
     if is_past(venue, body.date, body.time):
         raise ApiError(422, "validation", "This time has already passed.")
@@ -165,38 +144,3 @@ def join_waitlist(
         "position": position,
         "estimated_wait_minutes": waitlist.estimate_wait(session, venue, body.party, position),
     }
-
-
-@router.post("/b/{manage_token}/arrival")
-def arrival_notice(
-    manage_token: str, body: ArrivalIn, request: Request, session: db.SessionDep
-) -> dict[str, Any]:
-    _limit(session, request, "manage", MANAGE_LIMIT)
-    booking = booking_rows.load_by_token(session, manage_token)
-    venue = _venue_of(session, booking.venue_id)
-    if booking.status != "confirmed" or booking.end_at <= utc_now():
-        raise ApiError(
-            409,
-            "conflict",
-            "An arrival update is only available for an upcoming confirmed booking.",
-        )
-    arrival = booking.start_at + dt.timedelta(minutes=body.delay_minutes)
-    if arrival >= booking.end_at:
-        raise ApiError(
-            422,
-            "validation",
-            "This arrival is after your table's service. Please contact the restaurant.",
-        )
-    booking.arrival_at = arrival
-    record_change(
-        session,
-        venue,
-        [booking.date],
-        actor="diner",
-        action="booking.arrival",
-        entity="booking",
-        entity_id=booking.public_id,
-        detail={"delay_minutes": body.delay_minutes},
-    )
-    session.commit()
-    return booking_rows.describe(session, venue, booking)

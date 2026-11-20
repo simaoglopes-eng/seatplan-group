@@ -16,14 +16,7 @@ from app.events_service import attendee_view
 from app.events_service.access import load_guest
 from app.events_service.attendee_view import event_of
 from app.events_service.recommend import recommendations
-from app.events_service.schemas import (
-    AgeProfileIn,
-    KnowsIn,
-    NameProfileIn,
-    PrivacyIn,
-    RsvpIn,
-    SeatChoice,
-)
+from app.events_service.schemas import KnowsIn, PrivacyIn, RsvpIn, SeatChoice
 from app.events_service.seating import (
     confirm_seat,
     hold_seat,
@@ -76,16 +69,6 @@ def set_knows(body: KnowsIn, me: Attendee, session: db.SessionDep) -> dict[str, 
 @router.post("/a/{token}/privacy")
 def set_privacy(body: PrivacyIn, me: Attendee, session: db.SessionDep) -> dict[str, Any]:
     return attendee_view.set_privacy(session, me, body.wants_anonymous)
-
-
-@router.post("/a/{token}/name-profile")
-def name_profile(body: NameProfileIn, me: Attendee, session: db.SessionDep) -> dict[str, Any]:
-    return attendee_view.set_name_profile(session, me, body.first_name, body.last_name)
-
-
-@router.post("/a/{token}/age-profile")
-def age_profile(body: AgeProfileIn, me: Attendee, session: db.SessionDep) -> dict[str, Any]:
-    return attendee_view.set_age_profile(session, me, body.birth_date, body.share_age)
 
 
 @router.get("/a/{token}/recommendations")

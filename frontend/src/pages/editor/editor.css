@@ -202,17 +202,3 @@
     max-height: none;
   }
 }
-
-/* Planning workspace */
-.editor { gap: 1.4rem; }
-.editor-head { padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--c-border); border-radius: 1.25rem; background: var(--c-primary-soft); }
-.editor-heading { min-width: 0; }
-.editor-heading > p:last-child { margin: .5rem 0 0; color: var(--c-text-muted); line-height: 1.5; }
-.editor-eyebrow { margin: 0 0 .5rem; color: var(--c-text-muted); font-size: .68rem; font-weight: 700; letter-spacing: .15em; }
-.editor-title { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3.25rem); font-weight: 400; line-height: 1.1; letter-spacing: -.04em; overflow-wrap: anywhere; }
-.editor-toolbar { padding-top: .5rem; }
-.editor-body { gap: 1rem; }
-.editor-canvas, .editor-panel { border-radius: 1.2rem; box-shadow: var(--shadow-sm); }
-.editor-panel { padding: 1.25rem; }
-.editor-panel .panel-title { font-family: var(--font-display); font-weight: 400; font-size: 1.6rem; }
-@media(max-width:600px) { .editor-head { padding: 1.25rem; } .editor-canvas { min-height: 22rem; height: 60vh; } .editor-toolbar-group { width: 100%; } }

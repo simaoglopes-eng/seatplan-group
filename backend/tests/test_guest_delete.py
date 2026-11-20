@@ -1,6 +1,5 @@
 """Deleting a guest account (GDPR): seats freed, rows erased or unlinked, emails wiped."""
 
-from datetime import date
 from typing import Any
 
 from fastapi.testclient import TestClient
@@ -78,12 +77,6 @@ def test_deleting_the_account(
 ) -> None:
     world = _setup(client, organiser, monkeypatch)
     invited_id = world["invited"].guests["Ana Silva"]
-    invited = session.get(Guest, invited_id)
-    invited.first_name = "Private"
-    invited.last_name = "Profile"
-    invited.birth_date = date(1995, 5, 1)
-    invited.share_age = True
-    session.commit()
     cancellations_before = len(outbox(session, "seat_cancelled"))
     deleted = client.post(
         "/api/guest/me/delete", headers=world["headers"], json={"password": GUEST_PASSWORD}
@@ -98,12 +91,6 @@ def test_deleting_the_account(
         "Ana Silva",
         EMAIL,
         None,
-    )
-    assert (kept.first_name, kept.last_name, kept.birth_date, kept.share_age) == (
-        None,
-        None,
-        None,
-        False,
     )
     assert kept.token_revoked_at is None  # the organiser's record stays
     assert len(outbox(session, "seat_cancelled")) == cancellations_before  # no email

@@ -12,7 +12,7 @@ import type { FormEvent, RefObject } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { register, verifyCode } from "../../api/guest";
 import type { CodeSent, RegisterIn } from "../../api/guest";
-import { AuthLayout, Badge, Button, Checkbox, Field, PageShell, useToast } from "../../design/components";
+import { Badge, Button, Checkbox, Field, PageShell, useToast } from "../../design/components";
 import { FieldError } from "../../design/components/Field";
 import { ProblemBox, asApiError, listErrors, looksLikeEmail, splitFieldMessage } from "../account/FormProblem";
 import type { FieldErrors } from "../account/FormProblem";
@@ -139,7 +139,6 @@ export default function RegisterPage() {
 
   return (
     <PageShell title="Create your account">
-      <AuthLayout eyebrow="FOR PARTICIPANTS" headline="Your invitation, all in one place." description="Confirm your email, choose a seat and keep your event details close at hand.">
       <div className="acc-page">
         <p className="visually-hidden" role="status" aria-live="polite">
           {status}
@@ -170,7 +169,6 @@ export default function RegisterPage() {
           />
         )}
       </div>
-      </AuthLayout>
     </PageShell>
   );
 }

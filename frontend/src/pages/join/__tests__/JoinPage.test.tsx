@@ -107,7 +107,7 @@ describe("JoinPage: the visitor's view of a shared link", () => {
     const heading = screen.getByRole("heading", { name: "Seat 1 at table T1 is free" });
     expect(document.activeElement).toBe(heading);
     const panel = heading.closest("section") as HTMLElement;
-    expect(within(panel).getByText(/Create an account to join/)).toBeTruthy();
+    expect(within(panel).getByText(/To choose it, create an account/)).toBeTruthy();
     expect(within(panel).getByRole("link", { name: "Create an account to choose a seat" })).toBeTruthy();
     expect(seatWrites(server)).toEqual([]);
     // The wish is kept for the seat page, nothing more.

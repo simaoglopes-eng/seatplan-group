@@ -4,15 +4,11 @@
 // stray click cannot mix the preview with real moves. Seats the preview
 // changes get a square outline (`marked`), not the attendee's round
 // "recommended" halo, and real names are written under the seats.
-// A room setup chosen in the Layout tab replaces the plan with that setup,
-// empty and look-only, until it is applied or dropped (LayoutPreviewMap).
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { DragEvent } from "react";
 import type { OrganiserEvent } from "../../api/events";
 import { Legend } from "../../design/components";
 import { SeatMap } from "../../seatmap/SeatMap";
-import type { LayoutPreset } from "../../api/events";
-import { previewToMap } from "./layoutModel";
 import { changedSeats, previewSeats, seatIdFromElement } from "./planPreview";
 import { pickSeat } from "./seatPick";
 import type { OrganiserState } from "./useOrganiser";
@@ -21,41 +17,20 @@ const NO_MARKS: ReadonlySet<number> = new Set();
 const CHANGED_LABEL = "changed by preview";
 
 export function OrganiserMap({ org, data }: { org: OrganiserState; data: OrganiserEvent }) {
-  if (org.layoutPreview) return <LayoutPreviewMap org={org} preset={org.layoutPreview} eventName={data.event.name} />;
-  return <PlanMap org={org} data={data} />;
-}
-
-const NOTHING_SELECTABLE = (): boolean => false;
-
-/** The chosen setup, drawn empty: nobody sits there until it is applied. */
-function LayoutPreviewMap({ org, preset, eventName }: { org: OrganiserState; preset: LayoutPreset; eventName: string }) {
-  const map = useMemo(() => previewToMap(preset.preview, preset.key), [preset]);
-  return (
-    <div className="ev-org-map" ref={org.mapRef}>
-      <p className="ev-preview-banner">
-        <strong>Preview of the {preset.label} setup, not applied.</strong> {preset.capacity} seats. Apply it or choose
-        another in the Layout tab.
-      </p>
-      <div className="ev-map">
-        <SeatMap label={`Preview of the ${preset.label} setup, ${eventName}`} zones={map.zones} tables={map.tables} seats={map.seats} selectable={NOTHING_SELECTABLE} />
-      </div>
-    </div>
-  );
-}
-
-function PlanMap({ org, data }: { org: OrganiserState; data: OrganiserEvent }) {
   const { map } = data;
   const preview = org.preview;
   const seats = useMemo(() => (preview ? previewSeats(map.seats, data.guests, preview) : map.seats), [preview, map.seats, data.guests]);
   const changed = useMemo(() => (preview ? changedSeats(preview, data.guests) : NO_MARKS), [preview, data.guests]);
   const blocked = useMemo(() => new Set(map.seats.filter((s) => s.state === "blocked").map((s) => s.id)), [map.seats]);
   const selectedSeat = data.guests.find((g) => g.id === org.selectedGuest)?.seat_id ?? null;
+  const [dropTargetId, setDropTargetId] = useState<number | null>(null);
 
   const selectable = (seatId: number): boolean => preview === null && !blocked.has(seatId);
   const onSelect = (seatId: number): void => void pickSeat(org, data, seatId, org.selectedGuest);
 
   const onDrop = (event: DragEvent<HTMLDivElement>): void => {
     event.preventDefault();
+    setDropTargetId(null);
     const guestId = Number(event.dataTransfer.getData("text/plain"));
     const seatId = seatIdFromElement(document.elementFromPoint(event.clientX, event.clientY));
     if (!guestId || seatId === null || !selectable(seatId)) {
@@ -66,6 +41,16 @@ function PlanMap({ org, data }: { org: OrganiserState; data: OrganiserEvent }) {
     void pickSeat(org, data, seatId, guestId);
   };
 
+  const onDragOver = (event: DragEvent<HTMLDivElement>): void => {
+    event.preventDefault();
+    const seatId = seatIdFromElement(document.elementFromPoint(event.clientX, event.clientY));
+    setDropTargetId(seatId);
+  };
+
+  const onDragLeave = (event: DragEvent<HTMLDivElement>): void => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropTargetId(null);
+  };
+
   return (
     <div className="ev-org-map" ref={org.mapRef}>
       {preview && (
@@ -74,7 +59,12 @@ function PlanMap({ org, data }: { org: OrganiserState; data: OrganiserEvent }) {
           the Optimise tab.
         </p>
       )}
-      <div className="ev-map" onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
+      <div className="ev-map" onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
+        {dropTargetId !== null && (
+          <p className="ev-drop-hint" role="status">
+            {selectable(dropTargetId) ? "Release to place the guest here." : "This seat is unavailable. Choose a free seat."}
+          </p>
+        )}
         <SeatMap
           label={`Seating plan, ${data.event.name}`}
           zones={map.zones}
@@ -82,6 +72,7 @@ function PlanMap({ org, data }: { org: OrganiserState; data: OrganiserEvent }) {
           seats={seats}
           selectable={selectable}
           selectedId={selectedSeat}
+          dropTargetId={dropTargetId}
           marked={changed}
           markedLabel={CHANGED_LABEL}
           showOccupants

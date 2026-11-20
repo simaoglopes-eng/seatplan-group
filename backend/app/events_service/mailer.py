@@ -20,7 +20,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.core.parent_venue import shown_venue, shown_venue_of
 from app.mail import templates
 from app.mail.invites import calendar_invite
 from app.mail.outbox import enqueue
@@ -68,7 +67,7 @@ def _seat_words(session: Session, seat: Seat | None) -> str:
 def _parts(
     session: Session, kind: str, guest: Guest, event: Event, seat: Seat, old: Seat | None, link: str
 ) -> templates.EmailParts:
-    venue = shown_venue_of(session, event.venue_id)  # the hall's name, not the setup copy's
+    venue = session.get(Venue, event.venue_id)
     when = templates.format_when(event.starts_at, venue.timezone if venue else "UTC")
     if kind == "seat_confirmed":
         table = session.get(VenueTable, seat.table_id)
@@ -96,7 +95,7 @@ def _parts(
 
 
 def _invite(session: Session, kind: str, guest: Guest, event: Event, seat: Seat) -> str:
-    venue = shown_venue_of(session, event.venue_id)
+    venue = session.get(Venue, event.venue_id)
     # One UID per guest per event: a change or a cancellation replaces the entry.
     return calendar_invite(
         kind="seat",
@@ -142,9 +141,8 @@ def _account_parts(
     session: Session, event: Event, guest: Guest, seat: Seat, old: Seat | None, moved: bool
 ) -> tuple[templates.EmailParts, str]:
     """The account seat email and its picture (Base64) for a confirmed or changed seat."""
-    venue = session.get(Venue, event.venue_id)  # the event's own room, for the picture
-    shown = shown_venue(session, venue)
-    if venue is None or shown is None:
+    venue = session.get(Venue, event.venue_id)
+    if venue is None:
         raise ValueError("The event has no venue.")
     table = session.get(VenueTable, seat.table_id)
     table_label = table.label if table else "-"
@@ -152,11 +150,11 @@ def _account_parts(
     facts = templates.AccountSeat(
         guest_name=guest.name,
         event_name=event.name,
-        when=templates.format_when(event.starts_at, shown.timezone),
-        venue_name=shown.name,
+        when=templates.format_when(event.starts_at, venue.timezone),
+        venue_name=venue.name,
         seat_label=seat.label,
         table_label=table_label,
-        deadline=templates.format_when(deadline, shown.timezone) if deadline else None,
+        deadline=templates.format_when(deadline, venue.timezone) if deadline else None,
         link=account_link(event),
         old_seat=_seat_words(session, old) if old is not None else None,
         moved_by_organiser=moved,

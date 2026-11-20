@@ -17,7 +17,6 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.core.privacy import display_name
-from app.events_service.age import age_at, visible_age
 from app.events_service.problem import active_guests, build_problem, current_rows, venue_seats
 from app.events_service.seatmap import holder_key, known_ids, live_holds
 from app.models import Event, Guest, Seat, VenueTable
@@ -43,36 +42,12 @@ def recommendations(session: Session, event: Event, me: Guest) -> list[dict[str,
     fixed = {g: s for g, s in others.items() if g in guest_ids}
     problem = build_problem(session, seats, guests, fixed, extra_blocked=held_by_others)
     problem = only_my_own_list(problem, me.id)
-    picks = recommend(problem, fixed, me.id, top=len(seats))
-    my_age = age_at(me.birth_date, event.starts_at.date())
-    if my_age is not None:
-        table_of = {seat.id: seat.table_id for seat in seats}
-        ages_by_table: dict[int, list[int]] = {}
-        for guest in guests:
-            row = rows.get(guest.id)
-            age = visible_age(guest, event)
-            if guest.id != me.id and row and age is not None and row.seat_id in table_of:
-                ages_by_table.setdefault(table_of[row.seat_id], []).append(age)
-
-        def difference(pick: Recommendation) -> float:
-            ages = ages_by_table.get(table_of[pick.seat_id], [])
-            return sum(abs(my_age - age) for age in ages) / len(ages) if ages else float("inf")
-
-        picks.sort(key=difference)
-    picks = picks[:TOP]
+    picks = recommend(problem, fixed, me.id, top=TOP)
     strong = problem.weights.friend_adjacent
-    result = []
-    for rank, pick in enumerate(picks, start=1):
-        item = {
-            **_describe(session, event, me, seats, pick),
-            "rank": rank,
-            "match": match(pick, strong),
-        }
-        if my_age is not None and difference(pick) <= 10:
-            item["reasons"].insert(0, "People with similar ages are seated at this table.")
-            item["match"] = "some"
-        result.append(item)
-    return result
+    return [
+        {**_describe(session, event, me, seats, pick), "rank": rank, "match": match(pick, strong)}
+        for rank, pick in enumerate(picks, start=1)
+    ]
 
 
 def only_my_own_list(problem: EventProblem, me_id: int) -> EventProblem:

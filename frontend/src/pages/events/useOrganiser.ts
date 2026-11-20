@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../../api/client";
 import * as eventsApi from "../../api/events";
-import type { LayoutPreset, Move, OrganiserEvent, Scenario, WhatIfResult } from "../../api/events";
+import type { Move, OrganiserEvent, Scenario, WhatIfResult } from "../../api/events";
 import { useLive } from "../../api/useLive";
 import { useToast } from "../../design/components";
 
@@ -26,8 +26,6 @@ export function useOrganiser(eventId: string) {
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState<Scenario | null>(null);
-  // A room setup from the Layout tab, drawn on the map instead of the plan until applied or dropped.
-  const [layoutPreview, setLayoutPreview] = useState<LayoutPreset | null>(null);
   const [selectedGuest, setSelectedGuest] = useState<number | null>(null);
   const [whatIfMode, setWhatIfMode] = useState(false);
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
@@ -87,19 +85,15 @@ export function useOrganiser(eventId: string) {
     busy,
     message,
     preview,
-    layoutPreview,
     selectedGuest,
     whatIfMode,
     pendingMove,
     links,
     mapRef,
     retry: firstLoad,
-    /** Fetches the event again without the loading state (the panel and its tab stay). */
-    reload,
     run,
     announce: setMessage,
     setPreview,
-    setLayoutPreview,
     setSelectedGuest,
     setWhatIfMode,
     setPendingMove,

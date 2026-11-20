@@ -92,16 +92,11 @@ Set these for **Production** in the Vercel project. Every name is read by
 | `DEMO_KEY` | A new secret | The only way to call `POST /api/demo/reset` (header `X-Demo-Key`). Empty means nobody can reset |
 | `DEMO_ORGANISER_PASSWORD` | A private password | The public local defaults never apply on Postgres |
 | `DEMO_STAFF_PASSWORD` | A private password | Same as above |
-| `DEMO_MEMBER_PASSWORD` | A private password | Same as above (Rita Rossi, the "one account" demo member) |
 | `CRON_SECRET` | A new secret | The email cron sends it as `X-Cron-Secret`. Empty rejects every call |
 | `EMAIL_PROVIDER` | `console` until step 6, then `resend` | `console` only writes one log line per email |
 | `RESEND_API_KEY` | Empty until step 6 | Needed only for `resend` |
 | `EMAIL_FROM` | Until step 6: `SeatPlan <noreply@example.com>`; after: an address on your verified domain | Resend sends only from a verified domain |
 | `EMAIL_ALLOWLIST` | Comma-separated addresses of the team's own test inboxes | Everyone else is stored as `skipped`, so a demo never mails a stranger |
-| `PAYMENT_PROVIDER` | Unset (or `demo`) until Stripe is set up, then `stripe` | `demo` is a pretend payment page: no money moves. Deposits only work for demo restaurants while it is on |
-| `STRIPE_SECRET_KEY` | Empty until Stripe is set up. `sk_test_...` first | Needed only for `stripe`. The app refuses to start without it, and with a live key on a non-https `PUBLIC_BASE_URL` |
-| `STRIPE_WEBHOOK_SECRET` | Empty until Stripe is set up. `whsec_...` | Needed only for `stripe`. Checks that webhooks really come from Stripe. Endpoint: `/api/payments/webhooks/stripe` |
-| `STRIPE_ACCOUNT_ID`, `STRIPE_API_VERSION` | Optional, usually empty | Charge a connected account instead of your own; pin Stripe's API version |
 
 Variables you set in Vercel apply to the next deployment, so redeploy after
 changing one.
@@ -125,29 +120,13 @@ Then, for the demo only:
 
 ```bash
 cd backend
-DATABASE_URL='PASTE THE NEON URL HERE' SECRET_KEY='PASTE THE SAME SECRET_KEY AS ON VERCEL' DEMO_MODE=1 DEMO_ORGANISER_PASSWORD='PASTE IT' DEMO_STAFF_PASSWORD='PASTE IT' DEMO_MEMBER_PASSWORD='PASTE IT' ../.venv/bin/python -m app.seed.run
+DATABASE_URL='PASTE THE NEON URL HERE' SECRET_KEY='PASTE THE SAME SECRET_KEY AS ON VERCEL' DEMO_MODE=1 DEMO_ORGANISER_PASSWORD='PASTE IT' DEMO_STAFF_PASSWORD='PASTE IT' ../.venv/bin/python -m app.seed.run
 ```
-
-Run it once, on an empty database. Run again on a seeded database, it adds a
-second copy of every demo venue and event (slugs end in `-2`), and the public
-`/events` page then shows each event twice. To bring new demo data to a demo
-database that is already seeded, call `POST /api/demo/reset` (header
-`X-Demo-Key`) instead: it wipes the demo data and seeds it once.
 
 It prints the demo links (`/e/...`, `/organiser/...`, `/r/...`, `/staff/...`).
 They contain secret tokens: share them only with the people who need them.
 Type the values in your own terminal; do not paste them into chats or files
 that get committed.
-
-### Upgrading an existing database (events parity, 2026-11-18)
-
-The events parity code reads `events.event_type`, `events.listed`,
-`venues.venue_type`, `organisers.session_version` and the new table
-`venue_members`. Run the same migrate command below **before** that code goes
-live: without `organisers.session_version` every work sign-in fails. On a demo
-database, also set `DEMO_MEMBER_PASSWORD` in Vercel first (`POST
-/api/demo/reset` fails without it on Postgres), then reset the demo instead of
-running `app.seed.run` again. Not tried on Postgres yet.
 
 ### Upgrading an existing database (guest accounts, 2026-11-10)
 

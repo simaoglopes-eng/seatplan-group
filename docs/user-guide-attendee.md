@@ -93,17 +93,3 @@ Some organisers post one link for everyone, for example
   invited you, they keep their own record of that invitation.
 - **"The organiser removed you from this event"** means just that: ask them
   if you think it is a mistake.
-
-## Finding an event yourself (Event booking)
-
-Some events are open to anyone. Open **Plan an event** in the header (the
-`/events` page), pick a kind of event (Wedding, Conference, Birthday, Gala
-dinner, Corporate dinner, Christening) and you see the upcoming ones at the
-halls and quintas on SeatPlan, with how many places are left. **Choose your
-seat** opens the event's room. To hold a seat you need a SeatPlan account:
-create one there with the code we email you, or sign in. Your events then
-appear in **My account**, under **Booking**.
-
-**Halls and quintas** (`/venues`) lists the venues themselves. Each venue has
-its own page with photos, the room's size, how to get there and its upcoming
-events.

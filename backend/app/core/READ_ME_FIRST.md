@@ -9,7 +9,7 @@ specific vertical (events or restaurants).
 
 | File | Function | What it guarantees |
 |---|---|---|
-| `errors.py` | `ApiError`, `SeatTaken`, `HoldExpired` | Raise these anywhere; `main.py` turns them into the uniform JSON error (with `details` only when given) |
+| `errors.py` | `ApiError`, `SeatTaken`, `HoldExpired` | Raise these anywhere; `main.py` turns them into the uniform JSON error |
 | `holds.py` | `take_hold(...)` | Five-minute hold, committed; expired holds on the same spot are removed in the same transaction; a clash raises `SeatTaken` |
 | `holds.py` | `confirm_hold(...)` | The holder still has a live hold; consumes it (no commit) or raises `HoldExpired` |
 | `holds.py` | `commit_or_seat_taken(session)` | Commits the assignment or table slots; a UNIQUE clash becomes `SeatTaken` |
@@ -20,8 +20,6 @@ specific vertical (events or restaurants).
 | `privacy.py` | `display_name(name, mode, wants_anonymous)` | `full_name` / `first_initial` ("Ana S.") / `anonymous` ("Guest") |
 | `layout.py` | `save_layout(...)` | Upsert by id, delete what is missing, rebuild `seat_neighbours` |
 | `neighbours.py` | `neighbour_pairs(table, seats)` | Pure geometry: who sits next to whom at one table |
-| `members.py` | `is_member`, `member_venue_ids`, the owner's team list (`add`, `remove`, `listing`) | A venue's team is a list of addresses (`venue_members`); a work account with one of them works at that venue as staff. Used by every venue and event loader. An event's setup copy has no team: `is_member` checks its parent's |
-| `parent_venue.py` | `shown_venue`, `shown_venue_of` | An event's own copy of a hall (`venues.parent_venue_id`) is named and shown as its parent; anything else as itself |
 | `text.py` | `PlainText` | Request text a person types (names, notes, labels) never holds a control character such as NUL, which Postgres refuses; such text gets a 422 instead of a 500 |
 
 ## Data flow: a person picks a seat

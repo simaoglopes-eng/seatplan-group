@@ -15,8 +15,6 @@ interface DialogProps {
   children: ReactNode;
   /** Buttons shown at the bottom, e.g. Cancel and Confirm. */
   actions?: ReactNode;
-  /** "side" slides a full-height drawer in from the right (filters); the default is the centred dialog. */
-  placement?: "center" | "side";
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -25,7 +23,7 @@ function focusableIn(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE));
 }
 
-export function Dialog({ open, title, onClose, children, actions, placement = "center" }: DialogProps) {
+export function Dialog({ open, title, onClose, children, actions }: DialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   // Latest-value ref, so the document listener always calls the newest onClose.
@@ -51,10 +49,10 @@ export function Dialog({ open, title, onClose, children, actions, placement = "c
   if (!open) return null;
 
   return (
-    <div className={`dialog-backdrop${placement === "side" ? " dialog-backdrop-side" : ""}`} onMouseDown={onClose}>
+    <div className="dialog-backdrop" onMouseDown={onClose}>
       <div
         ref={panelRef}
-        className={`dialog${placement === "side" ? " dialog-side" : ""}`}
+        className="dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

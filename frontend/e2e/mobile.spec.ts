@@ -14,7 +14,7 @@ test("on a phone, an attendee taps a seat on the map and confirms it", async ({ 
   await card.tap();
   await seatOnMap(page, seatName).tap();
 
-  const holdBar = page.getByRole("region", { name: "Selected seat" });
+  const holdBar = page.getByRole("region", { name: "Seat on hold" });
   await expect(holdBar).toContainText(seatName);
   await holdBar.getByRole("button", { name: "Confirm this seat" }).tap();
   await expectConfirmed(page, seatName);

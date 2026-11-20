@@ -449,7 +449,6 @@ interface ShareSettings {
   link: string | null;       // "/j/<token>", a path; the page adds its own origin.
                              // null when never switched on, or when SECRET_KEY changed
                              // since the link was made (needs_new_link is then true)
-  code: string | null;       // short code to enter on the home page; null when the link is unavailable
   needs_new_link: boolean;
   cap: number | null;        // most people who may join with the link; null = no cap
   joined: number;            // active guests with source "self_registered"
@@ -460,10 +459,6 @@ interface ShareSettings {
 ```
 
 - **`GET /events/{eid}/share`** -> `200 ShareSettings`.
-- **`GET /join-code/{code}`** -> `{ path: "/j/<token>" }`. Resolves the organiser's
-  short, case-insensitive code to the same event invitation page. Unknown,
-  disabled or replaced codes answer 404. The code changes when the organiser
-  regenerates the invitation; requests are rate limited by network address.
 - **`PATCH /events/{eid}/share`** body `{ enabled?: boolean; cap?: number | null }`
   (cap 1..5000) -> `200 ShareSettings`. Switching on an event whose
   `share_token_hash` is NULL computes it (version 0). Audit `share.update` with

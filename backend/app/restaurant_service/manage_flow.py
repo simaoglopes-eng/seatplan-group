@@ -13,18 +13,10 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import ApiError, SeatTaken
 from app.core.holds import commit_or_seat_taken
-from app.models import Booking, Venue, WaitlistEntry, utc_now
+from app.models import Booking, Venue, WaitlistEntry
 from app.optimiser.restaurant_assign import recommend_table
 from app.optimiser.restaurant_model import choice_problem
-from app.restaurant_service import (
-    booking_payments,
-    booking_rows,
-    chosen_seat,
-    emails,
-    occupancy,
-    schedule,
-    waitlist,
-)
+from app.restaurant_service import booking_rows, emails, occupancy, schedule, waitlist
 from app.restaurant_service.availability import PartyNeeds, check_covers_cap, table_specs_for
 from app.restaurant_service.changes import record_change
 from app.restaurant_service.clock import is_past, venue_zone
@@ -39,8 +31,7 @@ class Change:
 
 def needs_of(booking: Booking, party_size: int | None = None) -> PartyNeeds:
     size = booking.party_size if party_size is None else party_size
-    prefs = frozenset(booking.prefs or [])
-    return PartyNeeds(size, booking.needs_accessible, booking.high_chairs, prefs=prefs)
+    return PartyNeeds(size, booking.needs_accessible, booking.high_chairs)
 
 
 def check_changeable(venue: Venue, booking: Booking) -> None:
@@ -60,7 +51,7 @@ def _pick_tables(
         occupancy.booked_slots(session, venue, change.day, ignore_booking=booking.id),
         occupancy.held_slots(session, venue, change.day),
     )
-    specs = table_specs_for(session, venue, needs, change.day, change.at)
+    specs = table_specs_for(session, venue)
     current = occupancy.tables_of(session, booking)
     current_specs = [spec for spec in specs if spec.id in current]
     fits = bool(current) and choice_problem(current_specs, needs.spec(window)) is None
@@ -85,7 +76,6 @@ def change_booking(
     minutes = schedule.turn_minutes(session, venue, change.party_size)
     window = schedule.window_for(change.at, minutes)
     table_ids = _pick_tables(session, venue, booking, change, window)
-    chosen_seat.keep_seat_if_still_valid(session, booking, table_ids)
     old_day = booking.date
     emails.drop_reminder(session, booking)
     old_tables = booking_rows.release_slots(session, booking)
@@ -110,30 +100,6 @@ def change_booking(
     commit_or_seat_taken(session)
 
 
-def change_seat(session: Session, venue: Venue, booking: Booking, seat_id: int | None) -> None:
-    """Pick another chair at the booking's own tables, or none. The booking itself does not move.
-
-    The chair is only a wish (spec 9.4), so there is nothing to hold or to conflict with.
-    """
-    check_changeable(venue, booking)
-    if seat_id is not None:
-        chosen_seat.check_chosen_seat(
-            session, venue, seat_id, occupancy.tables_of(session, booking)
-        )
-    booking.chosen_seat_id = seat_id
-    record_change(
-        session,
-        venue,
-        [booking.date],
-        actor="diner",
-        action="booking.seat",
-        entity="booking",
-        entity_id=booking.public_id,
-        detail={"seat_id": seat_id},
-    )
-    session.commit()
-
-
 def cancel_booking(
     session: Session, venue: Venue, booking: Booking, actor: str, token: str = ""
 ) -> WaitlistEntry | None:
@@ -146,9 +112,6 @@ def cancel_booking(
     freed = booking_rows.release_slots(session, booking)
     booking.status = "cancelled"
     session.flush()  # the freed slots must be gone before we look for free tables
-    # A paid deposit is refunded or kept, per the terms the diner accepted. Only the
-    # diner's own cancellation can lose it: the restaurant cancelling refunds in full.
-    booking_payments.on_cancel(session, venue, booking, actor == "diner", utc_now())
     emails.queue_cancellation(session, venue, booking, token)
     offered = waitlist.offer_freed_tables(session, venue, booking, freed)
     record_change(

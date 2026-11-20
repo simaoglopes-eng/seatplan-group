@@ -75,9 +75,3 @@ def booking_window(venue: Venue, booking: Booking) -> tuple[int, int]:
 
 def hhmm(moment: time) -> str:
     return moment.strftime("%H:%M")
-
-
-def when_text(venue: Venue, moment: datetime) -> str:
-    """A moment in the restaurant's own time, in words: "Fri 20 Nov, 19:30"."""
-    local = moment.astimezone(venue_zone(venue))
-    return f"{local:%a} {local.day} {local:%b}, {local:%H:%M}"

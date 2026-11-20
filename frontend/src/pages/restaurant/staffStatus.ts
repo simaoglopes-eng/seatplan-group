@@ -21,11 +21,7 @@ export const FLOOR_LOOK: Record<FloorStatus, { glyph: SeatState; label: string; 
 
 export const FLOOR_ORDER: FloorStatus[] = ["free", "reserved", "seated", "finishing"];
 
-export const STAFF_KEY: KeyEntry[] = [
-  ...FLOOR_ORDER.map((status) => ({ state: FLOOR_LOOK[status].glyph, name: FLOOR_LOOK[status].label, hint: FLOOR_LOOK[status].hint })),
-  // A chair a guest asked for (spec 9.4): marked on its table, so the place is laid for them.
-  { state: "mine" as SeatState, name: "Chair asked for", hint: "The guest would like to sit here" },
-];
+export const STAFF_KEY: KeyEntry[] = FLOOR_ORDER.map((status) => ({ state: FLOOR_LOOK[status].glyph, name: FLOOR_LOOK[status].label, hint: FLOOR_LOOK[status].hint }));
 
 /** The floor tables with the glyph state the shared map understands. */
 export function staffMapTables(tables: StaffTable[]): MapTable[] {
@@ -63,16 +59,6 @@ export function upcomingArrivals(bookings: StaffBooking[]): StaffBooking[] {
   return bookings.filter((b) => b.status === "confirmed").sort((a, b) => toMinutes(a.time) - toMinutes(b.time));
 }
 
-export const BOOKING_LOOK: Record<BookingStatus, { label: string; tone: "neutral" | "warning" | "success" }> = {
-  pending: { label: "Waiting for deposit", tone: "warning" },
-  confirmed: { label: "Expected", tone: "warning" },
-  seated: { label: "Seated", tone: "success" },
-  finishing: { label: "Finishing", tone: "success" },
-  completed: { label: "Completed", tone: "neutral" },
-  cancelled: { label: "Cancelled", tone: "neutral" },
-  no_show: { label: "No-show", tone: "neutral" },
-};
-
 export function bookingOnTable(floor: StaffFloor, table: StaffTable): StaffBooking | null {
   return floor.bookings.find((b) => b.id === table.booking_id) ?? null;
 }
@@ -82,7 +68,7 @@ export function nextActions(status: BookingStatus): { status: BookingStatus; lab
   switch (status) {
     case "confirmed":
       return [
-        { status: "seated", label: "Seat guests" },
+        { status: "seated", label: "Seat now" },
         { status: "no_show", label: "No-show" },
       ];
     case "seated":

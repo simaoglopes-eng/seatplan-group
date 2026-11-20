@@ -48,8 +48,7 @@ def free_tables(
         occupancy.booked_slots(session, venue, day), occupancy.held_slots(session, venue, day)
     )
     labels = {table.id: table.label for table in occupancy.venue_tables(session, venue)}
-    specs = table_specs_for(session, venue, needs, day, at)
-    choices = recommend_table(specs, busy, needs.spec(window), HOW_MANY)
+    choices = recommend_table(table_specs_for(session, venue), busy, needs.spec(window), HOW_MANY)
     return [
         {
             "table_ids": list(choice.table_ids),

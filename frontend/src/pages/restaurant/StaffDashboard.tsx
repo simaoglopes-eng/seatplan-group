@@ -3,31 +3,38 @@
 // labelled as one: SeatPlan never overbooks by itself; a person decides.
 import { getDashboard } from "../../api/restaurant";
 import type { Dashboard, ServiceStats } from "../../api/restaurant";
-import { Badge, Button, EmptyState, ErrorState, Skeleton } from "../../design/components";
+import { Badge, EmptyState, ErrorState, Skeleton } from "../../design/components";
 import { errorMessage, formatDate, needsSignIn, percent } from "./format";
 import { SignInPrompt } from "./SignInPrompt";
 import { useLoad } from "./useLoad";
 
-export function StaffDashboard({ venueId, date, onOpenSchedule }: { venueId: string; date: string; onOpenSchedule?: () => void }) {
+export function StaffDashboard({ venueId, date }: { venueId: string; date: string }) {
   const { state, reload } = useLoad(() => getDashboard(venueId, date), date);
   if (state.status === "loading") return <Skeleton lines={6} label="Loading the numbers" />;
   if (state.status === "error") {
     if (needsSignIn(state.error)) return <SignInPrompt venueId={venueId} />;
     return <ErrorState title="We could not load the numbers" message={errorMessage(state.error)} onRetry={() => reload()} />;
   }
-  return <DashboardView data={state.data} onOpenSchedule={onOpenSchedule} />;
+  return <DashboardView data={state.data} />;
 }
 
-function DashboardView({ data, onOpenSchedule }: { data: Dashboard; onOpenSchedule?: () => void }) {
+function DashboardView({ data }: { data: Dashboard }) {
+  if (data.covers_booked === 0 && data.services.length === 0) {
+    return (
+      <EmptyState title="No bookings yet">
+        <p>Nothing is booked for {formatDate(data.date)}. Numbers appear here as soon as the first booking comes in.</p>
+      </EmptyState>
+    );
+  }
   return (
     <div className="st-dashboard">
-      <h2 className="rb-service-title">On this date · {formatDate(data.date)}</h2>
+      <h2 className="rb-service-title">{formatDate(data.date)}</h2>
       <ul className="st-stats">
         <Stat label="Covers booked" value={String(data.covers_booked)} />
         {/* Guests who really sat down (seated, finishing or completed), next to the promise above. */}
         <Stat label="Covers seated" value={String(data.covers_seated)} />
         <Stat label="Covers cancelled" value={String(data.covers_cancelled)} />
-        <Stat label="Historical no-show rate" value={data.no_show_sample > 0 ? percent(data.no_show_rate) : "No data"} note={`From the last ${data.no_show_sample} bookings`} />
+        <Stat label="No-show rate" value={percent(data.no_show_rate)} note={`From the last ${data.no_show_sample} bookings`} />
       </ul>
       <section className="rb-card">
         <h3 className="rb-service-title">Utilisation by service</h3>
@@ -37,9 +44,8 @@ function DashboardView({ data, onOpenSchedule }: { data: Dashboard; onOpenSchedu
             <UtilisationBar key={service.name} service={service} />
           ))}
         </ul>
-        {data.services.length === 0 && <EmptyState title="No service data for this date"><p>Choose another day to see service utilisation.</p></EmptyState>}
       </section>
-      <OverbookingCard data={data} onOpenSchedule={onOpenSchedule} />
+      <OverbookingCard data={data} />
     </div>
   );
 }
@@ -68,7 +74,7 @@ function UtilisationBar({ service }: { service: ServiceStats }) {
   );
 }
 
-function OverbookingCard({ data, onOpenSchedule }: { data: Dashboard; onOpenSchedule?: () => void }) {
+function OverbookingCard({ data }: { data: Dashboard }) {
   const suggestion = data.overbooking;
   return (
     <section className="rb-card st-suggestion">
@@ -80,13 +86,12 @@ function OverbookingCard({ data, onOpenSchedule }: { data: Dashboard; onOpenSche
           <p className="st-answer-best">
             You could accept about <strong>{suggestion.extra_covers} extra covers</strong> for this day.
           </p>
+          <p>{suggestion.explanation}</p>
         </>
       ) : (
         <p>{suggestion?.explanation ?? "Not enough history yet to suggest overbooking. Keep every table bookable as normal."}</p>
       )}
-      {suggestion && <details><summary>How this suggestion is calculated</summary><p>{suggestion.explanation}</p><p>Historical sample: {data.no_show_sample} bookings. This is an estimate, not today's observed occupancy.</p></details>}
       <p className="rb-muted st-small">SeatPlan never overbooks by itself. If you follow this, raise the covers per slot in the Schedule tab.</p>
-      {onOpenSchedule && <Button variant="secondary" onClick={onOpenSchedule}>Review weekly schedule</Button>}
     </section>
   );
 }

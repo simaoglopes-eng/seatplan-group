@@ -197,15 +197,10 @@ def _record_failure(row: EmailOutbox, error: Exception, now: datetime) -> str:
 
 
 def _process_one(
-    row: EmailOutbox,
-    provider: Provider,
-    allowlist: tuple[str, ...],
-    now: datetime,
-    *,
-    allow_all: bool = False,
+    row: EmailOutbox, provider: Provider, allowlist: tuple[str, ...], now: datetime
 ) -> str:
     """Send one claimed row and return its new status."""
-    if not allow_all and row.to_email.strip().lower() not in allowlist:
+    if row.to_email.strip().lower() not in allowlist:
         # Demo-safety rule: only addresses on EMAIL_ALLOWLIST ever get email.
         row.status = "skipped"
         row.last_error = "Not on EMAIL_ALLOWLIST, so not sent."
@@ -251,9 +246,7 @@ def process_due(
         row = session.get(EmailOutbox, row_id, populate_existing=True)
         if row is None:
             continue
-        status = _process_one(
-            row, provider, allowlist, now, allow_all=get_settings().email_allow_all
-        )
+        status = _process_one(row, provider, allowlist, now)
         session.commit()
         _count(report, status)
     return report
@@ -276,13 +269,7 @@ def send_now(session: Session, provider: Provider, idempotency_key: str, now: da
         row = session.get(EmailOutbox, row_id, populate_existing=True)
         if row is None:
             return "not_claimed"
-        status = _process_one(
-            row,
-            provider,
-            get_settings().email_allowlist,
-            now,
-            allow_all=get_settings().email_allow_all,
-        )
+        status = _process_one(row, provider, get_settings().email_allowlist, now)
         session.commit()
         return status
     except Exception:  # any error: the person's request must still succeed

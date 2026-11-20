@@ -44,17 +44,6 @@ def visitor_page(token: str, request: Request, session: db.SessionDep) -> dict[s
     return share.visitor_view(session, share.load_shared_event(session, token))
 
 
-@router.get("/join-code/{code}")
-def resolve_join_code(code: str, request: Request, session: db.SessionDep) -> dict[str, str]:
-    """Resolve an organiser's short invitation code to the existing event link."""
-    rate_limit(session, f"share-code:{client_ip(request)}", VIEWS_PER_MINUTE, 60)
-    event = share.load_shared_code(session, code)
-    path = share.share_path(event)
-    if path is None:  # The link was invalidated after SECRET_KEY changed.
-        raise ApiError(404, "not_found", share.LINK_NOT_VALID)
-    return {"path": path}
-
-
 @router.post("/j/{token}/register", status_code=202)
 def register(
     token: str, body: RegisterIn, request: Request, session: db.SessionDep
@@ -69,7 +58,6 @@ def register(
     if not body.name.strip():
         raise ApiError(422, "validation", "name: Type your name.")
     accounts.check_new_password(body.password, email)
-    accounts.require_signup_mail(email)
     # The link and the deadline first (reads only), so requests with a wrong
     # link cannot use up anyone's code limits.
     event = share.load_shared_event(session, token)

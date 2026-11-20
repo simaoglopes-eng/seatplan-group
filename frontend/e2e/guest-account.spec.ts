@@ -94,7 +94,7 @@ test.describe.serial("a visitor with the shared link", () => {
     await expect(page.getByText(`Signed in as ${VISITOR.email}`)).toBeVisible();
   });
 
-  test("chooses and confirms a seat", async ({ page }) => {
+  test("chooses, holds and confirms a seat", async ({ page }) => {
     // A new page has no guest session yet: signing in is part of this step.
     await page.goto(`/my/${eventId}`);
     await page.waitForURL((url) => url.pathname === "/my/sign-in");
@@ -107,12 +107,12 @@ test.describe.serial("a visitor with the shared link", () => {
     const recommended = await firstRecommendation(page);
     seatName = recommended.seatName;
     await recommended.card.click();
-    await page.getByRole("button", { name: "Select this seat" }).click();
-    const holdBar = page.getByRole("region", { name: "Selected seat" });
+    await page.getByRole("button", { name: "Hold this seat for 5 minutes" }).click();
+    const holdBar = page.getByRole("region", { name: "Seat on hold" });
     await expect(holdBar).toContainText(seatName);
     await holdBar.getByRole("button", { name: "Confirm this seat" }).click();
     await expectConfirmed(page, seatName);
-    await expect(page.getByText(/Your seat is confirmed/)).toBeVisible();
+    await expect(page.getByText(new RegExp(`picture of the room to ${VISITOR.email.replace(".", "\\.")}`))).toBeVisible();
   });
 
   test("the outbox holds one seat email for them, with the picture inline", async ({ request }) => {
@@ -169,7 +169,7 @@ test.describe.serial("a visitor with the shared link", () => {
     });
     expect(verified.status()).toBe(201);
     const { token } = (await verified.json()) as { token: string };
-    const hold = await request.post(`/api/guest/events/${eventId}/confirm`, {
+    const hold = await request.post(`/api/guest/events/${eventId}/hold`, {
       data: { seat_id: seatId },
       headers: { Authorization: `Bearer ${token}` },
     });

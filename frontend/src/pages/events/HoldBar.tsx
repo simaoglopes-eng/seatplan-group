@@ -2,6 +2,7 @@
 // and the one button that finishes the job. It sticks to the bottom of a
 // phone screen so the Confirm button is always under the thumb.
 import { Button } from "../../design/components";
+import { formatCountdown } from "./format";
 
 interface HoldBarProps {
   seatLabel: string;
@@ -10,13 +11,21 @@ interface HoldBarProps {
   onConfirm: () => void;
 }
 
-export function HoldBar({ seatLabel, busy, onConfirm }: HoldBarProps) {
+// Under one minute the timer gets a word as well as a colour ("hurry").
+const LOW_SECONDS = 60;
+
+export function HoldBar({ seatLabel, secondsLeft, busy, onConfirm }: HoldBarProps) {
+  const low = secondsLeft <= LOW_SECONDS;
   return (
-    <div className="ev-holdbar" role="region" aria-label="Selected seat">
+    <div className="ev-holdbar" role="region" aria-label="Seat on hold">
       <div className="ev-holdbar-text">
-        <span className="ev-holdbar-label">Selected seat</span>
+        <span className="ev-holdbar-label">Held for you</span>
         <strong>{seatLabel}</strong>
-        <span>Available until someone confirms it.</span>
+        <span className={`ev-timer tabular ${low ? "ev-timer-low" : ""}`.trim()}>
+          {/* The visible clock is not live: reading it out every second would drown everything else. */}
+          <span aria-hidden="true">{formatCountdown(secondsLeft)}</span>
+          <span className="visually-hidden">{Math.ceil(secondsLeft / 60)} minutes</span> left{low ? ", hurry" : ""}
+        </span>
       </div>
       <Button busy={busy} onClick={onConfirm}>
         Confirm this seat

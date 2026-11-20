@@ -22,14 +22,12 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.core import audit
 from app.core.errors import ApiError
-from app.core.parent_venue import shown_venue
 from app.core.privacy import display_name
 from app.events_service.access import (
     MAX_TOKEN_LENGTH,
     deadline_passed,
     load_venue,
 )
-from app.events_service.age import visible_age
 from app.events_service.attendee_view import event_summary
 from app.events_service.problem import active_guests, current_rows, event_guests, venue_seats
 from app.events_service.seating import lock_event
@@ -46,8 +44,6 @@ REMOVED = "The organiser removed you from this event. Ask them if you think this
 # New guest rows through one event's link (docs/guest-accounts.md, 8.1).
 JOINS_PER_HOUR = 30
 MEMBER_STATUSES = ("joined", "linked", "already_member")
-_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"  # Crockford base32: no I, L, O or U.
-_CODE_SIGNATURE_LENGTH = 10  # 50 bits of HMAC output.
 
 # ---------------------------------------------------------------- the token
 
@@ -72,53 +68,6 @@ def share_path(event: Event) -> str | None:
     if event.share_token_hash is None or needs_new_link(event):
         return None
     return f"/j/{derive_token(event)}"
-
-
-def _encode_event_id(event_id: int) -> str:
-    """Encode the internal id compactly so code lookup needs one indexed DB read."""
-    value = event_id
-    encoded = ""
-    while value:
-        value, digit = divmod(value, len(_CODE_ALPHABET))
-        encoded = _CODE_ALPHABET[digit] + encoded
-    return encoded or "0"
-
-
-def derive_join_code(event: Event) -> str:
-    """A readable, signed invitation code that changes when the link is regenerated."""
-    key = get_settings().secret_key.encode("utf-8")
-    message = f"share-code:{event.public_id}:{event.share_version}".encode()
-    digest = hmac.new(key, message, hashlib.sha256).digest()
-    number = int.from_bytes(digest, "big")
-    signature = ""
-    for _ in range(_CODE_SIGNATURE_LENGTH):
-        number, digit = divmod(number, len(_CODE_ALPHABET))
-        signature = _CODE_ALPHABET[digit] + signature
-    return f"{_encode_event_id(event.id)}-{signature}"
-
-
-def load_shared_code(session: Session, code: str) -> Event:
-    """Resolve a short join code without revealing whether another event exists."""
-    if not code or len(code) > 32:
-        raise ApiError(404, "not_found", LINK_NOT_VALID)
-    normalized = code.strip().upper()
-    parts = normalized.split("-")
-    if len(parts) != 2 or not parts[0] or len(parts[1]) != _CODE_SIGNATURE_LENGTH:
-        raise ApiError(404, "not_found", LINK_NOT_VALID)
-    try:
-        event_id = 0
-        for char in parts[0]:
-            event_id = event_id * len(_CODE_ALPHABET) + _CODE_ALPHABET.index(char)
-        if event_id <= 0:
-            raise ValueError
-    except ValueError:
-        raise ApiError(404, "not_found", LINK_NOT_VALID) from None
-    event = session.get(Event, event_id)
-    if event is None or not tokens_match(normalized, derive_join_code(event)):
-        raise ApiError(404, "not_found", LINK_NOT_VALID)
-    if not event.share_enabled or share_path(event) is None:
-        raise ApiError(404, "not_found", LINK_NOT_VALID)
-    return event
 
 
 def switch_on(event: Event) -> None:
@@ -236,11 +185,9 @@ def join_state(session: Session, event: Event) -> dict[str, Any]:
 
 def share_settings(session: Session, event: Event) -> dict[str, Any]:
     """ShareSettings for the organiser (docs/guest-accounts.md, 6.3)."""
-    link = share_path(event)
     return {
         "enabled": event.share_enabled,
-        "link": link,
-        "code": derive_join_code(event) if link is not None and event.share_enabled else None,
+        "link": share_path(event),
         "needs_new_link": needs_new_link(event),
         "cap": event.share_cap,
         **place_counts(session, event),
@@ -271,9 +218,6 @@ def visitor_map(session: Session, event: Event, venue: Venue) -> dict[str, Any]:
         occupant = None
         if owner is not None:
             occupant = display_name(owner.name, event.privacy_mode, owner.wants_anonymous)
-            age = visible_age(owner, event)
-            if age is not None:
-                occupant = f"{occupant}, {age}"
         state = _visitor_state(seat, owner is not None, seat.id in holds)
         seats.append({**seat_base(seat), "state": state, "occupant": occupant})
     return {**map_frame(session, venue), "seats": seats}
@@ -281,10 +225,9 @@ def visitor_map(session: Session, event: Event, venue: Venue) -> dict[str, Any]:
 
 def visitor_view(session: Session, event: Event) -> dict[str, Any]:
     venue = load_venue(session, event)
-    shown = shown_venue(session, venue) or venue
     return {
         "event": event_summary(event),
-        "venue": {"name": shown.name},
+        "venue": {"name": venue.name},
         "map": visitor_map(session, event, venue),
         "join": join_state(session, event),
     }

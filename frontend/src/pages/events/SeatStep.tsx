@@ -44,13 +44,12 @@ export function SeatStep({ state, view, moved }: SeatStepProps) {
       <StepTitle id="ev-seat" focusOnMount={moved}>
         {state.changingSeat ? "Choose a new seat" : "Choose your seat"}
       </StepTitle>
-      <p>Choose a free seat, then confirm. The first person to confirm gets the seat.</p>
+      <p>Tap a free seat to hold it for 5 minutes, then confirm. Seats with a dashed halo are good matches for you.</p>
       {notice && (
         <SeatNotice notice={notice} seats={map.seats} tables={map.tables} busy={busy === "hold"} onHold={actions.hold} onDismiss={actions.dismissNotice} />
       )}
       <h3 className="ev-subtitle">Recommended for you</h3>
       <RecommendationStrip recs={state.recs} failed={state.recsFailed} seats={map.seats} tables={map.tables} focusedId={lookingAt} onFocus={showOnMap} />
-      <div className="ev-map-intro"><div><p className="ev-map-eyebrow">EXPLORE THE ROOM</p><h3>Find your place.</h3></div><p>Tap a free seat on the map to select it.</p></div>
       <div ref={mapRef} className="ev-map">
         <SeatMap
           label={`Seat map, ${view.event.name}`}
@@ -99,7 +98,7 @@ function FocusedSeat({ label, rec, busy, onHold }: FocusedSeatProps) {
       </p>
       {rec && rec.reasons.length > 0 && <p className="ev-muted">{rec.reasons.join(". ")}.</p>}
       <Button busy={busy} onClick={onHold}>
-        Select this seat
+        Hold this seat for 5 minutes
       </Button>
     </div>
   );

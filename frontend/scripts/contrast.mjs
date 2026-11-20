@@ -17,9 +17,6 @@ const NON_TEXT = 3;
 
 const PAIRS = [
   ["c-text", "c-bg", TEXT],
-  ["c-text", "c-ops-bg", TEXT],
-  ["c-text-muted", "c-ops-bg", TEXT],
-  ["c-ops-nav-text", "c-ops-nav", TEXT],
   ["c-text", "c-surface", TEXT],
   ["c-text", "c-surface-sunk", TEXT],
   ["c-text", "c-surface-strong", TEXT],
@@ -34,9 +31,6 @@ const PAIRS = [
   ["c-primary", "c-primary-soft", TEXT],
   ["c-on-primary", "c-primary", TEXT],
   ["c-on-primary", "c-primary-hover", TEXT],
-  // Restaurants only: the pink main action.
-  ["c-on-primary", "c-cta", TEXT],
-  ["c-on-primary", "c-cta-hover", TEXT],
   ["c-accent", "c-bg", TEXT],
   ["c-accent", "c-surface", TEXT],
   ["c-accent", "c-accent-soft", TEXT],
@@ -65,36 +59,6 @@ const PAIRS = [
   ["seat-accessible-mark", "seat-accessible", NON_TEXT],
   ["seat-held", "seat-held-soft", NON_TEXT],
   ["seat-friend", "seat-friend-soft", NON_TEXT],
-  // Glass: text that sits straight on the page meets the lamp pools of the
-  // background at their strongest, and text on a frosted panel meets the panel
-  // composited over the worst pool (--c-glass-floor).
-  ...["c-lamp-warm", "c-lamp-cool", "c-bg-deep"].flatMap((bg) => [
-    ["c-text", bg, TEXT],
-    ["c-heading", bg, TEXT],
-    ["c-text-muted", bg, TEXT],
-    ["c-primary", bg, TEXT],
-    ["c-accent", bg, TEXT],
-    ["c-focus", bg, NON_TEXT],
-  ]),
-  ["c-text", "c-glass-floor", TEXT],
-  ["c-heading", "c-glass-floor", TEXT],
-  ["c-text-muted", "c-glass-floor", TEXT],
-  ["c-primary", "c-glass-floor", TEXT],
-  ["c-accent", "c-glass-floor", TEXT],
-  ["c-danger", "c-glass-floor", TEXT],
-  ["c-border-strong", "c-glass-floor", NON_TEXT],
-  ["c-focus", "c-glass-floor", NON_TEXT],
-  // Clearer glass (inputs, chips, rows: --glass-fill-soft) over the darkest pool.
-  // Placeholders use --c-text-muted (base.css), so its pairs here and on
-  // --c-glass-floor and --c-surface are the placeholder checks too.
-  ["c-text", "c-glass-soft-floor", TEXT],
-  ["c-heading", "c-glass-soft-floor", TEXT],
-  ["c-text-muted", "c-glass-soft-floor", TEXT],
-  ["c-primary", "c-glass-soft-floor", TEXT],
-  ["c-accent", "c-glass-soft-floor", TEXT],
-  ["c-danger", "c-glass-soft-floor", TEXT],
-  ["c-border-strong", "c-glass-soft-floor", NON_TEXT],
-  ["c-focus", "c-glass-soft-floor", NON_TEXT],
 ];
 
 /** Reads every "--name: #hex;" inside one CSS block of text. */
@@ -113,12 +77,7 @@ function readThemes() {
   const light = readHexTokens(css.slice(0, darkStart));
   // Dark mode only overrides some tokens; the rest keep their light value.
   const dark = { ...light, ...readHexTokens(css.slice(darkStart, motionStart)) };
-  // The Restaurants look re-defines some of the same tokens for its own routes (restaurant-theme.css).
-  const theme = readFileSync(fileURLToPath(new URL("../src/design/restaurant-theme.css", import.meta.url)), "utf8");
-  const themeDark = theme.indexOf("@media (prefers-color-scheme: dark)");
-  const restLight = { ...light, ...readHexTokens(theme.slice(0, themeDark)) };
-  const restDark = { ...dark, ...readHexTokens(theme.slice(themeDark)) };
-  return { light, dark, restLight, restDark };
+  return { light, dark };
 }
 
 /** Relative luminance as defined by WCAG. */
@@ -137,22 +96,19 @@ function ratio(foreground, background) {
 function main() {
   const themes = readThemes();
   let failures = 0;
-  let checks = 0;
-  console.log("| Foreground | Background | Needs | Light | Dark | Restaurants light | Restaurants dark |");
-  console.log("|---|---|---|---|---|---|---|");
+  console.log("| Foreground | Background | Needs | Light | Dark |");
+  console.log("|---|---|---|---|---|");
   for (const [fg, bg, needed] of PAIRS) {
-    const cells = ["light", "dark", "restLight", "restDark"].map((name) => {
+    const cells = ["light", "dark"].map((name) => {
       const t = themes[name];
-      if (!(fg in t && bg in t) && (bg.startsWith("c-ops-") || bg.startsWith("c-cta")) && (name === "light" || name === "dark")) return "—";
-      checks += 1;
       const r = ratio(t[fg], t[bg]);
       const pass = r >= needed;
       if (!pass) failures += 1;
       return `${r.toFixed(2)} ${pass ? "pass" : "FAIL"}`;
     });
-    console.log(`| \`--${fg}\` | \`--${bg}\` | ${needed}:1 | ${cells.join(" | ")} |`);
+    console.log(`| \`--${fg}\` | \`--${bg}\` | ${needed}:1 | ${cells[0]} | ${cells[1]} |`);
   }
-  console.log(`\n${checks} checks, ${failures} failures.`);
+  console.log(`\n${PAIRS.length * 2} checks, ${failures} failures.`);
   process.exitCode = failures === 0 ? 0 : 1;
 }
 

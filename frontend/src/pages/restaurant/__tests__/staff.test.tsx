@@ -36,7 +36,7 @@ describe("Staff page", () => {
     expect(screen.getByRole("list", { name: "Tables by status" }).textContent).toContain("2 Free");
 
     fireEvent.click(screen.getByRole("button", { name: "New walk-in" }));
-    const dialog = await screen.findByRole("dialog", { name: "New walk-in" });
+    const dialog = await screen.findByRole("dialog", { name: /Walk-in at/ });
     fireEvent.change(within(dialog).getByLabelText("How many people?"), { target: { value: "5" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Find a table" }));
 
@@ -66,7 +66,7 @@ describe("Staff page", () => {
     renderStaff();
     fireEvent.click(await screen.findByRole("option", { name: /^Table 3,/ }));
     fireEvent.click(screen.getByRole("button", { name: "New walk-in" }));
-    const dialog = await screen.findByRole("dialog", { name: "New walk-in" });
+    const dialog = await screen.findByRole("dialog", { name: /Walk-in at/ });
     fireEvent.change(within(dialog).getByLabelText("How many people?"), { target: { value: "5" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Find a table" }));
     fireEvent.click(await within(dialog).findByRole("button", { name: "Seat at Table 3" }));
@@ -85,7 +85,6 @@ describe("Staff page", () => {
     renderStaff();
     const arrivals = await screen.findByRole("list", { name: "Upcoming arrivals" });
     fireEvent.click(within(arrivals).getByRole("button", { name: /Rui Costa/ }));
-    fireEvent.click(screen.getByRole("button",{name:"More actions"}));
     fireEvent.click(screen.getByRole("button", { name: "Move or combine" }));
     const dialog = await screen.findByRole("dialog", { name: /Move Rui Costa/ });
     fireEvent.click(within(dialog).getByLabelText(/Table 3/));
@@ -102,26 +101,11 @@ describe("Staff page", () => {
     expect(screen.getByRole("option", { name: "Table 1, 2 to 4 people, free" })).toBeTruthy();
   });
 
-  it("explains the marked chair in the key and keeps it apart from the table statuses", async () => {
-    const withSeats = { ...FLOOR, seats: [
-      { id: 21, table_id: 2, label: "2-1", x: 150, y: 30, state: "taken", accessible: false },
-      { id: 22, table_id: 2, label: "2-2", x: 190, y: 30, state: "mine", accessible: false },
-    ] };
-    mockApi({ [`GET ${API}/floor`]: () => withSeats });
-    renderStaff();
-    await screen.findByText("Rui Costa");
-    const key = screen.getByRole("list", { name: "Table status key" });
-    expect(within(key).getByText("Chair asked for")).toBeTruthy();
-    expect(within(key).getByText("The guest would like to sit here")).toBeTruthy();
-    // The four table statuses are still all there.
-    for (const status of ["Free", "Reserved", "Seated", "Finishing"]) expect(within(key).getByText(status)).toBeTruthy();
-  });
-
   it("moves focus to the suggestion after Find, so keyboard users hear it and stay in the dialog", async () => {
     mockApi({ [`GET ${API}/floor`]: () => FLOOR, [`POST ${API}/whatif`]: () => WHATIF_TABLE_3 });
     renderStaff();
     fireEvent.click(await screen.findByRole("button", { name: "New walk-in" }));
-    const dialog = await screen.findByRole("dialog", { name: "New walk-in" });
+    const dialog = await screen.findByRole("dialog", { name: /Walk-in at/ });
     const find = within(dialog).getByRole("button", { name: "Find a table" });
     find.focus();
     fireEvent.click(find);
@@ -135,12 +119,12 @@ describe("Staff page", () => {
     mockApi({ [`GET ${API}/floor`]: () => FLOOR, [`POST ${API}/whatif`]: () => WHATIF_TABLE_3 });
     renderStaff();
     fireEvent.click(await screen.findByRole("button", { name: "New walk-in" }));
-    let dialog = await screen.findByRole("dialog", { name: "New walk-in" });
+    let dialog = await screen.findByRole("dialog", { name: /Walk-in at/ });
     fireEvent.click(within(dialog).getByRole("button", { name: "Find a table" }));
     await within(dialog).findByText("Only free table for 5");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     fireEvent.click(screen.getByRole("button", { name: "New walk-in" }));
-    dialog = await screen.findByRole("dialog", { name: "New walk-in" });
+    dialog = await screen.findByRole("dialog", { name: /Walk-in at/ });
     expect(within(dialog).queryByText("Only free table for 5")).toBeNull();
     expect(within(dialog).getByRole("button", { name: "Find a table" })).toBeTruthy();
   });
@@ -151,7 +135,6 @@ describe("Staff page", () => {
     await screen.findByText("Rui Costa");
     fireEvent.change(screen.getByLabelText("Day"), { target: { value: "2026-12-24" } });
     await screen.findByText("Rui Costa");
-    fireEvent.click(screen.getByRole("button", { name: "Check a walk-in" }));
     fireEvent.click(screen.getByRole("button", { name: "Check" }));
     await screen.findByText("Only free table for 5");
     expect(callsTo(calls, "POST", `${API}/whatif`)[0]?.body).toMatchObject({ date: "2026-12-24" });
@@ -190,8 +173,7 @@ describe("Staff page", () => {
     expect(screen.getByText(/2 empty chairs fewer/)).toBeTruthy();
     expect(callsTo(calls, "POST", `${API}/optimise/service`)[0]?.body).toEqual({ date: todayIso(), service: "Dinner" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Apply 1 move" }));
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", {name:"Confirm 1 move"}));
+    fireEvent.click(screen.getByRole("button", { name: "Apply these moves" }));
     expect(await screen.findByText("Done: 1 booking moved.")).toBeTruthy();
     expect(callsTo(calls, "POST", `${API}/optimise/service`)[1]?.body).toEqual({ date: todayIso(), service: "Dinner", apply: true, plan_id: SERVICE_PLAN.plan_id });
   });
@@ -206,10 +188,9 @@ describe("Staff page", () => {
 
     answer = SERVICE_PLAN;
     fireEvent.click(screen.getByRole("button", { name: "Preview moves" }));
-    await screen.findByRole("button", { name: "Apply 1 move" });
+    await screen.findByRole("button", { name: "Apply these moves" });
     answer = apiError(409, "conflict", "The floor changed since the preview. Please preview again.");
-    fireEvent.click(screen.getByRole("button", { name: "Apply 1 move" }));
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", {name:"Confirm 1 move"}));
+    fireEvent.click(screen.getByRole("button", { name: "Apply these moves" }));
     expect((await screen.findByRole("alert")).textContent).toContain("Please preview again.");
   });
 
@@ -217,7 +198,6 @@ describe("Staff page", () => {
     const calls = mockApi({ [`GET ${API}/schedule`]: () => INFO.schedule, [`POST ${API}/optimise/exact-check`]: () => EXACT_CHECK });
     renderStaff();
     fireEvent.click(screen.getByRole("tab", { name: "Optimise" }));
-    fireEvent.click(await screen.findByText("Exact check · optional analysis"));
     fireEvent.click(await screen.findByRole("button", { name: "Run the exact check" }));
     const card = (await screen.findByText(/The best possible plan seats 2 more guests/)).closest("section") as HTMLElement;
     expect(card.textContent).toContain("Quick planner: 18 guests seated, 4 empty chairs");

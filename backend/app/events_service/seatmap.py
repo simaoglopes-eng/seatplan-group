@@ -14,17 +14,19 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.privacy import display_name
-from app.events_service.age import visible_age
+from app.events_service.access import event_scope
 from app.events_service.problem import current_rows, event_guests, venue_seats
 from app.models import (
     Acquaintance,
     Event,
     Guest,
+    Hold,
     Seat,
     SeatAssignment,
     Venue,
     VenueTable,
     Zone,
+    utc_now,
 )
 
 
@@ -62,8 +64,12 @@ def _table_dict(table: VenueTable) -> dict[str, Any]:
 
 def live_holds(session: Session, event: Event) -> dict[int, str]:
     """seat id -> holder key, for holds that have not expired yet."""
-    # Event seat previews are non-exclusive. Ignore any legacy holds.
-    return {}
+    query = select(Hold).where(
+        (Hold.scope == event_scope(event))
+        & (Hold.resource_kind == "seat")
+        & (Hold.expires_at > utc_now())
+    )
+    return {hold.resource_id: hold.holder_key for hold in session.scalars(query)}
 
 
 def holder_key(guest: Guest) -> str:
@@ -121,9 +127,6 @@ def attendee_map(session: Session, event: Event, venue: Venue, me: Guest) -> dic
         elif owner is not None:
             other = guests[owner.guest_id]
             occupant = display_name(other.name, event.privacy_mode, other.wants_anonymous)
-            age = visible_age(other, event)
-            if age is not None:
-                occupant = f"{occupant}, {age}"
         seats.append({**seat_base(seat), "state": state, "occupant": occupant})
     return {**map_frame(session, venue), "seats": seats}
 

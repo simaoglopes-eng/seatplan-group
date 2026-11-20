@@ -2,16 +2,6 @@
 
 Team: Sergio and Martim (restaurants), Simao and Federico (events).
 
-Restaurant integration update, 2026-11-13: `claude/ambiente` was merged locally
-into `martim/restaurantes-impl` at 31cc829. Claude's implemented work and decisions
-are in [his notes](../claude-ambiente-notas.md). Codex added final browser/performance
-checks and reviewed the integration against the approved spec. Task 38 is only
-partly verified: tasks 25/26/29 (discovery and the public page) are absent.
-Tasks 33/34/36 (chair management and email/demo integration) also remain pending;
-20 and 32 have remaining UI details. Do not present the whole platform as done.
-The [acceptance matrix](../restaurant-final-review.md) is the handoff list.
-No push, PR, deployment or merge into main was performed; Martim integrates.
-
 The rule is simple: **each person owns a slice from the button on the screen
 down to the row in the database**, plus one piece of the shared core. In the
 walkthrough you must be able to open any file in your list, say what it is for,
@@ -223,13 +213,3 @@ Then `plans.py` `apply_plan` (lines 167 to 200) and `problem.py` `human_fixed`
 - [ ] Rehearse your part of `docs/team/demo-script.md` twice, once with the
       backup plan.
 - [ ] Read `docs/team/ai-use.md` and do the "own it" tasks for your list.
-
-## The restaurant platform (2026-11-13): who owns the new pieces
-
-Split from section 13 of the platform spec. Because the work was finished in one branch (`claude/ambiente`), Sergio's tasks (19, 25, 26, 29 and
-the parts of 34 and 36 about discovery and demo data) are in their own commits so they can be reviewed or swapped alone.
-
-| Person | New pieces |
-|---|---|
-| Martim | Room editor (`pages/room-editor/`), ambience engine (`backend/app/ambience/`), `ambience_view.py`, map with rooms (`map_view.py`, `seatmap/RoomLayers.tsx`), light cursor, optimiser wishes, chair choice and change (`chosen_seat.py`, `ChooseSeat.tsx`, `ChangeSeat.tsx`), mini-map (`mail/restaurant_picture.py`) |
-| Sergio | Owner accounts and list, wizard, profile, photos, hours and publish (`pages/owner/`, `publishing.py`), discovery (`discovery.py`, `pages/discover/`), public page (`pages/restaurant-public/`), restaurant emails (`mail/restaurant_templates.py`, `email_facts.py`), demo restaurants (`seed/demo_showcase.py`, `demo_photos.py`) |

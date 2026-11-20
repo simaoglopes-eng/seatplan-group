@@ -142,7 +142,7 @@ describe("MySeatPage", () => {
     server.routes.set("GET /guest/events/spring", () => ({ body: accountView() }));
     server.routes.set("GET /guest/events/spring/recommendations", () => ({ body: [] }));
     renderAt("/my/spring");
-    expect(await screen.findByRole("button", { name: "Select this seat" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Hold this seat for 5 minutes" })).toBeTruthy();
     expect(screen.getByText("Table T1, seat 5")).toBeTruthy();
     expect(await screen.findByText("nina@example.com")).toBeTruthy();
     expect(callsTo(server, "GET", "/a/spring")).toEqual([]);

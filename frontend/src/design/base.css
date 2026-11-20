@@ -1,26 +1,6 @@
 /* Global defaults. Reads only tokens from tokens.css; defines no raw values
    except 0, 100% and unitless numbers. */
 
-/* Gloock, the display face, served from our own origin (the CSP allows fonts
-   from 'self' only). From Google Fonts, SIL Open Font License: fonts/OFL.txt. */
-@font-face {
-  font-family: "Gloock";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("./fonts/gloock-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: "Gloock";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("./fonts/gloock-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+1EF2-1EFF, U+20A0-20AB, U+20AD-20C4, U+2C60-2C7F, U+A720-A7FF;
-}
-
 *,
 *::before,
 *::after {
@@ -47,55 +27,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* The floor under the glass: grain and the lamp pools, fixed to the window so
-   panels slide over the light. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    var(--grain),
-    var(--page-lamps),
-    var(--c-bg);
-}
-
-/* The floor plan: the editor's dot grid, drawn once under the hero and faded out
-   before the content begins. It scrolls away with the page. */
-body::after {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: var(--grid-height);
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(circle, var(--grid-dot) 1px, transparent 1.5px) 0 0 / var(--grid-step) var(--grid-step);
-  -webkit-mask-image: var(--grid-fade);
-  mask-image: var(--grid-fade);
-}
-
-/* Placeholders read as muted text, never the browser's light grey (#757575 fails
-   4.5:1 on the glass). Firefox dims them with opacity; this undoes it. */
-::placeholder {
-  color: var(--c-text-muted);
-  opacity: 1;
-}
-
-/* Gloock has one weight; a bold heading would be a smeared fake bold. */
 h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: var(--fw-regular);
-  font-synthesis: none;
-  color: var(--c-heading);
+  font-weight: var(--fw-bold);
   line-height: var(--lh-tight);
   margin: 0 0 var(--space-3);
   letter-spacing: -0.01em;
 }
 
-h1 { font-size: var(--fs-3xl); letter-spacing: -0.02em; }
+h1 { font-size: var(--fs-3xl); }
 h2 { font-size: var(--fs-2xl); }
 h3 { font-size: var(--fs-xl); }
 

@@ -15,8 +15,7 @@ def test_health_reports_database_ok(client: TestClient) -> None:
     body = response.json()
     assert body["status"] == "ok"
     assert body["database"] == "ok"
-    assert body["schema"] == "ready"
-    assert set(body) == {"status", "database", "schema", "version", "time"}
+    assert set(body) == {"status", "database", "version", "time"}
 
 
 def test_security_headers_present(client: TestClient) -> None:

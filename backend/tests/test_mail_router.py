@@ -78,13 +78,3 @@ def test_log_masks_recipients_and_needs_an_organiser(
 def test_mask_email_short_local_part() -> None:
     assert mask_email("al@example.com") == "a***@example.com"
     assert mask_email("ana.silva@example.com") == "an***@example.com"
-
-
-def test_global_email_log_unavailable_outside_demo(
-    client: TestClient, organiser: Organiser, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from app.config import get_settings
-
-    monkeypatch.setenv("DEMO_MODE", "0")
-    get_settings.cache_clear()
-    assert client.get("/api/emails/log", headers=auth_header(organiser)).status_code == 404

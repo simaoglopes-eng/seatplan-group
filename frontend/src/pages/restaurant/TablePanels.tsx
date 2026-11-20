@@ -48,17 +48,16 @@ export function SuggestionCard({ map, busy, onTake, onChooseForMe }: SuggestionP
 
 interface ConflictProps {
   message: string;
-  title: string;
   options: DinerTable[];
   busy: boolean;
   onTake: (tableId: number) => void;
 }
 
-export function ConflictNotice({ title, message, options, busy, onTake }: ConflictProps) {
+export function ConflictNotice({ message, options, busy, onTake }: ConflictProps) {
   return (
     <div className="rb-notice rb-notice-warning" role="alert">
       <p>
-        <strong>{title}</strong> {message}
+        <strong>Sorry, that table is gone.</strong> {message}
       </p>
       {options.length > 0 ? (
         <>
@@ -82,16 +81,12 @@ interface TableListProps {
   tables: DinerTable[];
   map: DinerMap;
   heldId: number | null;
-  /** The table the card shows, marked in the list so plan, card and list agree. */
-  focusId?: number | null;
-  /** The room of a table, when the restaurant has several. */
-  roomNameOf?: (table: DinerTable) => string | null;
-  /** A row only selects the table; the card beside the list holds it. */
-  onSelect: (tableId: number) => void;
+  busy: boolean;
+  onTake: (tableId: number) => void;
 }
 
-/** Every table that suits the party, as a list: the same choices as the plan, for people who prefer a list or cannot use the plan. */
-export function TableList({ tables, map, heldId, focusId = null, roomNameOf, onSelect }: TableListProps) {
+/** Every table that suits the party, as a list. Tables that do not suit are counted, not listed, to keep it short. */
+export function TableList({ tables, map, heldId, busy, onTake }: TableListProps) {
   const suitable = tables.filter((t) => t.fits_party);
   const hidden = tables.length - suitable.length;
   const recommended = new Set(map.recommended?.table_ids ?? []);
@@ -99,41 +94,35 @@ export function TableList({ tables, map, heldId, focusId = null, roomNameOf, onS
     <div className="rb-table-list">
       <h3 className="rb-service-title">Tables that suit your party</h3>
       <ul>
-        {suitable.map((table) => {
-          const room = roomNameOf?.(table) ?? null;
-          const selected = table.id === focusId;
-          return (
-            <li key={table.id} className={`rb-table-row${selected ? " is-focus" : ""}`}>
-              <div>
-                <strong>Table {table.label}</strong>
-                {room && <span className="rb-muted"> · {room}</span>} {recommended.has(table.id) && <Badge tone="warning">Suggested</Badge>}{" "}
-                {selected && <Badge tone="success">Selected</Badge>}
-                <div className="rb-badges">
-                  {tableFeatures(table, map.zones).map((feature) => (
-                    <Badge key={feature} tone={feature === "Accessible" ? "info" : "neutral"}>
-                      {feature}
-                    </Badge>
-                  ))}
-                </div>
-                {table.ambience && table.ambience.phrases.length > 0 && <p className="rb-muted rb-table-light">{table.ambience.phrases.join(" · ")}</p>}
+        {suitable.map((table) => (
+          <li key={table.id} className="rb-table-row">
+            <div>
+              <strong>Table {table.label}</strong> {recommended.has(table.id) && <Badge tone="warning">Suggested</Badge>}
+              <div className="rb-badges">
+                {tableFeatures(table, map.zones).map((feature) => (
+                  <Badge key={feature} tone={feature === "Accessible" ? "info" : "neutral"}>
+                    {feature}
+                  </Badge>
+                ))}
               </div>
-              <TableRowAction table={table} heldId={heldId} selected={selected} onSelect={onSelect} />
-            </li>
-          );
-        })}
+            </div>
+            <TableRowAction table={table} heldId={heldId} busy={busy} onTake={onTake} />
+          </li>
+        ))}
       </ul>
       {hidden > 0 && <p className="rb-muted">{hidden} other tables are too small, too big or missing something you need.</p>}
     </div>
   );
 }
 
-function TableRowAction({ table, heldId, selected, onSelect }: { table: DinerTable; heldId: number | null; selected: boolean; onSelect: (id: number) => void }) {
+function TableRowAction({ table, heldId, busy, onTake }: { table: DinerTable; heldId: number | null; busy: boolean; onTake: (id: number) => void }) {
   if (table.id === heldId && table.state !== "taken") return <Badge tone="success">Held for you</Badge>;
   const reason = unavailableReason(table);
   if (reason) return <span className="rb-muted">{reason}</span>;
   return (
-    <Button variant="secondary" aria-pressed={selected} aria-label={`Select table ${table.label}`} onClick={() => onSelect(table.id)}>
-      Select
+    <Button variant="secondary" busy={busy} onClick={() => onTake(table.id)}>
+      Hold
+      <span className="visually-hidden"> table {table.label}</span>
     </Button>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, login } from "../api/client";
-import { AuthLayout, Button, Field, PageShell, useToast } from "../design/components";
+import { Button, Field, PageShell, useToast } from "../design/components";
 import "./login.css";
 
 /** Only allow in-app paths after login, so a link cannot send people to another site. */
@@ -20,10 +20,9 @@ function messageFor(error: unknown): string {
   return error.message;
 }
 
-export default function Login({ defaultNext = "/organiser" }: { defaultNext?: string } = {}) {
+export default function Login() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const isStaff = params.get("next") === "/staff";
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +40,7 @@ export default function Login({ defaultNext = "/organiser" }: { defaultNext?: st
     try {
       const result = await login(email.trim(), password);
       toast.show(`Welcome back, ${result.user.name}.`, "success");
-      navigate(safeNextPath(params.get("next") ?? defaultNext));
+      navigate(safeNextPath(params.get("next")));
     } catch (caught) {
       setError(messageFor(caught));
     } finally {
@@ -51,11 +50,11 @@ export default function Login({ defaultNext = "/organiser" }: { defaultNext?: st
 
   return (
     <PageShell title="Sign in">
-      <AuthLayout eyebrow={isStaff ? "STAFF ACCESS" : "FOR ORGANISERS"} headline="Plan the details. Enjoy the moment." description="Bring your event together with a seating plan that feels effortless to manage.">
       <div className="login">
-        <h1>{isStaff ? "Staff sign in" : "Organiser sign in"}</h1>
+        <h1>Sign in</h1>
         <p className="login-lede">
-          {isStaff ? "Sign in to open your staff workspace." : "Sign in to manage your events and seating plans."} Are you attending an event? <Link to="/my/sign-in">Participant sign in</Link>.
+          For organisers and restaurant staff. Invited guests only need their personal link. Guests who made an account on a shared link{" "}
+          <Link to="/my/sign-in">sign in on the guest page</Link>.
         </p>
         <form onSubmit={onSubmit} noValidate>
           <Field label="Email" type="email" name="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -73,9 +72,7 @@ export default function Login({ defaultNext = "/organiser" }: { defaultNext?: st
             Sign in
           </Button>
         </form>
-        {!isStaff && <p>New to SeatPlan? <Link to="/organiser/register">Create an organiser account</Link>.</p>}
       </div>
-      </AuthLayout>
     </PageShell>
   );
 }

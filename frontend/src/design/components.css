@@ -33,17 +33,12 @@
   top: var(--space-3);
 }
 
-/* Frosted, but nearly opaque: photos and the map scroll under it and the
-   header text must stay readable over the darkest of them. */
 .shell-header {
   position: sticky;
   top: 0;
   z-index: var(--z-header);
-  background: var(--glass-fill-strong);
-  -webkit-backdrop-filter: var(--glass-blur-strong);
-  backdrop-filter: var(--glass-blur-strong);
-  border-bottom: var(--border-width) solid var(--glass-edge);
-  box-shadow: 0 1px 0 var(--c-border);
+  background: var(--c-bg);
+  border-bottom: var(--border-width) solid var(--c-border);
 }
 
 .shell-header .shell-inner {
@@ -70,24 +65,14 @@
 }
 
 .shell-footer {
-  border-top: var(--border-width) solid var(--glass-edge);
-  background: var(--glass-fill-soft);
+  border-top: var(--border-width) solid var(--c-border);
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
-  padding-block: var(--space-3);
+  padding-block: var(--space-4);
 }
 
 .shell-footer p {
   margin: 0;
-  max-width: none;
-}
-
-/* The notes in the footer (the project line, map and photo credits) sit side by side and only wrap when they must. */
-.shell-footer .shell-inner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-5);
 }
 
 .wordmark {
@@ -99,27 +84,14 @@
   text-decoration: none;
 }
 
-.wordmark-logo {
-  flex: none;
-  display: block;
-  height: 40px;
-  width: auto;
-}
-@media (max-width: 30rem) {
-  .wordmark-logo { height: 34px; }
-}
-@media (prefers-color-scheme: dark) {
-  /* The logo is dark purple: on a dark page it sits on a light plate so it stays readable. */
-  :root:not([data-surface="restaurants"]) .wordmark-logo,
-  :root[data-surface="restaurants"][data-theme="dark"] .wordmark-logo {
-    background: #f6f3ff;
-    border-radius: var(--radius-md);
-    padding: 3px 8px;
-  }
+.wordmark-mark {
+  width: 28px;
+  height: 28px;
 }
 
-.restaurant-brand-text { display:grid;gap:.15rem;line-height:1.05; }
-.restaurant-brand-label { color:var(--c-text-muted);font:600 .6875rem/1.05 var(--font-body); }
+.wordmark-table { fill: var(--c-primary); }
+.wordmark-seat { fill: var(--c-text); }
+.wordmark-seat-mine { fill: var(--c-accent-bright); }
 
 .wordmark-text {
   font-family: var(--font-display);
@@ -148,13 +120,11 @@
   transition:
     background-color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
     transform var(--dur-instant) var(--ease-out);
 }
 
 .btn:active:not(:disabled) {
   transform: translateY(1px);
-  box-shadow: none;
 }
 
 .btn:disabled {
@@ -171,25 +141,20 @@
 .btn-primary {
   background: var(--c-primary);
   color: var(--c-on-primary);
-  box-shadow: var(--btn-sheen);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--c-primary-hover);
-  box-shadow: var(--btn-sheen), var(--shadow-press);
 }
 
-/* A pane of glass with a lit edge, not an outlined box. */
 .btn-secondary {
-  background: var(--glass-fill-soft);
+  background: var(--c-surface);
   color: var(--c-text);
-  border-color: var(--glass-edge);
-  box-shadow: var(--glass-highlight), var(--shadow-sm);
+  border-color: var(--c-border-strong);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--glass-fill-hover);
-  box-shadow: var(--glass-highlight), var(--shadow-md);
+  background: var(--c-primary-soft);
 }
 
 .btn-ghost {
@@ -198,8 +163,7 @@
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--glass-fill-soft);
-  box-shadow: var(--glass-highlight);
+  background: var(--c-primary-soft);
 }
 
 .btn-danger {
@@ -249,17 +213,10 @@
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: var(--border-width) solid var(--c-border-strong);
-  background: var(--glass-fill-soft);
-  box-shadow: var(--glass-highlight);
+  background: var(--c-surface);
   color: var(--c-text);
   font: inherit;
-  transition:
-    border-color var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out);
-}
-
-.field-input:focus {
-  background: var(--glass-fill-hover);
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 
 .field-input:hover {
@@ -306,23 +263,6 @@
   background-repeat: no-repeat;
 }
 
-@supports (appearance:base-select) {
-  :is(select.select-themed,.select-themed select) { appearance:base-select;cursor:pointer; }
-  .select-themed .select-input { background-image:none;padding-inline-end:var(--space-3); }
-  :is(select.select-themed,.select-themed select)::picker(select) {
-    appearance:base-select;max-height:min(18rem,50vh);overflow-y:auto;margin-block:.375rem;padding:.375rem;
-    min-inline-size:max(anchor-size(self-inline),8.5rem);border:1px solid var(--c-border);
-    border-radius:var(--radius-md);background:var(--c-surface);color:var(--c-text);
-    box-shadow:var(--shadow-lg);font:.875rem/1.3 var(--font-body);overscroll-behavior:contain;
-  }
-  :is(select.select-themed,.select-themed select)::picker-icon { color:var(--c-primary); }
-  :is(select.select-themed,.select-themed select) option {
-    min-height:2.25rem;gap:.5rem;padding:.375rem .5rem;border-radius:var(--radius-sm);
-  }
-  :is(select.select-themed,.select-themed select) option:checked { color:var(--c-primary);font-weight:700; }
-  :is(select.select-themed,.select-themed select) option:is(:focus,:hover) { background:var(--c-primary-soft); }
-}
-
 /* ---------- Checkbox ---------- */
 
 .checkbox {
@@ -363,12 +303,7 @@
   place-items: center;
   padding: var(--space-4);
   background: var(--c-overlay);
-  animation: backdrop-in var(--dur-base) var(--ease-out);
-}
-
-/* Only the dimming fades in. Fading the whole backdrop (opacity) would also fade the dialog's text for a few frames. */
-@keyframes backdrop-in {
-  from { background-color: transparent; }
+  animation: fade-in var(--dur-base) var(--ease-out);
 }
 
 .dialog {
@@ -384,26 +319,6 @@
 
 .dialog:focus {
   outline: none;
-}
-
-/* A drawer from the right edge: used for the discovery filters. */
-.dialog-backdrop-side {
-  place-items: stretch end;
-  padding: 0;
-}
-
-.dialog-side {
-  width: min(100%, 24rem);
-  max-height: none;
-  height: 100%;
-  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
-  animation: slide-in-right var(--dur-base) var(--ease-out);
-}
-
-/* The panel slides; it never fades, so its text keeps full contrast from the first frame (the backdrop does the fading). */
-@keyframes slide-in-right {
-  from { transform: translateX(2rem); }
-  to { transform: none; }
 }
 
 .dialog-title {
@@ -678,10 +593,3 @@
 .legend-static {
   animation: none;
 }
-
-/* Site frame: consistent spacing across the event and account journeys. */
-.shell-header .shell-inner { min-height: 4.5rem; }
-.shell-main { padding-block: clamp(1.5rem, 4vw, 3rem) 4rem; }
-.shell-footer { padding-block: 1.5rem; }
-.wordmark-text { font-family: var(--font-body); font-size: 1.35rem; font-weight: 750; letter-spacing: -.055em; }
-@media (min-width: 48rem) { .shell-inner { padding-inline: 2rem; } }

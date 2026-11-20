@@ -61,12 +61,7 @@ def _use_database(url: str, monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
     monkeypatch.setenv("SECRET_KEY", "test-secret-key-not-used-anywhere-else")
     monkeypatch.setenv("DEMO_MODE", "1")
     monkeypatch.setenv("FRONTEND_ORIGIN", "http://localhost:5173")
-    for name in (
-        "DEMO_KEY",
-        "DEMO_ORGANISER_PASSWORD",
-        "DEMO_STAFF_PASSWORD",
-        "DEMO_MEMBER_PASSWORD",
-    ):
+    for name in ("DEMO_KEY", "DEMO_ORGANISER_PASSWORD", "DEMO_STAFF_PASSWORD"):
         monkeypatch.delenv(name, raising=False)
     if url.startswith("postgresql"):
         # On Postgres the seed never falls back to the public demo passwords,
