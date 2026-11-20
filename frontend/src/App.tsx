@@ -23,6 +23,7 @@ import VenuesPage from "./pages/events-public/VenuesPage";
 import DirectoryPage from "./pages/directory/DirectoryPage";
 import Home from "./pages/Home";
 import DemoHome from "./pages/DemoHome";
+import CreditsPage from "./pages/credits/CreditsPage";
 import ParticipantStartPage from "./pages/ParticipantStartPage";
 import JoinPage from "./pages/join/JoinPage";
 import JoinSignInPage from "./pages/join/JoinSignInPage";
@@ -38,6 +39,8 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/organiser/register" element={<OrganiserRegister />} />
       <Route path="/demo" element={<DemoHome />} />
+      {/* Photo and data credits, as the licences ask */}
+      <Route path="/credits" element={<CreditsPage />} />
       {/* One account: sign in or create, then Booking | Staff */}
       <Route path="/account" element={<YourAccountPage />} />
       {/* A venue's team: the owner adds the people who run its events */}

@@ -1,6 +1,7 @@
 // A small, fixed sample floor for the home page, so visitors can try the
 // map before opening the demo. It never talks to the server.
 import type { MapSeat, MapTable, SeatState, TableShape } from "../api/types";
+import type { DirectoryKind } from "../api/venueDirectory";
 import { seatPositions, sizeFor } from "../seatmap/seatPositions";
 
 interface SampleTable {
@@ -51,3 +52,16 @@ export function buildSampleFloor(): { tables: MapTable[]; seats: MapSeat[] } {
 
 /** The sample's "recommended" seats: next to the friends. */
 export const SAMPLE_RECOMMENDED: ReadonlySet<number> = new Set([102, 307]);
+
+/** The three photo tiles of "The rooms": each opens the directory filtered to its kind.
+    The photos are illustrations, credited on /credits (src/data/photoCredits.ts). */
+export const ROOM_TILES: { kind: DirectoryKind; photo: string; blurb: string }[] = [
+  { kind: "estate", photo: "/images/photos/douro-quinta-2.jpg", blurb: "Vineyards, manors and country houses" },
+  { kind: "hall", photo: "/images/photos/ballroom.jpg", blurb: "Ballrooms and banquet rooms" },
+  { kind: "conference", photo: "/images/photos/conference-room.jpg", blurb: "Auditoriums and meeting rooms" },
+];
+
+/** 1835 -> "1,835", the same on every machine (no reliance on the browser's locale). */
+export function formatCount(n: number): string {
+  return n.toLocaleString("en-GB");
+}

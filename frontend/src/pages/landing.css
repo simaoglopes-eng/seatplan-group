@@ -1,166 +1,354 @@
-/* The home page (Home.tsx). Tokens only; cards reuse events-public.css and discover.css. */
+/* The home page (Home.tsx), direction A "corporate sober": a full-bleed photo with a
+   navy gradient, a search bar over its foot, photo tiles, a quiet directory listing and
+   one navy band. Tokens only; the cards reuse events-public.css, discover.css and
+   directory.css and are only re-dressed here, inside .ld-route. */
 
-.ld-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-  gap: var(--space-7);
-  align-items: center;
-  margin: var(--space-6) 0 var(--space-8);
+/* One content width for the header, every section and the footer. */
+.ld-route .shell-header .shell-inner,
+.ld-route .shell-footer .shell-inner { max-width: var(--frame-max); }
+.ld-route .shell-overlay .shell-header .shell-inner { min-height: 5.25rem; }
+.ld-wrap {
+  width: 100%;
+  max-width: var(--frame-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
 }
 
 .ld-eyebrow {
-  color: var(--c-accent);
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   margin: 0 0 var(--space-3);
-}
-
-.ld-hero h1 {
-  font-size: clamp(2.4rem, 1.4rem + 3.2vw, 4.25rem);
-  line-height: 1.02;
-  letter-spacing: -0.025em;
-  margin: 0 0 var(--space-5);
-}
-
-.ld-lede {
-  font-size: 1.125rem;
   color: var(--c-text-muted);
-  max-width: 34rem;
-  margin: 0 0 var(--space-5);
+  font-size: 0.75rem;
+  font-weight: var(--fw-medium);
+  line-height: 1.3;
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
 }
 
+/* ---------- Hero ---------- */
+.ld-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 47.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: 7rem 8rem;
+  background: var(--c-band);
+  color: var(--c-on-band);
+}
+.ld-hero-photo {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ld-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--c-band) 92%, transparent) 0%,
+    color-mix(in srgb, var(--c-band) 70%, transparent) 45%,
+    color-mix(in srgb, var(--c-band) 20%, transparent) 100%);
+}
+.ld-hero .ld-eyebrow { color: var(--c-on-band); }
+.ld-hero h1 {
+  max-width: 47.5rem;
+  margin: var(--space-4) 0 1.25rem;
+  color: var(--c-on-band);
+  font-size: clamp(2.625rem, 1rem + 4vw, 4.75rem);
+  line-height: 1.03;
+  letter-spacing: -0.03em;
+}
+.ld-lede {
+  max-width: 33rem;
+  margin: 0 0 var(--space-6);
+  color: var(--c-on-band);
+  font-size: 1.1875rem;
+  line-height: 1.55;
+}
 .ld-hero-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-.ld-hero-note { margin: var(--space-4) 0 0; color: var(--c-text-muted); }
+.ld-hero-note { margin: var(--space-4) 0 0; color: var(--c-on-band-muted); font-size: var(--fs-sm); }
+.ld-hero-note a { display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--c-on-band); font-weight: var(--fw-medium); }
+.ld-hero-note a:hover { color: var(--c-on-band); }
 
-/* The sample room sits in a frosted frame; the floor itself stays solid. */
-.ld-hero-map {
+/* Light buttons for navy grounds (hero and band). */
+.btn.ld-btn-light,
+.btn.ld-btn-line {
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.02em;
+}
+.btn.ld-btn-light { background: var(--c-on-band); color: var(--c-band); border-color: var(--c-on-band); }
+.btn.ld-btn-light:hover:not(:disabled) { background: var(--c-on-band-muted); border-color: var(--c-on-band-muted); color: var(--c-band); }
+.btn.ld-btn-line { background: transparent; color: var(--c-on-band); border-color: var(--c-on-band); }
+.btn.ld-btn-line:hover:not(:disabled) { background: var(--c-on-band); color: var(--c-band); }
+.ld-hero :focus-visible,
+.ld-band :focus-visible { outline-color: var(--c-on-band); }
+
+/* ---------- Search bar over the hero's foot ---------- */
+.ld-search { position: relative; z-index: 2; margin-top: -3rem; }
+.ld-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.ld-field {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  padding: var(--space-2);
-  border-radius: calc(var(--radius-lg) + var(--space-2));
-  background: var(--glass-fill);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border: var(--border-width) solid var(--glass-edge);
-  box-shadow: var(--glass-highlight), var(--shadow-glass);
+  padding: 1.125rem var(--space-5) 0.875rem;
+  border-right: var(--border-width) solid var(--c-border);
 }
-.ld-hero-map .seatmap-viewport { height: min(55vh, 24rem); border-color: transparent; }
-.ld-map-note { margin: var(--space-2) var(--space-3) var(--space-1); color: var(--c-text-muted); font-size: 0.9375rem; }
-
-.ld-section { margin: 0 0 var(--space-8); }
-.ld-section-head { margin-bottom: var(--space-5); }
-.ld-section-head h2 { font-size: clamp(1.75rem, 1.3rem + 1.4vw, 2.5rem); margin: 0 0 var(--space-2); }
-.ld-section-head p { margin: 0; color: var(--c-text-muted); }
-
-/* Kind tiles: real toggle buttons, pressed state is the filter in use. */
-.ld-kinds {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
-  gap: var(--space-3);
-  margin: var(--space-4) 0;
+.ld-field label {
+  color: var(--c-text-muted);
+  font-size: 0.6875rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
 }
-.ld-kind {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-1);
-  text-align: left;
-  font: inherit;
+.ld-field select {
+  appearance: none;
+  width: 100%;
+  min-height: var(--touch-target);
+  margin: 0;
+  padding: 0 var(--space-6) 0 0;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--c-text) 50%),
+    linear-gradient(135deg, var(--c-text) 50%, transparent 50%);
+  background-position: calc(100% - 10px) 50%, calc(100% - 5px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
   color: var(--c-text);
+  font-size: 1.0625rem;
+  font-weight: var(--fw-medium);
+  text-overflow: ellipsis;
   cursor: pointer;
-  padding: var(--space-4);
-  min-height: 2.75rem;
-  border-radius: var(--radius-lg);
-  background: var(--glass-fill);
-  -webkit-backdrop-filter: var(--glass-blur-soft);
-  backdrop-filter: var(--glass-blur-soft);
-  border: var(--border-width) solid var(--c-border);
-  box-shadow: var(--glass-highlight);
-  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
-.ld-kind:hover { background: var(--glass-fill-hover); }
-.ld-kind:active { transform: translateY(1px); }
-.ld-kind:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
-.ld-kind[aria-pressed="true"] { background: var(--c-primary); border-color: var(--c-primary); color: var(--c-on-primary); }
-.ld-kind[aria-pressed="true"] .ld-kind-blurb,
-.ld-kind[aria-pressed="true"] .ld-kind-count { color: var(--c-on-primary); }
-.ld-kind-label { font-family: var(--font-display); font-size: 1.375rem; line-height: 1.15; }
-.ld-kind-blurb { color: var(--c-text-muted); font-size: 0.9375rem; }
-.ld-kind-count { margin-top: auto; padding-top: var(--space-2); font-weight: 600; font-size: 0.875rem; color: var(--c-primary); }
+.ld-field select:focus-visible { outline: var(--focus-width) solid var(--c-focus); outline-offset: 2px; }
+.ld-bar-submit {
+  min-height: 5.75rem;
+  padding: 0 2.25rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-size: 0.9375rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+.ld-bar-submit:hover { background: var(--c-primary-hover); }
+.ld-bar-submit:focus-visible { outline: var(--focus-width) solid var(--c-on-primary); outline-offset: -6px; }
 
-.ld-guests {
+/* ---------- Sections ---------- */
+.ld-section { padding-top: 7rem; }
+.ld-head {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.25rem 2.5rem;
+  margin-bottom: 2.5rem;
 }
-.ld-guests label { font-weight: 600; }
-.ld-guests input[type="range"] { flex: 1 1 12rem; max-width: 22rem; accent-color: var(--c-primary); min-height: 2.75rem; }
-.ld-guests output { min-width: 7.5rem; color: var(--c-text-muted); font-variant-numeric: tabular-nums; }
-
-.ld-more { margin: var(--space-4) 0 0; font-weight: 600; }
-.ld-more a { display: inline-flex; align-items: center; min-height: 2.75rem; gap: var(--space-1); }
-
-/* Occasions: links to /events?type=. */
-.ld-occasions {
-  list-style: none;
+.ld-head h2 {
+  max-width: 40rem;
   margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
-  gap: var(--space-3);
+  font-size: clamp(2rem, 1.2rem + 2.3vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
 }
-.ld-occasion {
-  display: flex;
-  flex-direction: column;
+.ld-head > p { max-width: 24rem; margin: 0; color: var(--c-text-muted); }
+
+.ld-more { margin: var(--space-5) 0 0; font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.ld-more a {
+  display: inline-flex;
+  align-items: center;
   gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-  min-height: 2.75rem;
-  border-radius: var(--radius-md);
-  background: var(--c-surface);
-  border: var(--border-width) solid var(--c-border);
+  min-height: var(--touch-target);
   color: var(--c-text);
-  text-decoration: none;
-  transition: border-color 160ms ease, background-color 160ms ease;
+  text-decoration: underline;
+  text-underline-offset: 0.35em;
+  text-decoration-thickness: 1px;
 }
-.ld-occasion:hover { border-color: var(--c-primary); background: var(--c-primary-soft); }
-.ld-occasion-label { font-weight: 600; }
-.ld-occasion-count { font-size: 0.875rem; color: var(--c-text-muted); }
 
-.ld-events { display: grid; gap: var(--space-4); }
-
-.ld-ways {
+/* The three rooms: photo tiles into the directory. */
+.ld-tiles {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
-  gap: var(--space-4);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
 }
-.ld-way {
+.ld-tile {
+  position: relative;
+  display: block;
+  height: 26.875rem;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--c-band);
+  color: var(--c-on-band);
+  text-decoration: none;
+}
+.ld-tile:hover { color: var(--c-on-band); }
+.ld-tile:focus-visible { outline-offset: 3px; }
+.ld-tile img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+.ld-tile:hover img { transform: scale(1.03); }
+.ld-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 35%, color-mix(in srgb, var(--c-band) 88%, transparent) 100%);
+}
+.ld-tile-text {
+  position: absolute;
+  z-index: 1;
+  left: 1.75rem;
+  right: 1.75rem;
+  bottom: 1.75rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  background: var(--c-surface);
-  border: var(--border-width) solid var(--c-border);
 }
-.ld-way h3 { margin: 0; }
-.ld-way p { margin: 0 0 var(--space-2); color: var(--c-text-muted); }
-.ld-way .btn { margin-top: auto; }
+.ld-tile-count { font-size: 0.75rem; font-weight: var(--fw-medium); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }
+.ld-tile-title {
+  margin: 0.625rem 0 0.375rem;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: var(--fw-bold);
+  line-height: 1.1;
+  letter-spacing: var(--ls-display);
+}
+.ld-tile-blurb { font-size: var(--fs-sm); color: var(--c-on-band-muted); }
 
-.ld-footer-links { display: flex; flex-wrap: wrap; gap: var(--space-4); margin: var(--space-2) 0 0; }
-.ld-footer-links a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+/* In the directory: the listing cards, re-dressed as quiet columns with a hairline on top. */
+.ld-directory .discover-chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-5); }
+.ld-directory .discover-chips-label { width: 100%; color: var(--c-text-muted); font-size: 0.6875rem; font-weight: var(--fw-medium); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }
+.ld-directory .discover-chip { box-shadow: none; border-color: var(--c-border-strong); font-weight: var(--fw-medium); }
+.ld-directory .discover-chip:hover { box-shadow: none; border-color: var(--c-text); }
+.ld-directory .discover-chip.is-on { background: var(--c-primary); border-color: var(--c-primary); color: var(--c-on-primary); }
+.ld-directory .dir-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.5rem var(--space-5); }
+.ld-directory .dir-card { padding: 1.25rem 0 0; border: 0; border-top: var(--border-width) solid var(--c-text); border-radius: 0; background: transparent; }
+.ld-directory .dir-card .ep-type { margin: 0 0 var(--space-2); color: var(--c-text-muted); font-size: 0.6875rem; font-weight: var(--fw-medium); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }
+.ld-directory .dir-card h3 { margin: 0 0 var(--space-1); font-size: 1.3125rem; line-height: 1.2; }
+.ld-directory .dir-place { color: var(--c-text-muted); font-size: 0.9375rem; }
+.ld-directory .dir-actions { gap: 0 var(--space-5); padding-top: var(--space-2); }
+.ld-directory .dir-actions .btn-primary,
+.ld-directory .dir-actions .btn-primary:hover:not(:disabled) {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--c-text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.35em;
+  text-decoration-thickness: 1px;
+}
+.ld-directory .dir-actions .btn-primary:hover:not(:disabled) { color: var(--c-text-muted); }
+.ld-directory .dir-link { color: var(--c-text); font-size: var(--fs-sm); font-weight: var(--fw-medium); text-decoration: none; }
+.ld-directory .dir-link:hover { text-decoration: underline; }
 
-@media (max-width: 860px) {
-  .ld-hero { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); margin-top: var(--space-4); }
+/* ---------- For organisers: the navy band with the Palazzo Vecchio photo ---------- */
+.ld-band { margin-top: 7rem; padding-block: 6rem; background: var(--c-band); color: var(--c-on-band); }
+.ld-band-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4.5rem; align-items: center; }
+.ld-band-photo {
+  min-width: 0;
+  aspect-ratio: 5 / 4;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--c-surface-sunk);
+}
+.ld-band-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ld-band .ld-eyebrow { color: var(--c-on-band-muted); }
+.ld-band h2 {
+  margin: 0 0 1.125rem;
+  color: var(--c-on-band);
+  font-size: clamp(2rem, 1.2rem + 2.1vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.ld-band-lede { max-width: 30rem; margin: 0; color: var(--c-on-band-muted); }
+.ld-steps { list-style: none; margin: 1.625rem 0 2.125rem; padding: 0; display: grid; gap: var(--space-4); }
+.ld-steps li {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  padding-top: 0.875rem;
+  border-top: var(--border-width) solid color-mix(in srgb, var(--c-on-band) 18%, transparent);
+}
+.ld-step-n { color: var(--c-on-band-muted); font-size: 0.8125rem; font-variant-numeric: tabular-nums; line-height: 1.75; }
+
+.ld-footer-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-5); }
+
+/* The band is the last section: it meets the footer directly. */
+.ld-route .shell-footer { border-top: 0; }
+
+/* ---------- Narrow screens ---------- */
+@media (max-width: 900px) {
+  /* The copy sits at the foot, so the top of the hero shows the room itself. */
+  .ld-hero { min-height: min(46rem, 100svh); justify-content: flex-end; padding-block: 16rem 6rem; }
+  /* A tall crop of a wide photo would show only the ceiling: the photo fills the top of
+     the hero instead, framed on the stage and the seats, and fades into the navy. */
+  .ld-hero-photo { height: 62%; object-position: 50% 72%; }
+  .ld-bar { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ld-field:nth-child(2) { border-right: 0; }
+  .ld-field { border-bottom: var(--border-width) solid var(--c-border); }
+  .ld-bar-submit { grid-column: 1 / -1; min-height: 3.5rem; }
+  .ld-tiles, .ld-directory .dir-grid { grid-template-columns: minmax(0, 1fr); }
+  .ld-tile { height: 21.25rem; }
+  .ld-band-grid { grid-template-columns: minmax(0, 1fr); gap: 2.25rem; }
+  .ld-section { padding-top: 5rem; }
+  .ld-band { margin-top: 5rem; padding-block: 4rem; }
+  /* The text spans the width here: the room stays visible above it, and the navy
+     deepens only where the copy sits (from about a third of the way down). */
+  .ld-hero::after {
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--c-band) 40%, transparent) 0%,
+      color-mix(in srgb, var(--c-band) 15%, transparent) 18%,
+      color-mix(in srgb, var(--c-band) 75%, transparent) 40%,
+      var(--c-band) 62%);
+  }
+}
+
+@media (max-width: 560px) {
+  .ld-hero h1 { font-size: 2.625rem; }
+  .ld-lede { font-size: 1.0625rem; }
+  .ld-hero-actions .btn { flex: 1 1 100%; }
+  .ld-bar { grid-template-columns: minmax(0, 1fr); }
+  .ld-field { border-right: 0; padding-inline: 1.125rem; }
+  .ld-tile { height: 18rem; }
+  .ld-tile-title { font-size: 1.75rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ld-kind, .ld-occasion { transition: none; }
-  .ld-kind:active { transform: none; }
+  .ld-tile img, .ld-bar-submit { transition: none; }
+  .ld-tile:hover img { transform: none; }
 }

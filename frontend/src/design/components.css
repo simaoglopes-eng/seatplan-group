@@ -11,7 +11,7 @@
 .shell-inner {
   width: 100%;
   margin: 0 auto;
-  padding-inline: var(--space-4);
+  padding-inline: var(--gutter);
 }
 
 .shell-normal { max-width: var(--layout-max); }
@@ -33,18 +33,65 @@
   top: var(--space-3);
 }
 
-/* Frosted, but nearly opaque: photos and the map scroll under it and the
-   header text must stay readable over the darkest of them. */
+/* A plain bar in the page colour with one hairline under it. */
 .shell-header {
   position: sticky;
   top: 0;
   z-index: var(--z-header);
-  background: var(--glass-fill-strong);
-  -webkit-backdrop-filter: var(--glass-blur-strong);
-  backdrop-filter: var(--glass-blur-strong);
-  border-bottom: var(--border-width) solid var(--glass-edge);
-  box-shadow: 0 1px 0 var(--c-border);
+  background: var(--c-bg);
+  border-bottom: var(--border-width) solid var(--c-border);
 }
+
+/* variant="overlay" (the home page only): the bar sits transparent over the hero
+   photo with white text, and scrolls away with it. */
+/* The public header links (PublicHeaderActions): small capitals, square account button. */
+.site-nav .site-nav-links .btn,
+.site-nav .site-nav-toggle,
+.site-nav .site-nav-login {
+  font-size: 0.8125rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.site-nav .site-nav-links .btn { color: var(--c-text); }
+/* The account link is an outline button on every page (the home hero makes it white). */
+.site-nav .site-nav-login {
+  min-height: var(--touch-target);
+  padding-inline: var(--space-4);
+  background: transparent;
+  color: var(--c-text);
+  border-color: var(--c-text);
+  box-shadow: none;
+}
+.site-nav .site-nav-login:hover:not(:disabled) { background: var(--c-text); color: var(--c-bg); border-color: var(--c-text); }
+
+.shell-overlay { position: relative; }
+.shell-overlay .shell-header {
+  position: absolute;
+  inset: 0 0 auto;
+  background: transparent;
+  border-bottom-color: transparent;
+  color: var(--c-on-band);
+}
+.shell-overlay .shell-header .wordmark,
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn,
+.shell-overlay .shell-header .site-nav-toggle { color: var(--c-on-band); }
+.shell-overlay .shell-header .site-nav-login {
+  background: transparent;
+  color: var(--c-on-band);
+  border-color: var(--c-on-band);
+}
+.shell-overlay .shell-header .site-nav-login:hover { background: var(--c-on-band); color: var(--c-band); }
+.shell-overlay .shell-header .site-nav-toggle:hover:not(:disabled),
+.shell-overlay .shell-header .site-nav-toggle[aria-expanded="true"],
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--c-on-band) 14%, transparent);
+  color: var(--c-on-band);
+}
+.shell-overlay .shell-header :focus-visible { outline-color: var(--c-on-band); }
+/* The open phone menu is a white panel: its links keep the normal ring. */
+.shell-overlay .shell-header .site-nav-links.is-open :focus-visible { outline-color: var(--c-focus); }
+.shell-overlay .shell-main { padding: 0; max-width: none; width: 100%; }
 
 .shell-header .shell-inner {
   display: flex;
@@ -70,12 +117,16 @@
 }
 
 .shell-footer {
-  border-top: var(--border-width) solid var(--glass-edge);
-  background: var(--glass-fill-soft);
+  border-top: var(--border-width) solid var(--c-border);
+  background: var(--c-bg);
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
   padding-block: var(--space-3);
 }
+
+.shell-footer-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-5); }
+.shell-footer a { color: var(--c-text-muted); display: inline-flex; align-items: center; min-height: var(--touch-target); }
+.shell-footer a:hover { color: var(--c-text); }
 
 .shell-footer p {
   margin: 0;
@@ -98,6 +149,7 @@
   color: var(--c-text);
   text-decoration: none;
 }
+.wordmark:hover { color: var(--c-text); }
 
 .wordmark-logo {
   flex: none;
@@ -179,17 +231,16 @@
   box-shadow: var(--btn-sheen), var(--shadow-press);
 }
 
-/* A pane of glass with a lit edge, not an outlined box. */
+/* An outlined box on the page colour. */
 .btn-secondary {
-  background: var(--glass-fill-soft);
+  background: var(--c-surface);
   color: var(--c-text);
-  border-color: var(--glass-edge);
-  box-shadow: var(--glass-highlight), var(--shadow-sm);
+  border-color: var(--c-border-strong);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--glass-fill-hover);
-  box-shadow: var(--glass-highlight), var(--shadow-md);
+  background: var(--c-surface-sunk);
+  border-color: var(--c-text);
 }
 
 .btn-ghost {
@@ -198,8 +249,7 @@
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--glass-fill-soft);
-  box-shadow: var(--glass-highlight);
+  background: var(--c-surface-sunk);
 }
 
 .btn-danger {
@@ -683,5 +733,4 @@
 .shell-header .shell-inner { min-height: 4.5rem; }
 .shell-main { padding-block: clamp(1.5rem, 4vw, 3rem) 4rem; }
 .shell-footer { padding-block: 1.5rem; }
-.wordmark-text { font-family: var(--font-body); font-size: 1.35rem; font-weight: 750; letter-spacing: -.055em; }
-@media (min-width: 48rem) { .shell-inner { padding-inline: 2rem; } }
+.wordmark-text { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
