@@ -202,10 +202,6 @@ def test_confirm_reseats_everyone_keeps_groups_releases_holds_and_emails(
     choose(client, setup, "Family 1", setup.seats[1][0])
     choose(client, setup, "Family 2", setup.seats[1][2])
     choose(client, setup, "Solo", setup.seats[0][2])
-    held = client.post(
-        f"/api/a/{setup.tokens['Waiting']}/hold", json={"seat_id": setup.seats[0][3]}
-    )
-    assert held.status_code == 200, held.text
     event = _event(session, setup)
     old_seats = {g: r.seat_id for g, r in _rows(session, event).items()}
     version_before = session.get(LiveVersion, f"event-{setup.eid}").version
@@ -380,10 +376,6 @@ def test_another_event_at_the_same_hall_is_never_touched(
     choose(client, first, "Guest 1", first.seats[0][0])
     choose(client, second, "Guest 1", second.seats[0][0])
     choose(client, second, "Guest 2", second.seats[1][1])
-    hold = client.post(
-        f"/api/a/{second.tokens['Guest 3']}/hold", json={"seat_id": second.seats[1][2]}
-    )
-    assert hold.status_code == 200
     other = _event(session, second)
     other_rows = {g: r.seat_id for g, r in _rows(session, other).items()}
     other_holds = [
@@ -672,7 +664,7 @@ def test_the_usual_event_flows_work_on_a_setup_copy(
     page = setup.page(client, "Guest 2")
     assert page["venue"] == {"name": "Hall"} and len(page["map"]["seats"]) == 30
     token = setup.tokens["Guest 2"]
-    assert client.post(f"/api/a/{token}/hold", json={"seat_id": old_hall_seat}).status_code == 404
+    assert client.post(f"/api/a/{token}/confirm", json={"seat_id": old_hall_seat}).status_code == 404
     choose(client, setup, "Guest 2", free[0])
 
     # Someone joins with the shared link and picks a seat of the copy.
@@ -681,10 +673,6 @@ def test_the_usual_event_flows_work_on_a_setup_copy(
     mine = client.get(f"/api/guest/events/{setup.eid}", headers=headers)
     assert mine.status_code == 200, mine.text
     assert len(mine.json()["map"]["seats"]) == 30
-    held = client.post(
-        f"/api/guest/events/{setup.eid}/hold", headers=headers, json={"seat_id": free[1]}
-    )
-    assert held.status_code == 200, held.text
     done = client.post(
         f"/api/guest/events/{setup.eid}/confirm", headers=headers, json={"seat_id": free[1]}
     )
@@ -774,18 +762,20 @@ def test_the_step_free_sentence_reads_right_for_one_and_for_none() -> None:
     assert loss(2, 2) == loss(0, 4) == ""
 
 
-def test_the_confirm_step_counts_people_choosing_a_seat_right_now(
+def test_the_confirm_step_counts_nobody_choosing_since_holds_are_gone(
     client: TestClient, session: Session, organiser: Organiser
 ) -> None:
+    """Seat holds were removed (the first confirmation wins), so a selection
+    reserves nothing and the confirm step never counts anyone as choosing."""
     setup = make_event(client, organiser, PEOPLE)
     choose(client, setup, "Guest 1", setup.seats[0][0])
     held = client.post(
         f"/api/a/{setup.tokens['Guest 2']}/hold", json={"seat_id": setup.seats[1][0]}
     )
-    assert held.status_code == 200, held.text
+    assert held.status_code == 410, held.text
     refused = _apply(client, setup, "banquet")
     assert refused.status_code == 409
-    assert refused.json()["error"]["details"]["holding"] == 1
+    assert refused.json()["error"]["details"]["holding"] == 0
 
 
 def test_the_setup_in_use_again_changes_nothing_and_emails_nobody(
@@ -888,7 +878,7 @@ def test_a_write_that_loaded_the_event_before_a_setup_change_uses_the_new_room(
     put a guest on a seat of the old one (the hall's, or a removed copy's)."""
     from app.core.errors import ApiError
     from app.events_service.schemas import SeatChoice
-    from app.events_service.seating import confirm_seat, hold_seat
+    from app.events_service.seating import confirm_seat
     from app.routers import events as events_router
 
     people = [{"name": f"G{n}", "email": f"g{n}@example.com"} for n in range(3)]
@@ -920,7 +910,6 @@ def test_a_write_that_loaded_the_event_before_a_setup_change_uses_the_new_room(
     stale = loaded_now()
     assert _apply(client, setup, "cabaret", confirm=True).status_code == 200
     guest = session.get(Guest, g2)
-    assert status_of(lambda: hold_seat(session, stale, guest, hall_seat)) == 404
     assert status_of(lambda: confirm_seat(session, stale, guest, hall_seat)) == 404
 
     # 2. One copy, then the next: the first copy and its seats are gone.

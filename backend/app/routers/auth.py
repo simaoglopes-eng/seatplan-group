@@ -149,4 +149,4 @@ def verify_organiser(body: VerifyOrganiserIn, request: Request, session: db.Sess
     except IntegrityError:
         session.rollback()
         raise ApiError(409, "conflict", "Please sign in or try again.") from None
-    return LoginOut(token=create_session_token(user.id), user=_user_out(user))
+    return LoginOut(token=work_session_token(user), user=_user_out(user))

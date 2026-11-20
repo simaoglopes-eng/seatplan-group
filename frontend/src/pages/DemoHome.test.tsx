@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import Home from "./Home";
+import Home from "./DemoHome";
 
 function renderHome(): void {
   render(
@@ -31,16 +31,14 @@ describe("Home demo links", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ links }), { status: 200 })));
     renderHome();
     expect(screen.getByText("Loading demo links...")).toBeTruthy();
-    const booking = await screen.findByRole("link", { name: /Restaurant booking/ });
-    expect(booking.getAttribute("href")).toBe("/r/casa");
-    expect(booking.textContent).toContain("Book a table as a diner");
-    expect(screen.getByRole("link", { name: /Restaurant staff/ }).getAttribute("href")).toBe("/staff/casa");
-    expect(screen.getByRole("link", { name: /Event booking/ }).getAttribute("href")).toBe("/events");
+    // Events only in this project: the restaurant links are sent but never shown.
+    expect((await screen.findByRole("link", { name: /Event booking/ })).getAttribute("href")).toBe("/events");
     expect(screen.getByRole("link", { name: /Event staff/ }).getAttribute("href")).toBe("/events/staff");
-    expect(screen.getByRole("link", { name: "Browse restaurants" }).getAttribute("href")).toBe("/");
+    expect(screen.queryByRole("link", { name: /Restaurant/ })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Restaurant" })).toBeNull();
     expect(screen.getByRole("link", { name: "Browse halls and quintas" }).getAttribute("href")).toBe("/venues");
     // Each card: its two entries and its browse link, nothing else.
-    for (const title of ["Restaurant", "Events"]) {
+    for (const title of ["Events"]) {
       const card = screen.getByRole("heading", { name: title }).closest("article") as HTMLElement;
       expect(within(card).getAllByRole("link")).toHaveLength(3);
     }
@@ -53,15 +51,13 @@ describe("Home demo links", () => {
   it("describes each link in words instead of printing its path", async () => {
     // A real token is 43 characters with no place to break: printed, it pushed the page sideways on a phone.
     const token = "x".repeat(43);
-    const links = { restaurant_booking: `/r/${token}`, restaurant_staff: "/staff/demo-venue" };
+    const links = { event_booking: `/j/${token}`, event_staff: "/events/staff" };
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ links }), { status: 200 })));
     renderHome();
-    const booking = await screen.findByRole("link", { name: /Restaurant booking/ });
-    expect(booking.getAttribute("href")).toBe(`/r/${token}`);
+    const booking = await screen.findByRole("link", { name: /Event booking/ });
+    expect(booking.getAttribute("href")).toBe(`/j/${token}`);
     expect(booking.textContent).not.toContain(token);
-    expect(screen.getByRole("link", { name: /Restaurant staff/ }).textContent).toContain("Run the dining room during service");
-    // A card whose links are missing says so instead of showing nothing.
-    expect(screen.getByText("No demo links for this part yet.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Event staff/ }).getAttribute("href")).toBe("/events/staff");
   });
 
   it("shows an error with a working retry when the server is down", async () => {
