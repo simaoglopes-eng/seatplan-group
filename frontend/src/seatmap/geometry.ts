@@ -13,6 +13,14 @@ export const HIT_PADDING = 4;
 export const MIN_TARGET_PX = 24;
 /** Tap target we aim for wherever the spacing between seats allows (Apple and WCAG 2.5.5). */
 export const COMFORT_TARGET_PX = 44;
+/**
+ * Smallest on-screen diameter of a seat when the map is zoomed out to fit a phone.
+ * Seats are drawn in venue units, so a whole floor on a 390px screen would draw them
+ * about 7px wide; below this size the glyph is enlarged in place (never the layout).
+ */
+export const MIN_SEAT_PX = 16;
+/** Screen pixels an enlarged seat always keeps free from its neighbour and from its table. */
+const SEAT_CLEAR_PX = 3;
 
 export interface Point {
   id: number;
@@ -151,6 +159,38 @@ export function roomAround(points: Point[]): Map<number, number> {
     room.set(p.id, nearest / 2);
   }
   return room;
+}
+
+/**
+ * Free space between a seat's centre and the edge of its own table, in venue units.
+ * Theatre-row seats sit on the row itself, so the row never limits them (Infinity).
+ */
+export function tableClearance(seat: { x: number; y: number }, table: MapTable | undefined): number {
+  if (!table || table.shape === "row") return Infinity;
+  const centre = tableCentre(table);
+  // Into the table's own axes, so a rotated table is measured like an upright one.
+  const a = (-table.rotation * Math.PI) / 180;
+  const dx = seat.x - centre.x;
+  const dy = seat.y - centre.y;
+  const lx = dx * Math.cos(a) - dy * Math.sin(a);
+  const ly = dx * Math.sin(a) + dy * Math.cos(a);
+  if (table.shape === "round") return Math.hypot(lx, ly) - Math.max(table.w, table.h) / 2;
+  return Math.hypot(Math.max(Math.abs(lx) - table.w / 2, 0), Math.max(Math.abs(ly) - table.h / 2, 0));
+}
+
+/**
+ * How much to enlarge a seat's glyph at zoom k so it is drawn at least MIN_SEAT_PX
+ * across, as far as its neighbours (`room`, half the distance to the nearest seat)
+ * and its table (`clearance`) allow. Never below 1: a seat is never drawn smaller.
+ * Rounded down to a twentieth so small zoom steps do not redraw every seat.
+ */
+export function seatGlyphScale(room: number, clearance: number, k: number): number {
+  // The seat's disc has radius SEAT_RADIUS - 1 (glyphs.tsx); its outline reaches SEAT_RADIUS.
+  const drawn = 2 * (SEAT_RADIUS - 1) * k;
+  if (drawn >= MIN_SEAT_PX) return 1;
+  const wanted = MIN_SEAT_PX / drawn;
+  const fits = (Math.min(room, clearance) - SEAT_CLEAR_PX / k) / SEAT_RADIUS;
+  return Math.floor(Math.max(1, Math.min(wanted, fits)) * 20) / 20;
 }
 
 /**

@@ -200,34 +200,103 @@
   border-left: calc(var(--border-width) * 4) solid var(--c-danger);
 }
 
-/* Account and invitation forms share the event site's calm, readable surfaces. */
-.acc-page { width: 100%; gap: 1.25rem; padding-bottom: 2rem; }
+/* ---------- Direction E ----------
+   Working screens (/my, /my/account, /my/:eventId): linen surfaces, one hairline, 14px
+   corners, Gloock headings, round buttons, no glass and no drop shadows. */
+.acc-page { width: 100%; gap: var(--space-5); padding-bottom: var(--space-6); }
 .acc-page .acc-title {
-  font-family: Georgia, serif;
-  font-size: clamp(2.15rem, 5vw, 3.4rem);
-  font-weight: 400;
-  letter-spacing: -.045em;
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 5vw, 3.4rem);
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-display);
   line-height: 1.08;
   overflow-wrap: anywhere;
 }
-.acc-page .acc-lede { line-height: 1.65; }
-.acc-page .acc-form { gap: 1rem; padding: clamp(1.25rem, 4vw, 2rem); border-radius: 1rem; }
-.acc-page .acc-bar, .acc-page .acc-event { border-radius: .9rem; }
-.acc-page :focus-visible { outline: 3px solid var(--c-focus); outline-offset: 3px; }
+.acc-page .acc-lede { line-height: var(--lh-body); }
+.acc-page .acc-form { gap: var(--space-4); padding: clamp(1.25rem, 4vw, 2rem); border-radius: var(--radius); border-color: var(--c-line); box-shadow: none; }
+.acc-page .acc-submit { border-radius: var(--radius-button); min-height: 48px; }
+.acc-page .acc-bar { padding: var(--space-2) var(--space-4); border-radius: var(--radius); border-color: var(--c-line); box-shadow: none; }
+/* .acc-bar repeated: premium.css gives these links 42px; the bar also sits outside .acc-page
+   on the seat page (/my/:eventId). */
+.acc-bar .acc-bar-links a,
+.acc-page .acc-links a { min-height: var(--touch-target); }
+.acc-bar.acc-bar { border-color: var(--c-line); border-radius: var(--radius); box-shadow: none; }
+.acc-page .acc-event { padding: var(--space-5); border-radius: var(--radius); border-color: var(--c-line); box-shadow: none; }
+.acc-page .acc-event h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: var(--fw-display); letter-spacing: var(--ls-display); }
+.acc-page .acc-event .btn { border-radius: var(--radius-button); }
+.acc-page .acc-events { gap: var(--space-3); }
+.acc-page .acc-privacy { padding: var(--space-4); border-radius: var(--radius-input); background: var(--c-surface-sunk); line-height: 1.6; }
+.acc-page .acc-problem { border-radius: var(--radius-input); }
+.acc-page .acc-notice { border-radius: var(--radius-input); }
+.acc-page :focus-visible { outline: var(--focus-width) solid var(--c-focus); outline-offset: 3px; }
 @media (max-width: 600px) {
-  .acc-page { margin-top: 1rem; gap: 1rem; }
+  .acc-page { margin-top: var(--space-3); gap: var(--space-4); }
+  .acc-page .acc-form { padding: var(--space-5) var(--space-4); }
   .acc-page .acc-bar { align-items: flex-start; }
   .acc-page .acc-bar-links { width: 100%; }
+  .acc-page .acc-event { padding: var(--space-4); }
   .acc-page .acc-event .btn { width: 100%; }
 }
 
-/* Account areas share the event experience's softer editorial surfaces. */
-.acc-page { gap: 1.35rem; }
-.acc-page .acc-title { font-size: clamp(2.5rem, 5vw, 3.75rem); }
-.acc-page .acc-form { padding: clamp(1.5rem, 4vw, 2.3rem); border-radius: 1.3rem; box-shadow: var(--shadow-md); }
-.acc-page .acc-bar { padding: .75rem 1.1rem; border-radius: 1rem; }
-.acc-page .acc-event { padding: 1.5rem; border-radius: 1.1rem; }
-.acc-page .acc-event h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 400; }
-.acc-page .acc-events { gap: .85rem; }
-.acc-page .acc-privacy { padding: 1rem; border-radius: .8rem; background: var(--c-surface-sunk); line-height: 1.6; }
-@media(max-width:600px) { .acc-page .acc-form { padding: 1.25rem; } }
+/* ---------- The entry forms over the terrace photo (AuthPhoto, login.css .ap-route) ----------
+   /my/sign-in, /my/register, /my/forgot, /my/reset, /j/:token/register, /j/:token/sign-in and
+   /account signed out. The panel is glass because it sits on the photograph; the inputs keep
+   the fixed light fill from login.css, so they read the same in both schemes. */
+.acc-solo { width: min(100%, 34rem); margin: clamp(.5rem, 2vw, 1.75rem) auto; }
+.acc-solo > .acc-page { margin-top: 0; }
+.ap-route :is(.acc-page, .ya-signed-out) .acc-title { color: var(--glass-text); text-shadow: 0 1px 2px rgb(0 0 0 / 0.22); }
+.ap-route :is(.acc-page, .ya-signed-out) :is(p, li, .acc-lede, .ev-muted, .checkbox-label, .checkbox-hint) { color: var(--glass-text-muted); }
+.ap-route :is(.acc-page, .ya-signed-out) strong { color: var(--glass-text); }
+.ap-route :is(.acc-page, .ya-signed-out) a:not(.btn) { color: var(--glass-text); font-weight: var(--fw-medium); text-decoration: underline; text-underline-offset: 4px; }
+.ap-route :is(.acc-page, .ya-signed-out) :focus-visible { outline-color: var(--glass-text); }
+.ap-route :is(.acc-page, .ya-signed-out) .acc-form { padding: 0; border: 0; background: transparent; box-shadow: none; }
+.ap-route :is(.acc-page, .ya-signed-out) .checkbox-input { accent-color: var(--c-accent-bright); }
+.ap-route :is(.acc-page, .ya-signed-out) .acc-details summary { color: var(--glass-text); }
+/* The privacy text on glass: a slightly darker pane, white words. */
+.ap-route :is(.acc-page, .ya-signed-out) .acc-privacy { background: rgb(var(--photo-veil-ink) / 0.45); border: var(--border-width) solid var(--glass-border); text-shadow: none; }
+.ap-route :is(.acc-page, .ya-signed-out) .acc-privacy :is(p, li) { color: var(--glass-text); }
+/* The problem box keeps a fixed light note with dark ink, legible on any photo. */
+.ap-route :is(.acc-page, .ya-signed-out) .acc-problem { background: #fbe9e5; border-left-color: #b42318; text-shadow: none; }
+.ap-route :is(.acc-page, .ya-signed-out) .acc-problem :is(p, li, strong) { color: #3b120d; }
+/* Round outline buttons on glass: "Show password", "Send a new code", the sign-in switch. */
+.ap-route :is(.acc-page, .ya-signed-out) .acc-toggle,
+.ap-route :is(.acc-page, .ya-signed-out) .btn-ghost,
+.ap-route :is(.acc-page, .ya-signed-out) .btn-secondary {
+  min-height: var(--touch-target);
+  border: var(--border-width) solid var(--glass-border);
+  border-radius: var(--radius-button);
+  background: var(--glass-bg);
+  color: var(--glass-text);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  box-shadow: none;
+}
+.ap-route :is(.acc-page, .ya-signed-out) .acc-toggle:hover,
+.ap-route :is(.acc-page, .ya-signed-out) :is(.btn-ghost, .btn-secondary):hover:not(:disabled) { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); color: var(--glass-text); }
+.ap-route :is(.acc-page, .ya-signed-out) .acc-toggle[aria-pressed="true"] { background: rgb(255 255 255 / 0.9); color: #1f2b26; text-shadow: none; }
+.ap-route :is(.acc-page, .ya-signed-out) .btn:disabled { opacity: 0.7; }
+/* The main button: green glass, like the organiser sign-in. */
+.ap-route :is(.acc-page, .ya-signed-out) :is(.acc-submit, .btn-primary).btn {
+  min-height: 48px;
+  border: var(--border-width) solid rgb(255 255 255 / 0.4);
+  border-radius: var(--radius-button);
+  background: var(--glass-green);
+  box-shadow: var(--glass-shadow-button);
+  -webkit-backdrop-filter: var(--glass-blur-button);
+  backdrop-filter: var(--glass-blur-button);
+  color: var(--glass-text);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+}
+.ap-route :is(.acc-page, .ya-signed-out) :is(.acc-submit, .btn-primary).btn:hover:not(:disabled) { background: var(--glass-green-hover); border-color: var(--glass-border-hover); color: var(--glass-text); }
+@media (prefers-reduced-transparency: reduce) {
+  .ap-route :is(.acc-page, .ya-signed-out) :is(.acc-submit, .btn-primary).btn { background: var(--glass-green-solid); }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ap-route :is(.acc-page, .ya-signed-out) :is(.acc-submit, .btn-primary).btn { background: var(--glass-green-solid); }
+}
+/* A field's own error keeps login.css's light note with dark red ink (outranks the white copy above). */
+.ap-route :is(.acc-page, .ya-signed-out) .field-error.field-error,
+.ap-route :is(.acc-page, .ya-signed-out) .field-error.field-error * { color: #8f1d12; text-shadow: none; }
+/* /my/register: "Already have an account? Sign in" is a link on its own line: a 44px target. */
+.ap-route .login > p:last-child > a:only-child { display: inline-flex; align-items: center; min-height: var(--touch-target); }
+/* The demo code note sits on glass too. */
+.ap-route :is(.acc-page, .ya-signed-out) .badge { background: rgb(255 255 255 / 0.9); color: #1f2b26; text-shadow: none; }

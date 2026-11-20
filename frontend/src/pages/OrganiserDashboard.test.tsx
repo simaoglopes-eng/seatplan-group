@@ -6,6 +6,8 @@ import OrganiserDashboard from "./OrganiserDashboard";
 const mocks = vi.hoisted(() => ({ getMe: vi.fn(), get: vi.fn(), post: vi.fn() }));
 vi.mock("../api/client", () => ({
   api: { get: mocks.get, post: mocks.post }, getMe: mocks.getMe, clearSessionToken: vi.fn(),
+  // The header's public navigation reads both tokens to say "My account" or "Sign in".
+  getGuestToken: () => null, getSessionToken: () => "session",
   ApiError: class ApiError extends Error { status = 500; },
 }));
 

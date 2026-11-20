@@ -59,9 +59,9 @@ export default function Home() {
       >
         <Hero count={count} />
         <Rooms count={count} />
+        <TrySeat />
         <Directory count={count} />
         <Organisers />
-        <TrySeat />
       </PageShell>
     </div>
   );
@@ -309,7 +309,8 @@ function usePageWheel<T extends HTMLElement>() {
   return ref;
 }
 
-/** "Try choosing a seat": the fixed sample floor (homeSample.ts), on plain linen. It never talks to the server. */
+/** "Try choosing a seat": the fixed sample floor (homeSample.ts) in a solid card, with its copy in glass over a
+ *  dinner photo. The map stays on a solid surface so every seat state keeps its contrast. It never talks to the server. */
 function TrySeat() {
   // A later threshold than the other blocks, so the seats light up where the visitor can see them.
   const reveal = useReveal<HTMLDivElement>(0.4);
@@ -317,12 +318,15 @@ function TrySeat() {
   const [selected, setSelected] = useState<number | null>(null);
   const mapBox = usePageWheel<HTMLDivElement>();
   return (
-    <section className="ld-block ld-section ld-tone-bg ld-try" aria-labelledby="ld-try-title">
-      <div className="ld-wrap ld-try-grid ld-drift" ref={reveal}>
-        <div className="ld-try-copy">
-          <p className="ld-eyebrow">Try it</p>
+    <section className="ld-block ld-section photo-band ld-try" aria-labelledby="ld-try-title">
+      <div className="photo-band-photo ld-try-photo">
+        <img src="/images/photos/hero-dining-hall.jpg" width={2000} height={1333} alt="" loading="lazy" decoding="async" />
+      </div>
+      <div className="photo-band-inner ld-wrap ld-try-grid ld-drift" ref={reveal}>
+        <div className="glass-panel ld-try-copy">
+          <p className="ld-eyebrow glass-eyebrow">Try it</p>
           <h2 id="ld-try-title">Try choosing a seat.</h2>
-          <p className="ld-try-lede">
+          <p className="ld-try-lede glass-muted">
             This is what a guest sees: the room as it is, live. Pick a free seat; the dashed rings mark the ones next to a friend.
           </p>
           <p className="ld-try-picked" aria-live="polite">
@@ -330,9 +334,8 @@ function TrySeat() {
               ? "No seat chosen yet."
               : `Seat ${selected % 100} at table ${Math.floor(selected / 100)} is yours in this sample.`}
           </p>
-          <Legend states={["free", "held", "taken", "friend", "blocked"]} showAccessible showRecommended />
           <p className="ld-try-links">
-            <Link className="btn btn-primary ld-btn" to="/demo">
+            <Link className="btn btn-glass-green ld-btn" to="/demo">
               Open the live demo
             </Link>
             <Link className="ld-text-link" to="/participant">
@@ -340,15 +343,18 @@ function TrySeat() {
             </Link>
           </p>
         </div>
-        <div className="ld-try-map" ref={mapBox}>
-          <SeatMap
-            label="Sample seat map, try choosing a seat"
-            tables={floor.tables}
-            seats={floor.seats}
-            highlight={SAMPLE_RECOMMENDED}
-            selectedId={selected}
-            onSelect={setSelected}
-          />
+        <div className="ld-try-card">
+          <div className="ld-try-map" ref={mapBox}>
+            <SeatMap
+              label="Sample seat map, try choosing a seat"
+              tables={floor.tables}
+              seats={floor.seats}
+              highlight={SAMPLE_RECOMMENDED}
+              selectedId={selected}
+              onSelect={setSelected}
+            />
+          </div>
+          <Legend states={["free", "held", "taken", "friend", "blocked"]} showAccessible showRecommended />
         </div>
       </div>
     </section>

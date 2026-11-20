@@ -3,6 +3,12 @@
 .organiser-dashboard { color: var(--c-text); }
 .organiser-dashboard * { box-sizing: border-box; }
 .btn.dashboard-signout { min-height: var(--touch-target); padding-inline: var(--space-4); border-radius: var(--radius-button); }
+/* One Sign out shows at a time (OrganiserDashboard.tsx): the header's, or on a phone the one under the intro. */
+.btn.dashboard-signout-inline { display: none; }
+@media (max-width: 40rem) {
+  .shell-actions > .btn.dashboard-signout { display: none; }
+  .btn.dashboard-signout-inline { display: inline-flex; margin-top: var(--space-3); border: var(--border-width) solid var(--c-border-strong); }
+}
 .dashboard-content { padding-block: clamp(1rem, 3vw, 2rem) var(--space-6); }
 .dashboard-kicker,
 .dashboard-label { margin: 0; color: var(--c-accent); font-size: 0.75rem; font-weight: var(--fw-medium); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }

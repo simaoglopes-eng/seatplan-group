@@ -66,3 +66,30 @@
 .ow-team-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-3) var(--space-4); background: var(--c-surface); border: var(--border-width) solid var(--c-border); border-radius: var(--radius-md); overflow-wrap: anywhere; }
 .ow-team-list li > div { min-width: 0; flex: 1 1 14rem; }
 .ow-team-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
+
+/* An event venue's team (Events, direction E): eyebrow, Gloock title, hairlines,
+   solid surfaces. The restaurant owner pages keep their own look. */
+.ow-team-venue .ow-workspace {
+  margin: var(--space-4) 0 var(--space-2);
+  padding: 0;
+  border: 0;
+  color: var(--c-text-muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+}
+.ow-team-venue .ow-page-head { padding-bottom: var(--space-5); border-bottom: var(--border-width) solid var(--c-line); }
+.ow-team-venue .ow-page-head p { max-width: 40rem; margin: var(--space-2) 0 0; color: var(--c-text-muted); }
+.ow-team-venue .ow-title {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  font-size: clamp(2.1rem, 1.5rem + 2.4vw, 3.4rem);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  color: var(--c-heading);
+}
+.ow-team-venue .ow-team h2 { font-family: var(--font-display); font-weight: var(--fw-display); font-size: var(--fs-xl); letter-spacing: var(--ls-display); }
+.ow-team-venue .ow-team-add,
+.ow-team-venue .ow-team-list li { border-color: var(--c-line); border-radius: var(--radius); }
+.ow-team-venue .ow-team-list li { min-height: var(--touch-target); }

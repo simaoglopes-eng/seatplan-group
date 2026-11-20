@@ -1,5 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { SEAT_RADIUS, contentBounds, fitView, nearestInDirection, roomAround, seatHitRadius, zoomAround } from "./geometry";
+import { MIN_SEAT_PX, SEAT_RADIUS, contentBounds, fitView, nearestInDirection, roomAround, seatGlyphScale, seatHitRadius, tableClearance, zoomAround } from "./geometry";
+
+describe("seatGlyphScale (a zoomed-out phone map draws seats bigger, never overlapping)", () => {
+  it("leaves seats alone once they are big enough on screen", () => {
+    expect(seatGlyphScale(40, 30, 1)).toBe(1);
+  });
+  it("grows a 7px seat to the minimum size when there is room", () => {
+    const k = 0.394; // the organiser map fitted to a 390px phone
+    const scale = seatGlyphScale(32, 30, k);
+    expect(2 * (SEAT_RADIUS - 1) * k * scale).toBeGreaterThanOrEqual(MIN_SEAT_PX - 0.5);
+  });
+  it("stops before touching a neighbour or the table, and never shrinks a seat", () => {
+    const k = 0.4;
+    const tight = seatGlyphScale(20, Infinity, k);
+    expect(tight).toBeGreaterThan(1);
+    expect(tight * SEAT_RADIUS).toBeLessThanOrEqual(20 - 3 / k);
+    expect(seatGlyphScale(32, 12, k) * SEAT_RADIUS).toBeLessThanOrEqual(12);
+    expect(seatGlyphScale(5, 5, k)).toBe(1);
+  });
+  it("measures the gap to a round table from its edge, and to a rotated rectangle in its own axes", () => {
+    expect(tableClearance({ x: 0, y: -70 }, { id: 1, label: "T1", shape: "round", x: -50, y: -50, w: 100, h: 100, rotation: 0 })).toBeCloseTo(20);
+    expect(tableClearance({ x: 0, y: -40 }, { id: 2, label: "T2", shape: "rect", x: -10, y: -50, w: 20, h: 100, rotation: 90 })).toBeCloseTo(30);
+    expect(tableClearance({ x: 0, y: 0 }, { id: 3, label: "R1", shape: "row", x: -50, y: -5, w: 100, h: 10, rotation: 0 })).toBe(Infinity);
+  });
+});
 
 // A plus sign of seats around the centre seat 5, plus one far-off seat 9.
 //        1

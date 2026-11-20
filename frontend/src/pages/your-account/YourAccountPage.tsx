@@ -4,6 +4,7 @@
 // Either half can be missing: a work-only sign-in has no bookings, a guest-only one no staff
 // tools. Each side then says why and offers the right sign-in, instead of sending the person away.
 import { useCallback, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { AccountSessions } from "../../api/account";
 import { accountSignOut, getAccountWork } from "../../api/account";
@@ -11,6 +12,7 @@ import { getGuestToken, getSessionToken } from "../../api/client";
 import { getMyAccount } from "../../api/guest";
 import { Button, PageShell, useToast } from "../../design/components";
 import { PublicHeaderActions } from "../discover/PublicHeaderActions";
+import { AuthPhoto } from "../Login";
 import { AccountRegister } from "./AccountRegister";
 import { AccountSignIn } from "./AccountSignIn";
 import { BookingPanel } from "./BookingPanel";
@@ -60,12 +62,15 @@ export default function YourAccountPage() {
   const anySession = signed.guest || signed.work;
   const create = params.get("mode") === "create";
   const tab = params.get("tab") === "staff" ? "staff" : "booking";
+  // Signed out, the forms sit in a glass panel over the terrace photo (direction E, like /login).
+  const Frame = anySession ? PlainFrame : AuthPhoto;
   return (
+    <Frame>
     <div className="discover-route">
-      <PageShell title={anySession ? "My account" : create ? "Create your account" : "Sign in"} width="wide" headerActions={<PublicHeaderActions />}>
+      <PageShell title={anySession ? "My account" : create ? "Create your account" : "Sign in"} width="wide" variant={anySession ? "default" : "overlay"} headerActions={<PublicHeaderActions />}>
         <div className="ya-page">
           {!anySession ? (
-            <div className="ya-signed-out">
+            <div className="ya-signed-out auth-content acc-solo">
               <h1 className="acc-title">{create ? "Create your SeatPlan account" : "Sign in to SeatPlan"}</h1>
               <p className="acc-lede">One account for booking tables and event seats, and for the work you do at restaurants and venues.</p>
               <div className="discover-view-switch ya-switch" role="group" aria-label="Sign in or create an account">
@@ -126,7 +131,12 @@ export default function YourAccountPage() {
         </div>
       </PageShell>
     </div>
+    </Frame>
   );
+}
+
+function PlainFrame({ children }: { children: ReactNode }) {
+  return <>{children}</>;
 }
 
 /** Who is signed in, from whichever half is open, and Sign out for both. */

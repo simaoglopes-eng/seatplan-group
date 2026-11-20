@@ -1,89 +1,158 @@
-/* Participant journey only. Shared organiser and visitor styles remain unchanged. */
-.ev-attendee {
-  gap: 1.25rem;
+/* Guest journey only: /e/:token, /my/:eventId (.ev-attendee) and the shared link /j/:token
+   (.join-page). The organiser screens never carry these classes, so events.css stays theirs.
+
+   Direction E for working screens: linen surfaces, one hairline, 14px corners, Gloock headings,
+   round buttons, no glass and no drop shadows. The one photograph is the event header: white
+   words straight on the veiled dinner photo (credited on /credits), never a glass pane. The
+   seat map keeps every state and its own colours from tokens.css: nothing here dims it. */
+
+.ev-page.ev-attendee {
+  gap: var(--space-5);
   width: 100%;
   margin-inline: auto;
-  padding-bottom: 2rem;
+  padding-bottom: var(--space-6);
 }
-.ev-attendee .ev-header {
-  gap: .5rem;
-  padding: clamp(1.5rem, 4vw, 2.5rem);
-  border: 1px solid var(--c-border);
-  border-radius: 1rem;
-  background: var(--c-primary-soft);
+
+/* ---------- The event header: a photo band ---------- */
+.ev-page:is(.ev-attendee, .join-page) .ev-header {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  min-height: clamp(12rem, 26vw, 17rem);
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+  border: 0;
+  border-radius: var(--radius);
+  /* An even veil over the whole photo, then the shared veil, then the photo, then a solid
+     green in case the photo is slow: white text keeps 4.5:1 on every part of it. */
+  background:
+    linear-gradient(rgb(var(--photo-veil-ink) / 0.4), rgb(var(--photo-veil-ink) / 0.4)),
+    var(--photo-veil),
+    url("/images/photos/hero-dinner-giant.jpg") center 55% / cover no-repeat,
+    var(--c-band);
+  color: var(--glass-text);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
 }
-.ev-attendee .ev-eyebrow { font-size: .75rem; font-weight: 700; letter-spacing: .14em; }
-.ev-attendee .ev-title {
-  font-family: Georgia, serif;
+.ev-page:is(.ev-attendee, .join-page) .ev-eyebrow {
+  color: var(--glass-eyebrow);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-eyebrow);
+}
+.ev-page:is(.ev-attendee, .join-page) .ev-title {
+  max-width: 18ch;
+  color: var(--glass-text);
+  font-family: var(--font-display);
   font-size: clamp(2.3rem, 5vw, 4rem);
-  font-weight: 400;
-  letter-spacing: -.045em;
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-display);
   line-height: 1.05;
   overflow-wrap: anywhere;
 }
-.ev-attendee .ev-when { line-height: 1.6; }
-.ev-attendee .ev-card { border-radius: 1rem; }
-.ev-attendee .ev-card > p { line-height: 1.6; }
-.ev-attendee .ev-step-title {
-  font-family: Georgia, serif;
-  font-weight: 400;
-  letter-spacing: -.035em;
-  line-height: 1.15;
+.ev-page:is(.ev-attendee, .join-page) .ev-when { color: var(--glass-text-muted); line-height: 1.5; }
+
+/* ---------- Surfaces: linen and a hairline ---------- */
+.ev-page:is(.ev-attendee, .join-page) .ev-card {
+  border-color: var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  box-shadow: none;
 }
-/* Details are collapsed by default, with comfortable targets and readable forms. */
-.ev-attendee details.ev-card { display: block; padding: 0; }
-.ev-attendee details.ev-card summary { padding: 1rem 1.25rem; cursor: pointer; font-weight: 700; }
-.ev-attendee details.ev-card[open] summary { border-bottom: 1px solid var(--c-border); }
-.ev-attendee details.ev-card > p { margin: 1rem 1.25rem 0; color: var(--c-text-muted); }
-.ev-attendee details.ev-card form { display: grid; gap: .9rem; padding: 1rem 1.25rem 1.25rem; }
-.ev-attendee details.ev-card form label { display: grid; gap: .4rem; font-weight: 600; }
-.ev-attendee details.ev-card input:not([type="checkbox"]) {
-  width: 100%; max-width: 26rem; min-height: 2.75rem; padding: .65rem .75rem;
-  color: var(--c-text); background: var(--c-surface); border: 1px solid var(--c-border-strong);
-  border-radius: .5rem; font: inherit;
+.ev-page.ev-attendee .ev-card > p { line-height: var(--lh-body); }
+.ev-page:is(.ev-attendee, .join-page) :is(.ev-step-title, .ev-subtitle) {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-display);
 }
-.ev-attendee details.ev-card button { justify-self: start; }
-.ev-attendee .ev-seat-step { gap: 1.15rem; }
-.ev-attendee .ev-seat-step > p { color: var(--c-text-muted); line-height: 1.6; }
-.ev-attendee .ev-rec { border-radius: .8rem; padding: 1rem; }
-.ev-attendee .ev-focused, .ev-attendee .ev-holdbar { border-radius: .9rem; }
-.ev-attendee .ev-map { min-width: 0; }
-.ev-attendee :focus-visible { outline: 3px solid var(--c-focus); outline-offset: 3px; }
-@media (max-width: 600px) {
-  .ev-attendee { gap: 1rem; }
-  .ev-attendee .ev-header { padding: 1.4rem; }
-  .ev-attendee .ev-holdbar { bottom: .5rem; }
-  .ev-attendee .ev-holdbar > .btn { flex: 1 1 100%; }
-  .ev-attendee details.ev-card button { width: 100%; }
+.ev-page.ev-attendee .ev-step-title { font-size: clamp(2rem, 3.5vw, 3rem); line-height: 1.12; }
+.ev-page:is(.ev-attendee, .join-page) .ev-subtitle { font-size: var(--fs-xl); }
+.ev-page:is(.ev-attendee, .join-page) .btn { border-radius: var(--radius-button); }
+.ev-page:is(.ev-attendee, .join-page) .ev-warning { border-radius: var(--radius-input); }
+.ev-page:is(.ev-attendee, .join-page) :focus-visible { outline: var(--focus-width) solid var(--c-focus); outline-offset: 3px; }
+
+/* The two profile panels: collapsed, a full-width 48px summary. */
+.ev-page.ev-attendee details.ev-card { display: block; padding: 0; }
+.ev-page.ev-attendee details.ev-card summary {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: var(--space-2) var(--space-5);
+  cursor: pointer;
+  font-weight: var(--fw-bold);
+}
+.ev-page.ev-attendee details.ev-card[open] summary { border-bottom: var(--border-width) solid var(--c-line); }
+.ev-page.ev-attendee details.ev-card > p { margin: var(--space-4) var(--space-5) 0; color: var(--c-text-muted); }
+.ev-page.ev-attendee details.ev-card form { display: grid; gap: var(--space-3); padding: var(--space-4) var(--space-5) var(--space-5); }
+.ev-page.ev-attendee details.ev-card form label { display: grid; gap: var(--space-2); font-weight: var(--fw-medium); }
+.ev-page.ev-attendee details.ev-card input:not([type="checkbox"]) {
+  width: 100%;
+  max-width: 26rem;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  color: var(--c-text);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-border-strong);
+  border-radius: var(--radius-input);
+  font: inherit;
+}
+.ev-page.ev-attendee details.ev-card button { justify-self: start; }
+
+/* ---------- The seat step ---------- */
+.ev-page.ev-attendee .ev-seat-step { gap: var(--space-5); }
+.ev-page.ev-attendee .ev-seat-step > p { color: var(--c-text-muted); line-height: var(--lh-body); }
+.ev-page.ev-attendee .ev-recs { gap: var(--space-3); grid-auto-columns: minmax(min(16.5rem, 88%), 1fr); }
+.ev-page.ev-attendee .ev-rec {
+  padding: var(--space-4) var(--space-5);
+  border: var(--border-width) solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  box-shadow: none;
+}
+.ev-page.ev-attendee .ev-rec:hover { border-color: var(--c-accent); background: var(--c-surface); }
+.ev-page.ev-attendee .ev-rec[aria-pressed="true"] { border: calc(var(--border-width) * 2) solid var(--c-primary); background: var(--c-primary-soft); }
+.ev-page.ev-attendee .ev-rec-rank { letter-spacing: var(--ls-eyebrow); }
+.ev-page.ev-attendee .ev-rec-seat { margin-block: var(--space-1); font-size: 1.3rem; font-weight: var(--fw-display); }
+.ev-page.ev-attendee .ev-rec-cta { display: inline-flex; align-items: center; min-height: var(--touch-target); }
+.ev-map-intro { display: flex; justify-content: space-between; align-items: end; gap: var(--space-4); padding-top: var(--space-3); border-top: var(--border-width) solid var(--c-line); }
+.ev-map-intro h3 { margin: var(--space-1) 0 0; font-family: var(--font-display); font-size: clamp(1.65rem, 3vw, 2.2rem); font-weight: var(--fw-display); letter-spacing: var(--ls-display); }
+.ev-map-eyebrow { margin: 0; color: var(--c-text-muted); font-size: var(--fs-xs); font-weight: var(--fw-medium); letter-spacing: var(--ls-eyebrow); }
+.ev-map-intro > p { max-width: 18rem; margin: 0; color: var(--c-text-muted); font-size: var(--fs-sm); line-height: 1.5; }
+.ev-page.ev-attendee .ev-map { min-width: 0; }
+.ev-page.ev-attendee .ev-focused {
+  padding: var(--space-4) var(--space-5);
+  border: var(--border-width) solid var(--c-primary);
+  border-radius: var(--radius);
+  background: var(--c-primary-soft);
+}
+/* The sticky bar with the countdown and Confirm: a solid surface (it floats over the map),
+   so it keeps the one shadow on this page. */
+.ev-page.ev-attendee .ev-holdbar {
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-5);
+  border: var(--border-width) solid var(--c-line);
+  border-left: calc(var(--border-width) * 4) solid var(--c-accent);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-lg);
 }
 
-/* A calmer, more navigable seat selection experience. */
-.ev-attendee .ev-header {
-  position: relative;
-  overflow: hidden;
-  padding: clamp(1.65rem, 4vw, 3rem);
-  border-radius: 1.5rem;
-  background: radial-gradient(circle at 92% 12%, color-mix(in srgb, var(--c-surface) 58%, transparent) 0 4.5rem, transparent 4.6rem), var(--c-primary-soft);
+/* The legend sits on a sunk band, the same floor the map is drawn on. */
+.ev-page:is(.ev-attendee, .join-page) .legend {
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
 }
-.ev-attendee .ev-eyebrow { letter-spacing: .17em; }
-.ev-attendee .ev-title { max-width: 16ch; font-size: clamp(2.6rem, 5vw, 4.5rem); }
-.ev-attendee .ev-when { margin-top: .35rem; }
-.ev-attendee .ev-seat-step { gap: 1.35rem; }
-.ev-attendee .ev-step-title { font-size: clamp(2rem, 3.5vw, 3rem); }
-.ev-attendee .ev-subtitle { font-size: 1.05rem; }
-.ev-attendee .ev-recs { gap: .75rem; grid-auto-columns: minmax(min(16.5rem, 88%), 1fr); }
-.ev-attendee .ev-rec { padding: 1.25rem; border: 1px solid var(--c-border); border-radius: 1rem; box-shadow: var(--shadow-sm); }
-.ev-attendee .ev-rec:hover { border-color: var(--c-accent); }
-.ev-attendee .ev-rec[aria-pressed="true"] { border-color: var(--c-primary); background: var(--c-primary-soft); }
-.ev-attendee .ev-rec-seat { margin-block: .25rem; font-size: 1.3rem; }
-.ev-map-intro { display: flex; justify-content: space-between; align-items: end; gap: 1rem; padding-top: .75rem; }
-.ev-map-intro h3 { margin: .3rem 0 0; font-family: var(--font-display); font-size: clamp(1.65rem, 3vw, 2.2rem); font-weight: 400; letter-spacing: -.035em; }
-.ev-map-eyebrow { margin: 0; color: var(--c-text-muted); font-size: .68rem; font-weight: 700; letter-spacing: .15em; }
-.ev-map-intro > p { max-width: 18rem; margin: 0; color: var(--c-text-muted); font-size: .875rem; line-height: 1.5; }
-.ev-attendee .ev-focused { padding: 1.25rem; background: var(--c-primary-soft); border-color: var(--c-primary); }
-.ev-attendee .ev-holdbar { padding: 1rem 1.25rem; box-shadow: var(--shadow-lg); }
-@media(max-width:600px) {
-  .ev-attendee .ev-header { padding: 1.5rem; border-radius: 1.15rem; }
-  .ev-map-intro { align-items: flex-start; flex-direction: column; gap: .5rem; }
-  .ev-attendee .ev-recs { grid-auto-columns: minmax(85%, 1fr); }
+
+/* On a phone the room is wider than tall: a shorter frame leaves less empty floor around it
+   without making a single seat smaller (the map fits the width). */
+@media (max-width: 600px) {
+  .ev-page:is(.ev-attendee, .join-page) { --map-height: min(62vh, 26rem); }
+  .ev-page.ev-attendee { gap: var(--space-4); }
+  .ev-page:is(.ev-attendee, .join-page) .ev-header { min-height: 11rem; padding: var(--space-5); }
+  .ev-page.ev-attendee .ev-holdbar { bottom: var(--space-2); }
+  .ev-page.ev-attendee .ev-holdbar > .btn { flex: 1 1 100%; }
+  .ev-page.ev-attendee details.ev-card button { width: 100%; }
+  .ev-map-intro { align-items: flex-start; flex-direction: column; gap: var(--space-2); }
+  .ev-page.ev-attendee .ev-recs { grid-auto-columns: minmax(85%, 1fr); }
 }

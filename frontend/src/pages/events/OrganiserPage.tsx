@@ -6,6 +6,7 @@ import { Link, useParams } from "react-router-dom";
 import type { ApiError } from "../../api/client";
 import type { OrganiserEvent } from "../../api/events";
 import { ErrorState, PageShell, Skeleton } from "../../design/components";
+import { PublicHeaderActions } from "../discover/PublicHeaderActions";
 import { formatDateTime } from "./format";
 import { GuestsTab } from "./GuestsTab";
 import { LayoutTab } from "./LayoutTab";
@@ -25,7 +26,7 @@ export default function OrganiserPage() {
 
   if (org.load.status === "loading") {
     return (
-      <PageShell title="Event seating plan" width="wide">
+      <PageShell title="Event seating plan" width="wide" headerActions={<PublicHeaderActions />}>
         <div className="ev-org-layout">
           <Skeleton lines={8} label="Loading the seating plan" />
           <Skeleton lines={6} label="Loading the guest list" />
@@ -35,14 +36,14 @@ export default function OrganiserPage() {
   }
   if (org.load.status === "error") {
     return (
-      <PageShell title="Event seating plan">
+      <PageShell title="Event seating plan" headerActions={<PublicHeaderActions />}>
         <OrganiserError error={org.load.error} onRetry={org.retry} />
       </PageShell>
     );
   }
   const data = org.load.data;
   return (
-    <PageShell title={`${data.event.name}, seating plan`} width="wide">
+    <PageShell title={`${data.event.name}, seating plan`} width="wide" headerActions={<PublicHeaderActions />}>
       <div className="ev-organiser-workspace">
       <OrganiserHeader data={data} />
       <p className="visually-hidden" role="status" aria-live="polite">

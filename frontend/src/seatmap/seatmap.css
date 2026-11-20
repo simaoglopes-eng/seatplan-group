@@ -124,7 +124,7 @@
 
 .glyph-blocked .glyph-body {
   stroke: var(--seat-blocked);
-  stroke-width: 1.5;
+  stroke-width: 2;
 }
 
 /* Restaurant tables reuse the glyph classes on a bigger shape. */
@@ -137,7 +137,7 @@
 .pat-friend-bg { fill: var(--seat-friend-soft); }
 .pat-friend-fg { fill: var(--seat-friend); }
 .pat-blocked-bg { fill: var(--seat-blocked-soft); }
-.pat-blocked-fg { stroke: var(--seat-blocked); stroke-width: 0.9; }
+.pat-blocked-fg { stroke: var(--seat-blocked); stroke-width: 1.1; }
 
 .mark {
   fill: none;
@@ -316,6 +316,28 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* Phones: a stack in the map's corner would sit on a table (it hid T3 and its seats
+   on a 390px screen), so the buttons leave the map and form a row of round buttons
+   under it, above the caption. The DOM order already puts them there. The landing
+   page's sample map places its own block (landing.css, .ld-try-map) and outranks this. */
+@media (max-width: 40rem) {
+  .seatmap-controls {
+    position: static;
+    align-self: flex-end;
+    flex-direction: row;
+    gap: var(--space-2);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+  /* The same round button as the landing map's (landing.css), so both read as one control. */
+  .seatmap > .seatmap-controls .map-control {
+    border-radius: var(--radius-button);
+    box-shadow: var(--shadow-sm);
+  }
 }
 
 .seatmap-caption {

@@ -15,6 +15,7 @@ import { EditorToolbar } from "./EditorToolbar";
 import { createTable, createZone, nudge, removeItem, replaceTable, replaceZone, reshapeTable } from "./layoutModel";
 import type { Selection, VenueLayout } from "./layoutModel";
 import { layoutFromVenue, payloadFromLayout } from "./layoutWire";
+import { PublicHeaderActions } from "../discover/PublicHeaderActions";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { useHistory } from "./useHistory";
 import type { History } from "./useHistory";
@@ -98,7 +99,7 @@ export default function EditorPage() {
 
 function EditorFrame({ children, title = "Floor plan editor" }: { children: ReactNode; title?: string }) {
   return (
-    <PageShell title={title} width="wide">
+    <PageShell title={title} width="wide" headerActions={<PublicHeaderActions />}>
       {children}
     </PageShell>
   );

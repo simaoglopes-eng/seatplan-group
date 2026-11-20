@@ -19,6 +19,8 @@ import type { FieldErrors } from "../account/FormProblem";
 import { PasswordToggle } from "../account/PasswordToggle";
 import { PrivacyText } from "../account/PrivacyText";
 import { joinOutcome } from "./joinOutcome";
+import { PublicHeaderActions } from "../discover/PublicHeaderActions";
+import { AuthPhoto } from "../Login";
 import "../account/account.css";
 import "./join.css";
 
@@ -138,7 +140,8 @@ export default function RegisterPage() {
   };
 
   return (
-    <PageShell title="Create your account">
+    <AuthPhoto>
+    <PageShell title="Create your account" variant="overlay" headerActions={<PublicHeaderActions />}>
       <AuthLayout eyebrow="FOR PARTICIPANTS" headline="Your invitation, all in one place." description="Confirm your email, choose a seat and keep your event details close at hand.">
       <div className="acc-page">
         <p className="visually-hidden" role="status" aria-live="polite">
@@ -172,6 +175,7 @@ export default function RegisterPage() {
       </div>
       </AuthLayout>
     </PageShell>
+    </AuthPhoto>
   );
 }
 

@@ -5,6 +5,8 @@ import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword } from "../../api/guest";
 import { Badge, Button, Field, PageShell, useToast } from "../../design/components";
+import { PublicHeaderActions } from "../discover/PublicHeaderActions";
+import { AuthPhoto } from "../Login";
 import type { ResetState } from "./ForgotPage";
 import { ProblemBox, asApiError, listErrors, looksLikeEmail, splitFieldMessage } from "./FormProblem";
 import type { FieldErrors } from "./FormProblem";
@@ -61,7 +63,9 @@ export default function ResetPage() {
   };
 
   return (
-    <PageShell title="Choose a new password">
+    <AuthPhoto>
+    <PageShell title="Choose a new password" variant="overlay" headerActions={<PublicHeaderActions />}>
+      <div className="auth-content acc-solo">
       <div className="acc-page">
         <h1 className="acc-title">Choose a new password</h1>
         {sentState?.sentTo && <p>If there is an account for {sentState.sentTo}, we sent it a code. It works for 15 minutes.</p>}
@@ -107,6 +111,8 @@ export default function ResetPage() {
           </div>
         </form>
       </div>
+      </div>
     </PageShell>
+    </AuthPhoto>
   );
 }

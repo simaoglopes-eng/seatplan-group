@@ -8,7 +8,7 @@ import { memo } from "react";
 import type { MapSeat, MapTable, SeatState } from "../api/types";
 import { describeItem } from "./describe";
 import type { DescribeItem, MapItem } from "./describe";
-import { SEAT_RADIUS, seatHitRadius, tableCentre, tableHitRadius } from "./geometry";
+import { SEAT_RADIUS, seatGlyphScale, seatHitRadius, tableCentre, tableClearance, tableHitRadius } from "./geometry";
 import { AccessibleBadge, SeatGlyph, StateMark, bodyFill } from "./glyphs";
 import { TableLabel, TableShape } from "./MapLayers";
 import type { MotionKind } from "./useSeatChanges";
@@ -60,10 +60,13 @@ function Rings({ radius, flags }: { radius: number; flags: TargetFlags }) {
   );
 }
 
-/** `hitRadius` grows with zoom-out up to the room around the seat (geometry.ts, seatHitRadius). */
-type SeatNodeProps = TargetFlags & { seat: MapSeat; hitRadius: number };
+/**
+ * `hitRadius` grows with zoom-out up to the room around the seat (geometry.ts, seatHitRadius).
+ * `glyphScale` enlarges the drawn seat and its rings when zoomed out (geometry.ts, seatGlyphScale).
+ */
+type SeatNodeProps = TargetFlags & { seat: MapSeat; hitRadius: number; glyphScale: number };
 
-export const SeatNode = memo(function SeatNode({ seat, hitRadius, ...flags }: SeatNodeProps) {
+export const SeatNode = memo(function SeatNode({ seat, hitRadius, glyphScale, ...flags }: SeatNodeProps) {
   return (
     <g
       id={flags.domId}
@@ -81,8 +84,14 @@ export const SeatNode = memo(function SeatNode({ seat, hitRadius, ...flags }: Se
       <g className="target-inner" data-motion={flags.motion}>
         {/* Invisible, larger hit area so small seats are easier to tap. */}
         <circle r={hitRadius} className="hit-area" />
-        <Rings radius={SEAT_RADIUS} flags={flags} />
-        <SeatGlyph state={seat.state} accessible={seat.accessible} prefix={flags.prefix} />
+        <Rings radius={SEAT_RADIUS * glyphScale} flags={flags} />
+        {glyphScale === 1 ? (
+          <SeatGlyph state={seat.state} accessible={seat.accessible} prefix={flags.prefix} />
+        ) : (
+          <g transform={`scale(${glyphScale})`}>
+            <SeatGlyph state={seat.state} accessible={seat.accessible} prefix={flags.prefix} />
+          </g>
+        )}
       </g>
     </g>
   );
@@ -212,9 +221,13 @@ export const TargetsLayer = memo(function TargetsLayer(p: TargetsLayerProps) {
   return (
     <g>
       {p.seats.map((seat) => {
-        const hitRadius = seatHitRadius(p.rooms.get(seat.id) ?? 0, p.zoom);
-        const item: MapItem = { kind: "seat", seat, table: p.tableById.get(seat.table_id) };
-        return <SeatNode key={seat.id} seat={seat} hitRadius={hitRadius} {...flagsFor(seat.id, item)} />;
+        const room = p.rooms.get(seat.id) ?? 0;
+        const table = p.tableById.get(seat.table_id);
+        const hitRadius = seatHitRadius(room, p.zoom);
+        // The drawn seat may grow on a zoomed-out phone map, but never past its hit area.
+        const glyphScale = Math.min(seatGlyphScale(room, tableClearance(seat, table), p.zoom), Math.max(1, hitRadius / SEAT_RADIUS));
+        const item: MapItem = { kind: "seat", seat, table };
+        return <SeatNode key={seat.id} seat={seat} hitRadius={hitRadius} glyphScale={glyphScale} {...flagsFor(seat.id, item)} />;
       })}
     </g>
   );
