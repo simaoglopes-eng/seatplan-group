@@ -1,9 +1,14 @@
-// The account link stays visible in the public header and opens /account. On phones the
-// event link sits behind Menu. Events only: no restaurant-owner link.
+// The right side of the header on every public page: Venues, Events, the primary
+// "Create your own event" button and the account link. On phones the first three sit
+// behind Menu (the create button is the menu's primary item); the account link stays
+// visible. Events only: no restaurant-owner link.
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getGuestToken, getSessionToken } from "../../api/client";
 import "./discover.css";
+
+/** Where every "Create your own event" button goes: the organiser space, with the new-event form focused. */
+export const CREATE_EVENT_HREF = "/organiser?new=1";
 
 export function PublicHeaderActions() {
   const [open, setOpen] = useState(false);
@@ -29,6 +34,9 @@ export function PublicHeaderActions() {
         </Link>
         <Link to="/events" className="btn btn-ghost" onClick={close}>
           Events
+        </Link>
+        <Link to={CREATE_EVENT_HREF} className="btn site-nav-create" onClick={() => setOpen(false)}>
+          Create your own event
         </Link>
       </div>
       {/* One account for bookings and work (plan 2026-11-18): either session means signed in. */}

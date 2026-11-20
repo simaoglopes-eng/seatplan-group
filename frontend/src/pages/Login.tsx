@@ -8,9 +8,13 @@ import { AuthLayout, Button, Field, PageShell, useToast } from "../design/compon
 import { PublicHeaderActions } from "./discover/PublicHeaderActions";
 import "./login.css";
 
-/** Only allow in-app paths after login, so a link cannot send people to another site. */
+/**
+ * Only allow in-app paths after login, so a link cannot send people to another site.
+ * A backslash is refused too: browsers read "/\host" as "//host", and the router
+ * throws on it, which left the page stuck on "Something went wrong".
+ */
 export function safeNextPath(next: string | null): string {
-  if (next && next.startsWith("/") && !next.startsWith("//")) return next;
+  if (next && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\")) return next;
   return "/";
 }
 
@@ -74,7 +78,7 @@ export default function Login({ defaultNext = "/organiser" }: { defaultNext?: st
             Sign in
           </Button>
         </form>
-        {!isStaff && <p>New to SeatPlan? <Link to={params.get("next") ? `/organiser/register?next=${encodeURIComponent(safeNextPath(params.get("next")))}` : "/organiser/register"}>Create an organiser account</Link>.</p>}
+        {!isStaff && <p>New to SeatPlan? <Link to={params.get("next") && safeNextPath(params.get("next")) === params.get("next") ? `/organiser/register?next=${encodeURIComponent(params.get("next") ?? "")}` : "/organiser/register"}>Create an organiser account</Link>.</p>}
       </div>
       </AuthLayout>
     </PageShell>

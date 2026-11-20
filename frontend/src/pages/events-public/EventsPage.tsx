@@ -15,8 +15,10 @@ import { EventCard } from "./EventCard";
 import { eventTypeFrom } from "./eventsModel";
 import { PageBand, countText } from "./PageBand";
 import { VenueCard } from "./VenueCard";
+import { CreateOwnEvent } from "../directory/CreateOwnEvent";
 import "../discover/discover.css";
 import "./events-public.css";
+import "../directory/directory.css";
 
 const PAGE = 20;
 type Results = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; items: PublicEvent[]; total: number };
@@ -122,6 +124,8 @@ export default function EventsPage() {
               Show more
             </Button>
           )}
+          {/* Under the list, or under the empty state: an event can be at any place, listed or not. */}
+          {results.status === "ready" && <CreateOwnEvent id="events-own-title" />}
         </section>
         <VenuesTeaser typeLabels={new Map(typeList.map((t) => [t.key, t.label]))} />
       </PageShell>

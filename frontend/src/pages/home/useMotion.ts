@@ -29,7 +29,7 @@ function canObserve(): boolean {
  * Drift in: a block that starts below the fold is nudged down and slightly faded
  * (never invisible) and settles when it enters the screen. Returns a ref callback.
  */
-export function useReveal<T extends HTMLElement>(): (el: T | null) => void {
+export function useReveal<T extends HTMLElement>(threshold = 0.12): (el: T | null) => void {
   const reduced = useReducedMotion();
   const cleanup = useRef<(() => void) | null>(null);
   return useCallback(
@@ -46,7 +46,7 @@ export function useReveal<T extends HTMLElement>(): (el: T | null) => void {
             io.disconnect();
           }
         },
-        { threshold: 0.12 },
+        { threshold },
       );
       io.observe(el);
       cleanup.current = () => {
@@ -54,7 +54,7 @@ export function useReveal<T extends HTMLElement>(): (el: T | null) => void {
         el.classList.remove("ld-pre");
       };
     },
-    [reduced],
+    [reduced, threshold],
   );
 }
 

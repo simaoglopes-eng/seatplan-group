@@ -4,6 +4,7 @@
 .cr-page h1 { margin: 0 0 var(--space-4); }
 .cr-lede { color: var(--c-text-muted); }
 .cr-page h2 { margin: var(--space-7) 0 var(--space-4); font-size: var(--fs-xl); }
+.cr-count { color: var(--c-text-muted); font-weight: var(--fw-medium); font-size: var(--fs-sm); }
 .cr-list { list-style: none; margin: 0; padding: 0; }
 .cr-item {
   display: grid;

@@ -1,16 +1,19 @@
 // Route /directory: real quintas, halls and conference centres in Portugal, Belgium and
 // Italy. Country, kind and search live in the address (?country=PT&kind=estate&q=sintra),
 // so the home page links straight to a filtered list. The server filters and pages.
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getDirectory } from "../../api/venueDirectory";
 import type { DirectoryCountry, DirectoryKind, Listing } from "../../api/venueDirectory";
+import { illustrativeLayout } from "../../data/illustrativePhotos";
+import { venuePhoto } from "../../data/venuePhotos";
 import { Button, EmptyState, ErrorState, PageShell, Skeleton } from "../../design/components";
 import { Chip, Chips } from "../discover/Chips";
 import { PublicHeaderActions } from "../discover/PublicHeaderActions";
 import { errorMessage } from "../restaurant/format";
 import { useLoad } from "../restaurant/useLoad";
 import { COUNTRIES, KINDS, countryFrom, kindFrom } from "./directoryModel";
+import { CreateOwnEvent } from "./CreateOwnEvent";
 import { Attribution, ListingCard } from "./ListingCard";
 import { PageBand, countText } from "../events-public/PageBand";
 import "../discover/discover.css";
@@ -18,6 +21,28 @@ import "../events-public/events-public.css";
 import "./directory.css";
 
 const PAGE = 24;
+
+/** How many columns the auto-fill grid has right now (1 until measured, e.g. in tests). */
+function useGridColumns(): [(el: HTMLDivElement | null) => void, number] {
+  const [el, setEl] = useState<HTMLDivElement | null>(null);
+  const [columns, setColumns] = useState(1);
+  useEffect(() => {
+    if (!el) return undefined;
+    const measure = (): void => {
+      const tracks = getComputedStyle(el).gridTemplateColumns.split(" ").filter((t) => t !== "" && t !== "none").length;
+      setColumns(Math.max(1, tracks));
+    };
+    measure();
+    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [el]);
+  return [useCallback((node: HTMLDivElement | null) => setEl(node), []), columns];
+}
 
 export default function DirectoryPage() {
   const [params, setParams] = useSearchParams();
@@ -48,6 +73,8 @@ export default function DirectoryPage() {
 
   const ready = list.state.status === "ready" ? list.state.data : null;
   const items = ready ? [...ready.items, ...extra] : [];
+  const [gridRef, columns] = useGridColumns();
+  const illustrative = illustrativeLayout(items.map((l) => ({ id: l.id, kind: l.kind, hasOwn: venuePhoto(l.id) !== undefined })), columns);
   async function more(): Promise<void> {
     setMoreBusy(true);
     try {
@@ -104,9 +131,9 @@ export default function DirectoryPage() {
               </EmptyState>
             ) : (
               <>
-                <div className="dir-grid">
-                  {items.map((listing) => (
-                    <ListingCard key={listing.id} listing={listing} />
+                <div className="dir-grid" ref={gridRef}>
+                  {items.map((listing, i) => (
+                    <ListingCard key={listing.id} listing={listing} illustrative={illustrative[i]} />
                   ))}
                 </div>
                 {items.length < ready.total && (
@@ -118,6 +145,8 @@ export default function DirectoryPage() {
                 )}
               </>
             ))}
+          {/* After the grid, or under the empty state: a venue that is not listed can still host an event. */}
+          {ready && <CreateOwnEvent />}
         </section>
         <Attribution />
       </PageShell>

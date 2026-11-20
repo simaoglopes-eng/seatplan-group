@@ -23,7 +23,43 @@
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .dir-card:hover .dir-card-photo img { transform: scale(1.06); }
 }
-@media (prefers-reduced-motion: reduce) { .dir-card-photo img { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .dir-card-photo img { transition: none; transform: none; } }
+/* A venue without its own photo shows an illustrative one (illustrativePhotos.ts), always labelled.
+   The label is a solid navy chip, a sibling of the img so it never zooms, legible on any photo. */
+.dir-photo-label {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  z-index: 1;
+  padding: 0.125rem 0.4375rem;
+  background: var(--c-band);
+  color: var(--c-on-band);
+  border: var(--border-width) solid rgb(255 255 255 / 0.18);
+  border-radius: var(--radius-sm);
+  font-size: 0.6875rem;
+  font-weight: var(--fw-bold);
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+/* "Can't find your venue?" (CreateOwnEvent.tsx): under the directory grid and on /events. */
+.dir-own {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  margin: var(--space-6) 0 0;
+  padding: var(--space-4) var(--space-5);
+  background: var(--c-surface-sunk);
+  border: var(--border-width) solid var(--c-border);
+  border-radius: var(--radius-lg);
+}
+.dir-own-text { flex: 1 1 18rem; min-width: 0; max-width: none; margin: 0; color: var(--c-text); }
+.dir-own-text strong { font-weight: var(--fw-bold); }
+.dir-own-btn { flex: none; }
+@media (max-width: 30rem) { .dir-own-btn { width: 100%; justify-content: center; } }
 /* On /directory the photo runs flush to the card's edges. */
 .dir-page .dir-card.has-photo { overflow: hidden; }.dir-page .dir-card-photo { margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-4); border-radius: 0; }
 

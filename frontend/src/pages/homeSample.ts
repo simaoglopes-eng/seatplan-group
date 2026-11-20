@@ -54,11 +54,12 @@ export function buildSampleFloor(): { tables: MapTable[]; seats: MapSeat[] } {
 export const SAMPLE_RECOMMENDED: ReadonlySet<number> = new Set([102, 307]);
 
 /** The three photo tiles of "The rooms": each opens the directory filtered to its kind.
-    The photos are illustrations, credited on /credits (src/data/photoCredits.ts). */
-export const ROOM_TILES: { kind: DirectoryKind; photo: string; blurb: string }[] = [
-  { kind: "estate", photo: "/images/photos/douro-quinta-2.jpg", blurb: "Vineyards, manors and country houses" },
-  { kind: "hall", photo: "/images/photos/ballroom.jpg", blurb: "Ballrooms and banquet rooms" },
-  { kind: "conference", photo: "/images/photos/conference-room.jpg", blurb: "Auditoriums and meeting rooms" },
+    The photos are real directory venues (HOME_TILE_VENUES in src/data/venuePhotos.ts),
+    mostly seen from outside, so the blurbs name buildings rather than rooms. */
+export const ROOM_TILES: { kind: DirectoryKind; blurb: string }[] = [
+  { kind: "estate", blurb: "Vineyards, manors and country houses" },
+  { kind: "hall", blurb: "Event halls and banquet venues" },
+  { kind: "conference", blurb: "Auditoriums and meeting rooms" },
 ];
 
 /** 1835 -> "1,835", the same on every machine (no reliance on the browser's locale). */

@@ -7,6 +7,14 @@
 /* The band sits first in .shell-main, which keeps the frame width; a spread shadow paints the
    navy out to the window edges and clip-path trims it vertically, so nothing widens the page. */
 .pg-route .shell-main { padding-top: 0; }
+/* The header is the one of /login and /credits: discover.css sizes the restaurant header
+   (4rem tall on a desktop, which cut the 4.25rem bar; 3.125rem and not sticky on a phone),
+   so the bar jumped 6px between pages. Back to the site frame here. */
+.discover-route.pg-route .shell-header { height: auto; position: sticky; min-height: 0; }
+.discover-route.pg-route .shell-header .shell-inner { min-height: 4.25rem; }
+@media (max-width: 680px) {
+  .discover-route.pg-route .shell-header .shell-inner { min-height: 3.9rem; }
+}
 .pg-band {
   position: relative;
   display: grid;

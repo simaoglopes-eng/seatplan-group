@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import OrganiserDashboard from "./OrganiserDashboard";
 
@@ -49,4 +49,47 @@ describe("organiser dashboard", () => {
     await waitFor(() => expect(mocks.post).toHaveBeenCalledOnce());
     expect(mocks.post.mock.calls[0][1].venue_name).toBeUndefined();
   });
+
+  it("with ?new=1 brings the new-event form into view and focuses the event name", async () => {
+    const scrolled = vi.fn();
+    const original = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = scrolled;
+    try {
+      render(<MemoryRouter initialEntries={["/organiser?new=1"]}><OrganiserDashboard /></MemoryRouter>);
+      await screen.findByText("Your events will appear here once you create one.");
+      const field = screen.getByLabelText("Event name");
+      await waitFor(() => expect(document.activeElement).toBe(field));
+      expect(scrolled).toHaveBeenCalledWith({ block: "center" });
+      expect(scrolled.mock.contexts[0]).toBe(field);
+    } finally {
+      HTMLElement.prototype.scrollIntoView = original;
+    }
+  });
+
+  it("without ?new=1 leaves the focus where it was", async () => {
+    render(<MemoryRouter initialEntries={["/organiser"]}><OrganiserDashboard /></MemoryRouter>);
+    await screen.findByText("Your events will appear here once you create one.");
+    expect(document.activeElement).not.toBe(screen.getByLabelText("Event name"));
+  });
+
+  it("sends a signed-out visitor to sign in with ?new=1 kept in next", async () => {
+    const { ApiError } = await import("../api/client");
+    // The mocked ApiError ignores its arguments, so the status is set on the instance.
+    const unauthorised = Object.assign(new ApiError(401, "unauthorised", "Sign in"), { status: 401 });
+    mocks.getMe.mockRejectedValue(unauthorised);
+    render(
+      <MemoryRouter initialEntries={["/organiser?new=1"]}>
+        <Routes>
+          <Route path="/organiser" element={<OrganiserDashboard />} />
+          <Route path="/login" element={<Where />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByTestId("where")).toHaveProperty("textContent", "/login?next=%2Forganiser%3Fnew%3D1");
+  });
 });
+
+function Where() {
+  const location = useLocation();
+  return <p data-testid="where">{location.pathname + location.search}</p>;
+}

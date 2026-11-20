@@ -5,12 +5,12 @@
 // it says: the search and the room tiles open the directory with that country and
 // kind; "See all" opens the directory; "Plan an event here" opens the organiser
 // space with that venue named. Motion is gentle and stops under reduced motion.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Legend, PageShell } from "../design/components";
 import { SeatMap } from "../seatmap/SeatMap";
-import { PublicHeaderActions } from "./discover/PublicHeaderActions";
+import { CREATE_EVENT_HREF, PublicHeaderActions } from "./discover/PublicHeaderActions";
 import { getDirectoryCounts } from "../api/venueDirectory";
 import type { DirectoryCountry, DirectoryCounts, DirectoryKind } from "../api/venueDirectory";
 import { COUNTRIES, KINDS, countryFrom, directoryHref, kindFrom } from "./directory/directoryModel";
@@ -20,6 +20,7 @@ import type { Loaded } from "./restaurant/useLoad";
 import { CountUp } from "./home/CountUp";
 import { HeroDots, HeroPhotos, useSlides, HERO_SLIDES } from "./home/HeroSlides";
 import { useReveal } from "./home/useMotion";
+import { TileSlides, roomPhotos, useRoomSlides } from "./home/RoomSlides";
 import { VenueStrip } from "./home/VenueStrip";
 import "./landing.css";
 
@@ -37,8 +38,9 @@ function counter(counts: Loaded<DirectoryCounts>): CountFn {
 export default function Home() {
   const counts = useLoad(getDirectoryCounts, "directory-counts");
   const count = counter(counts);
+  const footerReveal = useFooterReveal();
   return (
-    <div className="ld-route">
+    <div className="ld-route" ref={footerReveal}>
       <PageShell
         title="Venues for events that matter"
         width="wide"
@@ -60,6 +62,19 @@ export default function Home() {
         <TrySeat />
       </PageShell>
     </div>
+  );
+}
+
+/** The footer belongs to PageShell; on this page its content drifts in like the blocks above. */
+function useFooterReveal(): (route: HTMLDivElement | null) => void {
+  const reveal = useReveal<HTMLElement>();
+  return useCallback(
+    (route: HTMLDivElement | null) => {
+      const inner = route?.querySelector<HTMLElement>(".shell-footer .shell-inner") ?? null;
+      inner?.classList.add("ld-drift");
+      reveal(inner);
+    },
+    [reveal],
   );
 }
 
@@ -94,7 +109,12 @@ function Hero({ count }: { count: CountFn }) {
           <HeroDots index={index} go={go} />
         </div>
       </div>
-      <SearchBar count={count} />
+      <div className="ld-wrap ld-search">
+        <SearchBar count={count} />
+        <Link className="btn ld-btn-line ld-create" to={CREATE_EVENT_HREF}>
+          Create your own event
+        </Link>
+      </div>
     </section>
   );
 }
@@ -109,8 +129,7 @@ function SearchBar({ count }: { count: CountFn }) {
     navigate(directoryHref(country, kind));
   };
   return (
-    <div className="ld-wrap ld-search">
-      <form className="ld-bar" role="search" aria-label="Find a venue" onSubmit={submit}>
+    <form className="ld-bar" role="search" aria-label="Find a venue" onSubmit={submit}>
         <div className="ld-field">
           <label htmlFor="ld-country">Country</label>
           <select id="ld-country" value={country ?? ""} onChange={(e) => setCountry(countryFrom(e.target.value))}>
@@ -138,15 +157,18 @@ function SearchBar({ count }: { count: CountFn }) {
         <button type="submit" className="ld-bar-submit">
           {count ? `Search ${formatCount(count(kind, country))} venues` : "Search venues"}
         </button>
-      </form>
-    </div>
+    </form>
   );
 }
 
+const TILE_PHOTOS = ROOM_TILES.map((tile) => roomPhotos(tile.kind));
+const PHOTOS_PER_TILE = Math.min(...TILE_PHOTOS.map((photos) => photos.length));
+
 function Rooms({ count }: { count: CountFn }) {
   const reveal = useReveal<HTMLDivElement>();
+  const shown = useRoomSlides(TILE_PHOTOS.length, PHOTOS_PER_TILE);
   return (
-    <section className="ld-block ld-section" aria-labelledby="ld-rooms-title">
+    <section className="ld-block ld-section ld-tone-white" aria-labelledby="ld-rooms-title">
       <div className="ld-wrap ld-drift" ref={reveal}>
         <div className="ld-head">
           <div>
@@ -156,13 +178,13 @@ function Rooms({ count }: { count: CountFn }) {
           <p>Real venues from OpenStreetMap across three countries. Open one and start planning there.</p>
         </div>
         <ul className="ld-tiles">
-          {ROOM_TILES.map((tile) => {
+          {ROOM_TILES.map((tile, i) => {
             const label = KINDS.find((k) => k.key === tile.kind)?.label ?? tile.kind;
             const n = count ? count(tile.kind, null) : 0;
             return (
               <li key={tile.kind}>
                 <Link className="ld-tile" to={directoryHref(null, tile.kind)}>
-                  <img src={tile.photo} width={1400} height={933} alt="" loading="lazy" decoding="async" />
+                  <TileSlides photos={TILE_PHOTOS[i]} index={shown[i] ?? 0} />
                   <span className="ld-tile-text">
                     <span className="ld-tile-count">{n > 0 ? <><CountUp value={n} /> venues</> : "Venues"}</span>
                     <span className="ld-tile-title">{label}</span>
@@ -185,7 +207,7 @@ function Directory({ count }: { count: CountFn }) {
   const reveal = useReveal<HTMLDivElement>();
   const total = count ? count(null, null) : 0;
   return (
-    <section className="ld-block ld-section" aria-labelledby="ld-find-title">
+    <section className="ld-block ld-section ld-tone-sunk" aria-labelledby="ld-find-title">
       <div className="ld-wrap ld-drift" ref={reveal}>
         <VenueStrip titleId="ld-find-title" total={total > 0 ? <>See all <CountUp value={total} /> venues</> : "See all venues"} />
       </div>
@@ -222,8 +244,8 @@ function Organisers() {
               </li>
             ))}
           </ol>
-          <Link className="btn ld-btn-light" to="/organiser/register">
-            Plan an event
+          <Link className="btn ld-btn-light" to={CREATE_EVENT_HREF}>
+            Create your own event
           </Link>
         </div>
       </div>
@@ -254,12 +276,13 @@ function usePageWheel<T extends HTMLElement>() {
 
 /** "Try choosing a seat": the fixed sample floor (homeSample.ts). It never talks to the server. */
 function TrySeat() {
-  const reveal = useReveal<HTMLDivElement>();
+  // A later threshold than the other blocks, so the seats light up where the visitor can see them.
+  const reveal = useReveal<HTMLDivElement>(0.4);
   const floor = useMemo(buildSampleFloor, []);
   const [selected, setSelected] = useState<number | null>(null);
   const mapBox = usePageWheel<HTMLDivElement>();
   return (
-    <section className="ld-block ld-section ld-try" aria-labelledby="ld-try-title">
+    <section className="ld-block ld-section ld-tone-white ld-try" aria-labelledby="ld-try-title">
       <div className="ld-wrap ld-try-grid ld-drift" ref={reveal}>
         <div className="ld-try-copy">
           <p className="ld-eyebrow">Try it</p>

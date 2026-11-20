@@ -138,10 +138,86 @@ describe("Home", () => {
     expect(estate.getAttribute("href")).toBe("/directory?kind=estate");
     expect(within(rooms).getByRole("link", { name: /Event halls/ }).getAttribute("href")).toBe("/directory?kind=hall");
     expect(within(rooms).getByRole("link", { name: /Conference centres/ }).getAttribute("href")).toBe("/directory?kind=conference");
-    for (const img of within(rooms).getAllByRole("presentation")) {
-      expect(img.getAttribute("alt")).toBe("");
-      expect(img.getAttribute("loading")).toBe("lazy");
-    }
+  });
+
+  it("shows three real venues of the right kind in each room tile, named in the corner", () => {
+    stub();
+    renderHome();
+    const rooms = screen.getByRole("region", { name: "Three kinds of room, one way to seat it." });
+    const expected: Record<string, { files: string[]; first: string }> = {
+      "/directory?kind=estate": {
+        files: ["way-542292860.jpg", "node-3942508757.jpg", "way-212650231.jpg"],
+        first: "Villa delle Ginestre, Italy",
+      },
+      "/directory?kind=hall": {
+        // Nekkerhal, not the park gate of Kasteeldomein Hof ter Linden, under "event halls".
+        files: ["way-93159180.jpg", "way-23041580.jpg", "way-111347385.jpg"],
+        first: "Dogana Veneta, Italy",
+      },
+      "/directory?kind=conference": {
+        files: ["way-43664624.jpg", "way-200415692.jpg", "relation-5424595.jpg"],
+        first: "Roma Convention Center La Nuvola, Italy",
+      },
+    };
+    const tiles = rooms.querySelectorAll<HTMLAnchorElement>("a.ld-tile");
+    expect(tiles).toHaveLength(3);
+    tiles.forEach((tile) => {
+      const want = expected[tile.getAttribute("href") ?? ""];
+      expect(want).toBeTruthy();
+      const imgs = Array.from(tile.querySelectorAll("img"));
+      expect(imgs.map((img) => img.getAttribute("src"))).toEqual(want.files.map((f) => `/images/venues/${f}`));
+      imgs.forEach((img, i) => {
+        // Decorative (the tile names its kind), lazy, and only the first one on show.
+        expect(img.getAttribute("alt")).toBe("");
+        expect(img.getAttribute("loading")).toBe("lazy");
+        expect(img.classList.contains("is-on")).toBe(i === 0);
+      });
+      expect(tile.querySelector(".ld-tile-venue")?.textContent).toBe(want.first);
+      // The caption changes with the photo, so it stays out of the link's name.
+      expect(tile.querySelector(".ld-tile-venue")?.getAttribute("aria-hidden")).toBe("true");
+    });
+  });
+
+  it("moves each tile to its next venue every 5 s, a third of that apart from its neighbour", () => {
+    motion(false);
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    stub();
+    renderHome();
+    const rooms = screen.getByRole("region", { name: "Three kinds of room, one way to seat it." });
+    const onIndex = () =>
+      Array.from(rooms.querySelectorAll("a.ld-tile")).map((tile) => Array.from(tile.querySelectorAll("img")).findIndex((img) => img.classList.contains("is-on")));
+    expect(onIndex()).toEqual([0, 0, 0]);
+    act(() => {
+      vi.advanceTimersByTime(1667);
+    });
+    expect(onIndex()).toEqual([1, 0, 0]);
+    act(() => {
+      vi.advanceTimersByTime(1667);
+    });
+    expect(onIndex()).toEqual([1, 1, 0]);
+    act(() => {
+      vi.advanceTimersByTime(1667);
+    });
+    expect(onIndex()).toEqual([1, 1, 1]);
+    act(() => {
+      vi.advanceTimersByTime(5001);
+    });
+    expect(onIndex()).toEqual([2, 2, 2]);
+    expect(rooms.querySelector(".ld-tile-venue")?.textContent).toBe("Castello dei Solaro, Italy");
+  });
+
+  it("offers 'Create your own event' in the hero, the header and the organisers band, all to the new-event form", () => {
+    stub();
+    renderHome();
+    const hero = screen.getByRole("region", { name: "Venues for events that matter." });
+    expect(within(hero).getByRole("link", { name: "Create your own event" }).getAttribute("href")).toBe("/organiser?new=1");
+    const header = screen.getByRole("navigation", { name: "Main" });
+    const inMenu = within(header).getByRole("link", { name: "Create your own event" });
+    expect(inMenu.getAttribute("href")).toBe("/organiser?new=1");
+    // Inside the menu panel, so a phone reaches it from Menu too.
+    expect(inMenu.closest("#site-nav-links")).toBeTruthy();
+    const band = screen.getByRole("region", { name: "Every guest, in the right seat." });
+    expect(within(band).getByRole("link", { name: "Create your own event" }).getAttribute("href")).toBe("/organiser?new=1");
   });
 
   it("shows the featured venues that load, each with its own photo, and skips the ones that fail", async () => {
@@ -254,7 +330,7 @@ describe("Home", () => {
     const band = screen.getByRole("region", { name: "Every guest, in the right seat." });
     expect(within(band).getByRole("img", { name: /Palazzo Vecchio/ }).getAttribute("src")).toBe("/images/photos/palazzo-hall.jpg");
     expect(within(band).getByRole("list").querySelectorAll("li")).toHaveLength(3);
-    expect(within(band).getByRole("link", { name: "Plan an event" }).getAttribute("href")).toBe("/organiser/register");
+    expect(within(band).getByRole("link", { name: "Create your own event" }).getAttribute("href")).toBe("/organiser?new=1");
   });
 
   it("lets the visitor try the sample seat map, with the way to the live demo", () => {

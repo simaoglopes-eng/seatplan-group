@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api, ApiError, clearSessionToken, getMe } from "../api/client";
 import type { EventSummary } from "../api/events";
@@ -61,6 +61,18 @@ export default function OrganiserDashboard() {
     return () => { active = false; };
   }, [navigate]);
 
+  // "Create your own event" (/organiser?new=1, from the home page and the header): once the
+  // space has loaded, bring the new-event form into view and put the cursor in its name.
+  const nameField = useRef<HTMLInputElement>(null);
+  const wantsNew = params.get("new") === "1";
+  useEffect(() => {
+    if (!wantsNew || loading) return;
+    const field = nameField.current;
+    if (!field) return;
+    if (typeof field.scrollIntoView === "function") field.scrollIntoView({ block: "center" });
+    field.focus({ preventScroll: true });
+  }, [wantsNew, loading]);
+
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const start = new Date(starts), end = new Date(ends);
@@ -81,7 +93,7 @@ export default function OrganiserDashboard() {
       {venue && <section className="dashboard-created dashboard-venue" aria-label="Chosen venue"><strong>Planning at {venue.name}</strong><p>{venue.kind_label} · {placeLine(venue)}. Create the event below, then draw this room’s tables in the floor plan.</p><Link to="/directory">Choose another venue →</Link></section>}
       {error && <p className="dashboard-error" role="alert">{error}</p>}
       {created && <section className="dashboard-created" aria-live="polite"><strong>“{created.name}” is ready to plan.</strong><p>Start by arranging your tables and seats.</p><Link to={`/editor/${encodeURIComponent(created.venue_id)}`}>Arrange the floor plan →</Link><Link to={`/organiser/${encodeURIComponent(created.public_id)}`}>Open event →</Link></section>}
-      <div className="dashboard-grid"><section className="dashboard-card"><span className="dashboard-label">01 / NEW EVENT</span><h2>Let’s make a plan.</h2><p>Give your event a name, say where it is and choose when it takes place.</p><form onSubmit={create}><label>Event name<input value={name} onChange={e => setName(e.target.value)} maxLength={120} placeholder="e.g. Emma & Alex’s wedding" required /></label><fieldset className="dashboard-place"><legend>Where</legend><p className="dashboard-hint">{venue ? "From the venue directory. You can change it." : <>Any place, even one that is not in <Link to="/directory">our directory</Link>: a house, a garden, a restaurant. It stays private and is not added to the public directory.</>}</p><label>Venue name<input value={placeName} onChange={e => setPlaceName(e.target.value)} maxLength={120} placeholder="e.g. Quinta do Vale, or Grandma’s garden" autoComplete="off" /></label><label>Address or town<input value={placeAddress} onChange={e => setPlaceAddress(e.target.value)} maxLength={200} placeholder="e.g. Rua das Flores 12, Sintra" autoComplete="off" /></label></fieldset><label>Starts<input type="datetime-local" value={starts} onChange={e => setStarts(e.target.value)} required /></label><label>Ends<input type="datetime-local" value={ends} onChange={e => setEnds(e.target.value)} required /></label><button type="submit" disabled={busy}>{busy ? "Creating…" : "Create event →"}</button></form></section>
+      <div className="dashboard-grid"><section className="dashboard-card"><span className="dashboard-label">01 / NEW EVENT</span><h2>Let’s make a plan.</h2><p>Give your event a name, say where it is and choose when it takes place.</p><form onSubmit={create}><label>Event name<input ref={nameField} value={name} onChange={e => setName(e.target.value)} maxLength={120} placeholder="e.g. Emma & Alex’s wedding" required /></label><fieldset className="dashboard-place"><legend>Where</legend><p className="dashboard-hint">{venue ? "From the venue directory. You can change it." : <>Any place, even one that is not in <Link to="/directory">our directory</Link>: a house, a garden, a restaurant. It stays private and is not added to the public directory.</>}</p><label>Venue name<input value={placeName} onChange={e => setPlaceName(e.target.value)} maxLength={120} placeholder="e.g. Quinta do Vale, or Grandma’s garden" autoComplete="off" /></label><label>Address or town<input value={placeAddress} onChange={e => setPlaceAddress(e.target.value)} maxLength={200} placeholder="e.g. Rua das Flores 12, Sintra" autoComplete="off" /></label></fieldset><label>Starts<input type="datetime-local" value={starts} onChange={e => setStarts(e.target.value)} required /></label><label>Ends<input type="datetime-local" value={ends} onChange={e => setEnds(e.target.value)} required /></label><button type="submit" disabled={busy}>{busy ? "Creating…" : "Create event →"}</button></form></section>
       <section className="dashboard-card dashboard-list"><span className="dashboard-label">02 / YOUR EVENTS</span><h2>All your gatherings.</h2>{loading ? <p>Loading your events…</p> : events.length === 0 ? <p>Your events will appear here once you create one.</p> : <ul>{events.map(item => <li key={item.public_id}><div><strong>{item.name}</strong><small>{new Date(item.starts_at).toLocaleString()}</small></div><div><Link to={`/organiser/${encodeURIComponent(item.public_id)}`}>Open event →</Link><Link to={`/editor/${encodeURIComponent(item.venue_id)}`}>Edit floor plan →</Link></div></li>)}</ul>}</section></div></div>
     </section>
   </PageShell>;

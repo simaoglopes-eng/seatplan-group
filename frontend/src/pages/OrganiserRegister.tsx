@@ -2,9 +2,19 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { request, setSessionToken } from "../api/client";
 import { AuthLayout, Button, Field, PageShell } from "../design/components";
-import { safeNextPath } from "./Login";
 import { PublicHeaderActions } from "./discover/PublicHeaderActions";
 import "./login.css";
+
+/**
+ * Where to go once the account is verified: ?next= when it is a path on this site
+ * (starts with "/", not "//" and no backslash, which browsers read as "//"), else the
+ * organiser space. So /organiser?new=1 survives sign-up, and a link cannot send the
+ * new organiser to another site.
+ */
+export function registerNext(next: string | null): string {
+  if (next && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\")) return next;
+  return "/organiser";
+}
 
 type CodeResponse = { signup_id: string; sent_to: string };
 type SessionResponse = { token: string };
@@ -29,7 +39,7 @@ export default function OrganiserRegister() {
         setPassword("");
       } else {
         const result = await request<SessionResponse>("POST", "/auth/verify", { email: email.trim(), code, signup_id: pending.signup_id }, "none");
-        setSessionToken(result.token); navigate(params.get("next") ? safeNextPath(params.get("next")) : "/organiser");
+        setSessionToken(result.token); navigate(registerNext(params.get("next")));
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Something went wrong. Please try again.");
@@ -43,6 +53,6 @@ export default function OrganiserRegister() {
       {error && <p role="alert">{error}</p>}
       <Button type="submit" busy={busy} className="login-submit">{pending ? "Verify email" : "Continue"}</Button>
     </form>
-    <p><Link to="/login">Already have an account? Sign in</Link></p>
+    <p><Link to={params.get("next") ? `/login?next=${encodeURIComponent(registerNext(params.get("next")))}` : "/login"}>Already have an account? Sign in</Link></p>
   </div></AuthLayout></PageShell>;
 }

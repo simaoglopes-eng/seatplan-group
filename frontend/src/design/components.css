@@ -53,7 +53,9 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
-.site-nav .site-nav-links .btn { color: var(--c-text); }
+/* One height for every item in the bar: premium.css gives .btn 46px, the account and
+   create buttons use the 44px touch target, so the links take it too. */
+.site-nav .site-nav-links .btn { color: var(--c-text); min-height: var(--touch-target); }
 /* The account link is an outline button on every page (the home hero makes it white). */
 .site-nav .site-nav-login {
   min-height: var(--touch-target);
@@ -64,6 +66,25 @@
   box-shadow: none;
 }
 .site-nav .site-nav-login:hover:not(:disabled) { background: var(--c-text); color: var(--c-bg); border-color: var(--c-text); }
+/* "Create your own event": the one filled button in the public header (and the first
+   thing in the phone menu). Its own class, so the ghost-link colours never repaint it. */
+.site-nav .site-nav-links .btn.site-nav-create,
+.site-nav .btn.site-nav-create {
+  min-height: var(--touch-target);
+  padding-inline: var(--space-4);
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  border: var(--border-width) solid var(--c-primary);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  white-space: nowrap;
+}
+.site-nav .site-nav-links .btn.site-nav-create:hover:not(:disabled) {
+  background: var(--c-primary-hover);
+  border-color: var(--c-primary-hover);
+  color: var(--c-on-primary);
+}
+.site-nav-links.is-open .btn.site-nav-create { order: -1; justify-content: center; margin-bottom: var(--space-2); }
 
 .shell-overlay { position: relative; }
 .shell-overlay .shell-header {
@@ -87,6 +108,17 @@
 .shell-overlay .shell-header .site-nav-links:not(.is-open) .btn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--c-on-band) 14%, transparent);
   color: var(--c-on-band);
+}
+/* Over the hero photo the create button is white with navy ink; the open phone menu keeps the primary fill. */
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create {
+  background: var(--c-on-band);
+  color: var(--c-band);
+  border-color: var(--c-on-band);
+}
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create:hover:not(:disabled) {
+  background: var(--c-on-band-muted);
+  border-color: var(--c-on-band-muted);
+  color: var(--c-band);
 }
 .shell-overlay .shell-header :focus-visible { outline-color: var(--c-on-band); }
 /* The open phone menu is a white panel: its links keep the normal ring. */

@@ -13,7 +13,8 @@ export const HERO_SLIDES = [
 
 export const SLIDE_MS = 6500;
 
-function useTabVisible(): boolean {
+/** False while the tab is hidden, so the slide clocks stop. */
+export function useTabVisible(): boolean {
   const [visible, setVisible] = useState(() => typeof document === "undefined" || document.visibilityState !== "hidden");
   useEffect(() => {
     const update = (): void => setVisible(document.visibilityState !== "hidden");

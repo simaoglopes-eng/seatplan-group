@@ -39,6 +39,35 @@
 }
 .ld-section { padding-block: 3.5rem; background: var(--c-bg); }
 
+/* ---------- Tones, block by block ----------
+   No two neighbours share a ground: photo hero / white rooms / sunk grey directory /
+   navy band / white seat map / navy footer. Dark mode keeps the same rhythm in dark
+   tones (page #0b1426, lifted #111c33, the navy band and footer). */
+.ld-route { --ld-white: var(--c-bg); --ld-sunk: var(--c-surface-sunk); --ld-navy: var(--c-band); --ld-band: var(--c-band); }
+/* Dark: tones this deep read as one ground below about 1.3:1 (#0b1426 beside #111c33 was
+   1.1:1), so each neighbour steps by at least that: page #0b1426, lifted #1c2b4f (1.32:1),
+   band #2a3f70 (1.35:1 to the lifted block, 1.79:1 to the page). White text keeps 10:1 on
+   the band, #b8c0d0 5.6:1; muted text 6.2:1 and strong borders 3.1:1 on the lifted block.
+   The footer follows the page-toned seat map, so it takes the lifted navy too (#14213d was 1.15:1). */
+@media (prefers-color-scheme: dark) {
+  .ld-route { --ld-white: #0b1426; --ld-sunk: #1c2b4f; --ld-navy: #1c2b4f; --ld-band: #2a3f70; }
+}
+.ld-tone-white { background: var(--ld-white); }
+.ld-tone-sunk { background: var(--ld-sunk); }
+
+/* The footer on this page is a navy block of its own, distinct from the white seat map above. */
+.ld-route .shell-footer {
+  background: var(--ld-navy);
+  border-top-color: transparent;
+  color: var(--c-on-band-muted);
+  padding-block: 2.5rem;
+}
+.ld-route .shell-footer a { color: var(--c-on-band); }
+.ld-route .shell-footer a:hover { color: var(--c-on-band-muted); }
+.ld-route .shell-footer :focus-visible { outline: var(--focus-width) solid var(--c-on-band); outline-offset: 2px; }
+/* Its lines rise in as it arrives (Home.tsx gives the footer the same drift as the blocks). */
+.ld-route .shell-footer .ld-drift.ld-pre { transform: translateY(16px); opacity: 0.2; }
+
 /* Drift in: visible at rest, nudged only while waiting below the fold (useReveal). */
 .ld-drift { transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.8s ease; }
 .ld-drift.ld-pre { transform: translateY(28px); opacity: 0.35; }
@@ -152,7 +181,23 @@
 .ld-band :focus-visible { outline: var(--focus-width) solid var(--c-on-band); outline-offset: 2px; }
 
 /* ---------- Search, inside the hero at its foot ---------- */
-.ld-search { position: relative; z-index: 1; padding-bottom: 2.5rem; }
+.ld-search {
+  position: relative;
+  z-index: 1;
+  padding-bottom: 2.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: stretch;
+}
+/* "Create your own event": the white-outline way in for people who already have a place. */
+.btn.ld-create {
+  height: auto;
+  padding-inline: 1.75rem;
+  white-space: nowrap;
+  /* A thin navy wash so the white outline holds on the brighter right side of the photo. */
+  background: color-mix(in srgb, var(--c-band) 40%, transparent);
+}
 .ld-bar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
@@ -257,21 +302,48 @@
 }
 .ld-tile:hover { color: var(--c-on-band); }
 .ld-tile:focus-visible { outline-offset: 3px; }
-.ld-tile img {
+/* Three real venues per tile, cross-fading slowly (RoomSlides.tsx). The photos read
+   bright: no veil over them, only a gradient at the foot, behind the words. */
+.ld-tile-slides { position: absolute; inset: 0; transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.ld-tile-slides img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+  opacity: 0;
+  transition: opacity 1.6s ease;
 }
-.ld-tile:hover img, .ld-tile:focus-visible img { transform: scale(1.06); }
+.ld-tile-slides img.is-on { opacity: 1; }
+.ld-tile:hover .ld-tile-slides, .ld-tile:focus-visible .ld-tile-slides { transform: scale(1.05); }
 .ld-tile::after {
   content: "";
   position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 35%, color-mix(in srgb, var(--c-band) 88%, transparent) 100%);
+  inset: auto 0 0;
+  height: 13.5rem;
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, #0b1426 55%, transparent) 45%, color-mix(in srgb, #0b1426 85%, transparent) 100%);
+  pointer-events: none;
 }
+/* The venue on show, small in the top corner, so a photo is never taken for another place. */
+.ld-tile-venue {
+  position: absolute;
+  z-index: 1;
+  top: 0.875rem;
+  left: 0.875rem;
+  max-width: calc(100% - 1.75rem);
+  padding: 0.3125rem 0.5rem;
+  border-radius: 2px;
+  background: color-mix(in srgb, #0b1426 72%, transparent);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: var(--fw-medium);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: ld-fade 0.9s ease both;
+}
+@keyframes ld-fade { from { opacity: 0; } to { opacity: 1; } }
 .ld-tile-text {
   position: absolute;
   z-index: 1;
@@ -374,9 +446,19 @@
 .ld-card-links a:first-child { text-decoration: underline; text-underline-offset: 0.35em; text-decoration-thickness: 1px; }
 .ld-card-links a:hover { color: var(--c-text-muted); }
 .ld-strip-empty { color: var(--c-text-muted); }
+/* The cards slide in from the right one after another as the block arrives (ld-pre is
+   set by useReveal while the block waits below the fold). */
+.ld-card { transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.7s ease; }
+.ld-card:nth-child(2) { transition-delay: 0.09s; }
+.ld-card:nth-child(3) { transition-delay: 0.18s; }
+.ld-card:nth-child(4) { transition-delay: 0.27s; }
+.ld-card:nth-child(5) { transition-delay: 0.36s; }
+.ld-card:nth-child(6) { transition-delay: 0.45s; }
+.ld-drift.ld-pre .ld-card { transform: translateX(48px); opacity: 0.15; }
+.ld-tone-sunk .ld-arrow { background: var(--c-bg); }
 
 /* ---------- For organisers: the navy band ---------- */
-.ld-band { padding-block: 3.5rem; background: var(--c-band); color: var(--c-on-band); }
+.ld-band { padding-block: 3.5rem; background: var(--ld-band); color: var(--c-on-band); }
 .ld-band-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4.5rem; align-items: center; }
 .ld-band-photo {
   min-width: 0;
@@ -385,8 +467,19 @@
   border-radius: var(--radius-sm);
   background: var(--c-surface-sunk);
 }
-.ld-band-photo img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1); }
-.ld-band-photo:hover img { transform: scale(1.04); }
+/* A slow Ken Burns: the photo drifts and zooms over half a minute, back and forth. */
+.ld-band-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: 60% 40%;
+  animation: ld-kenburns 28s ease-in-out infinite alternate;
+}
+@keyframes ld-kenburns {
+  from { transform: scale(1) translate3d(0, 0, 0); }
+  to { transform: scale(1.12) translate3d(-2%, -1.5%, 0); }
+}
 .ld-band .ld-eyebrow { color: var(--c-on-band-muted); }
 .ld-band h2 {
   margin: 0 0 1.125rem;
@@ -405,6 +498,12 @@
   border-top: var(--border-width) solid color-mix(in srgb, var(--c-on-band) 18%, transparent);
 }
 .ld-step-n { color: var(--c-on-band-muted); font-size: 0.8125rem; font-variant-numeric: tabular-nums; line-height: 1.75; }
+/* The three steps enter one by one after the heading. */
+.ld-steps li { transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.6s ease; }
+.ld-steps li:nth-child(1) { transition-delay: 0.25s; }
+.ld-steps li:nth-child(2) { transition-delay: 0.5s; }
+.ld-steps li:nth-child(3) { transition-delay: 0.75s; }
+.ld-drift.ld-pre .ld-steps li { transform: translateX(-24px); opacity: 0; }
 
 /* ---------- Try choosing a seat: the sample map ---------- */
 .ld-try-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 4rem; align-items: center; }
@@ -431,6 +530,13 @@
   text-decoration-thickness: 1px;
 }
 .ld-try-map { min-width: 0; }
+/* Once, as the block arrives: the seats light up in four quick waves, as a room filling.
+   Opacity only, on .target-inner, so the seat's own position transform is untouched. */
+.ld-try-map .target-inner { transition: opacity 0.45s ease; }
+.ld-try-map .target:nth-child(4n+2) .target-inner { transition-delay: 0.22s; }
+.ld-try-map .target:nth-child(4n+3) .target-inner { transition-delay: 0.44s; }
+.ld-try-map .target:nth-child(4n) .target-inner { transition-delay: 0.66s; }
+.ld-drift.ld-pre .ld-try-map .target-inner { opacity: 0.12; transition-delay: 0s; }
 .ld-try-map .seatmap-viewport { height: clamp(18rem, calc(100svh - 12rem), 34rem); }
 
 .ld-footer-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-5); }
@@ -453,6 +559,8 @@
   .ld-field:nth-child(2) { border-right: 0; }
   .ld-field { border-bottom: var(--border-width) solid var(--c-border); }
   .ld-bar-submit { grid-column: 1 / -1; min-height: 3.5rem; }
+  .ld-search { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+  .btn.ld-create { min-height: var(--touch-target); }
 
   /* Rows become swipe strips, so each block still fits one screen. */
   .ld-tiles, .ld-strip {
@@ -511,7 +619,11 @@
 
 @media (max-width: 900px) and (max-height: 740px) {
   .ld-hero h1 { font-size: 2.375rem; margin-block: var(--space-2) var(--space-3); }
-  .ld-lede { font-size: 1rem; margin-bottom: var(--space-4); }
+  .ld-lede { font-size: 1rem; margin-bottom: var(--space-3); }
+  /* Room for "Create your own event" under the search on short phones (375x667). */
+  .ld-hero-copy { padding-bottom: 0.5rem; }
+  .ld-dots { margin-top: 0.25rem; }
+  .ld-search { padding-bottom: 0.75rem; gap: var(--space-2); }
   .ld-band-photo { height: 18svh; }
   .ld-try-map .seatmap-viewport { min-height: 13rem; }
   .ld-try-lede { display: none; }
@@ -519,6 +631,7 @@
   .ld-try .seatmap-caption { font-size: var(--fs-xs); }
   .ld-card-photo { max-height: calc(100svh - 26.5rem); }
   .ld-tile { height: calc(100svh - 24rem); }
+  .ld-tile::after { height: 10rem; }
   .ld-section, .ld-band { padding-block: 1.5rem; }
 }
 
@@ -529,9 +642,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ld-slides img, .ld-drift, .ld-tile img, .ld-tile-text, .ld-card-photo img, .ld-band-photo img, .ld-bar-submit, .ld-arrow, .ld-dots button::after { transition: none !important; }
-  .ld-slides img.is-on, .ld-tile:hover img, .ld-tile:focus-visible img, .ld-card:hover .ld-card-photo img, .ld-card:focus-within .ld-card-photo img, .ld-band-photo:hover img { transform: none; }
+  .ld-slides img, .ld-drift, .ld-tile-slides, .ld-tile-slides img, .ld-tile-text, .ld-card, .ld-card-photo img, .ld-steps li, .ld-try-map .target-inner, .ld-bar-submit, .ld-arrow, .ld-dots button::after { transition: none !important; }
+  .ld-slides img.is-on, .ld-tile:hover .ld-tile-slides, .ld-tile:focus-visible .ld-tile-slides, .ld-card:hover .ld-card-photo img, .ld-card:focus-within .ld-card-photo img { transform: none; }
   .ld-tile:hover .ld-tile-text { transform: none; }
-  .ld-hero-copy > .ld-wrap > * { animation: none; }
-  .ld-drift.ld-pre { transform: none; opacity: 1; }
-  .ld-strip { scroll-behavior: auto; }}
+  .ld-hero-copy > .ld-wrap > *, .ld-tile-venue, .ld-band-photo img { animation: none !important; }
+  .ld-drift.ld-pre, .ld-drift.ld-pre .ld-card, .ld-drift.ld-pre .ld-steps li, .ld-drift.ld-pre .ld-try-map .target-inner { transform: none; opacity: 1; }
+  .ld-strip { scroll-behavior: auto; }
+}
