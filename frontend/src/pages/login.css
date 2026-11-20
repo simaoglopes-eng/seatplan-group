@@ -31,6 +31,25 @@
 .login form + p,
 .login form ~ p { margin-top: var(--space-5); }
 
+/* Under the code field: "Send a new code" and "Use a different email", as text buttons. */
+.login-resend { margin-top: var(--space-4); }
+.login-resend-status { margin: 0; font-size: var(--fs-sm); }
+.login-resend-status:empty { display: none; }
+.login-resend-actions { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-5); }
+.login-linkbtn {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c-text);
+  font: inherit;
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.login-linkbtn:disabled { cursor: default; text-decoration: none; opacity: 0.85; }
+
 /* ---------- Organiser sign-in and sign-up over a photo (AuthPhoto in Login.tsx) ----------
    The terrace photo fills the window behind the page, under the shared veil; the header is the
    overlay one (white, glass buttons), the story is white text on the photo and the form sits
@@ -103,6 +122,8 @@
 .ap-route .login p { color: var(--glass-text-muted); }
 .ap-route .login a { color: var(--glass-text); font-weight: var(--fw-medium); text-decoration: underline; text-underline-offset: 4px; }
 .ap-route .auth-content :focus-visible { outline-color: var(--glass-text); }
+.ap-route .login-linkbtn { color: var(--glass-text); text-shadow: 0 1px 2px rgb(0 0 0 / 0.2); }
+.ap-route .login .login-resend-status { color: var(--glass-text); }
 
 .ap-route .field-label { color: var(--glass-text); }
 .ap-route .field-hint { color: var(--glass-text-muted); }
