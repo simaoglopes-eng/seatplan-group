@@ -24,6 +24,8 @@ interface TargetFlags {
   selectable: boolean;
   selected: boolean;
   active: boolean;
+  dropTarget: boolean;
+  dropAllowed: boolean;
   highlighted: boolean;
   /** The second highlight, for example "changed by preview". */
   marked: boolean;
@@ -38,6 +40,7 @@ function targetClass(flags: TargetFlags, state: SeatState): string {
   if (flags.selectable) classes.push("is-selectable");
   if (flags.selected) classes.push("is-selected");
   if (flags.active) classes.push("is-active");
+  if (flags.dropTarget) classes.push(flags.dropAllowed ? "is-drop-allowed" : "is-drop-blocked");
   if (flags.highlighted) classes.push("is-highlighted");
   if (flags.marked) classes.push("is-marked");
   return classes.join(" ");
@@ -156,6 +159,7 @@ export interface TargetsLayerProps {
   isSelectable: (id: number) => boolean;
   selectedId: number | null;
   activeId: number | null;
+  dropTargetId: number | null;
   highlight: ReadonlySet<number>;
   marked: ReadonlySet<number>;
   markedLabel: string;
@@ -188,6 +192,8 @@ export const TargetsLayer = memo(function TargetsLayer(p: TargetsLayerProps) {
       selectable: p.isSelectable(id),
       selected: id === p.selectedId,
       active: id === p.activeId,
+      dropTarget: id === p.dropTargetId,
+      dropAllowed: p.isSelectable(id),
       highlighted: p.highlight.has(id),
       marked: p.marked.has(id),
       motion: p.motion.get(id),

@@ -235,7 +235,26 @@
 }
 
 .ev-map {
+  position: relative;
   scroll-margin-top: var(--space-6);
+}
+
+.ev-drop-hint {
+  position: absolute;
+  z-index: 2;
+  top: var(--space-2);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 2 * var(--space-4));
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--c-text);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-border-strong);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  white-space: nowrap;
 }
 
 .ev-focused {

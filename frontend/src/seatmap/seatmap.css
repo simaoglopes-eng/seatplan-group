@@ -219,6 +219,17 @@
   filter: brightness(0.94);
 }
 
+.target.is-drop-allowed .glyph-body {
+  stroke: var(--c-success);
+  stroke-width: 3;
+}
+
+.target.is-drop-blocked .glyph-body {
+  stroke: var(--c-danger);
+  stroke-width: 3;
+  filter: brightness(0.9);
+}
+
 /* ---------- Motion ---------- */
 /* Each animation runs on .target-inner, which has no transform attribute of
    its own, so the CSS transform does not fight the seat's position. */
