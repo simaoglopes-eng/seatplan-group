@@ -32,7 +32,7 @@ from app.events_service.access import (
 )
 from app.events_service.age import visible_age
 from app.events_service.attendee_view import event_summary
-from app.events_service.problem import active_guests, current_rows, event_guests, venue_seats
+from app.events_service.problem import current_rows, event_guests, venue_seats
 from app.events_service.seating import lock_event
 from app.events_service.seatmap import live_holds, map_frame, seat_base
 from app.models import Event, Guest, GuestAccount, Seat, Venue
@@ -177,10 +177,23 @@ def _came_by_link(guest: Guest, everyone: dict[int, Guest]) -> bool:
     return guest.source == "companion" and booker is not None and booker.source == "self_registered"
 
 
+def _counted_guests(session: Session, event: Event) -> list[Guest]:
+    """The rows place_counts needs: every guest but the erased party members.
+
+    An erased member is never active and never anyone's booker, so leaving
+    it out changes no count; it only keeps the read small when a booker
+    adds and removes people again and again. Erased bookers stay in: a
+    member they left behind (party=keep) still counts as joined by the link.
+    """
+    erased_member = (Guest.source == "companion") & Guest.token_revoked_at.is_not(None)
+    query = select(Guest).where((Guest.event_id == event.id) & ~erased_member).order_by(Guest.id)
+    return list(session.scalars(query))
+
+
 def place_counts(session: Session, event: Event) -> dict[str, int]:
     """capacity (seats not blocked), guests (active) and joined (active, by the link)."""
     capacity, _reserved = _open_seats(session, event)
-    everyone = {guest.id: guest for guest in event_guests(session, event)}
+    everyone = {guest.id: guest for guest in _counted_guests(session, event)}
     coming = [guest for guest in everyone.values() if is_active(guest)]
     return {
         "capacity": capacity,
@@ -198,7 +211,7 @@ def _seats_for_newcomers(session: Session, event: Event) -> int:
     more of them than reserved seats.
     """
     capacity, reserved = _open_seats(session, event)
-    coming = active_guests(session, event)
+    coming = [guest for guest in _counted_guests(session, event) if is_active(guest)]
     tagged = sum(1 for guest in coming if guest.reserved_tag is not None)
     untagged = len(coming) - tagged
     spill_over = max(0, tagged - reserved)

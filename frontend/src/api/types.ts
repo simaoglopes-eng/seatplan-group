@@ -32,6 +32,11 @@ export type ErrorCode =
   | "party_exists" // HTTP 409: a guest who booked seats for others cannot leave while those people are coming
   | "has_party" // HTTP 409: the organiser deletes a guest who booked a party; send ?party=erase or keep
   | "party_member" // HTTP 409: a party member gets no link or address; the guest who booked them manages them
+  | "party_too_large" // HTTP 409: more seats than the event's party size (its max_party_size, the booker's own seat included)
+  | "party_changes_exhausted" // HTTP 409: this booker added and removed people too many times; the organiser can still help
+  | "too_soon" // HTTP 429: a code email went to this address less than 30 seconds ago
+  | "limit_reached" // HTTP 409: this account already has as many restaurants or event venues as one account may
+  | "storage_full" // HTTP 409: this account's photos use all the storage one account may
   | "method_not_allowed" // HTTP 405
   | "internal" // HTTP 500, or a status the API never plans to send
   | "network" // client only: the request never reached the server

@@ -1,5 +1,6 @@
 """Owner sign-up security through the public HTTP boundary."""
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -47,6 +48,7 @@ def test_demo_never_shows_owner_code_for_real_mailboxes(client: TestClient) -> N
     assert "code_shown" not in response.json()
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_replaced_owner_signup_cannot_consume_new_code(client: TestClient) -> None:
     first = client.post("/api/owner/register", json=FORM).json()
     second = client.post("/api/owner/register", json=FORM).json()
@@ -85,6 +87,7 @@ FORM = {
 }
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_owner_registration_verification_and_existing_login(client: TestClient) -> None:
     sent = client.post("/api/owner/register", json=FORM)
     assert sent.status_code == 202

@@ -10,12 +10,13 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, mo
 from sqlalchemy.exc import IntegrityError
 
 from app import db
+from app.core import limits, work_limits
 from app.core.errors import ApiError
 from app.core.text import PlainText
 from app.events_service import accounts
 from app.restaurant_service import owner_accounts, owner_view, profiles, publishing
 from app.routers.venues import TimeZoneName
-from app.security import CurrentOrganiser
+from app.security import CurrentOrganiser, rate_limit
 
 router = APIRouter(prefix="/owner", tags=["owners"])
 
@@ -134,6 +135,9 @@ class ProfilePatch(BaseModel):
 def create_restaurant(
     body: RestaurantIn, user: CurrentOrganiser, session: db.SessionDep
 ) -> dict[str, Any]:
+    # First: rate_limit commits its count. Then the account's limit, under its lock.
+    rate_limit(session, f"restaurant-create:{user.id}", limits.RESTAURANT_CREATES_PER_HOUR, 3600)
+    work_limits.require_room_for_venue(session, user, "restaurant")
     return profiles.create(session, user, body.name)
 
 
@@ -176,6 +180,7 @@ class VerifyIn(BaseModel):
 def register(body: RegisterIn, request: Request, session: db.SessionDep) -> dict[str, Any]:
     email = accounts.normalise_email(str(body.email))
     accounts.check_new_password(body.password, email)
+    accounts.require_signup_mail(email)
     accounts.count_code_send(session, request, email, "owner")
     accounts.count_app_send(session)
     try:

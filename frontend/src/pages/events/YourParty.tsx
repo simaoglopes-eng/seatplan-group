@@ -9,7 +9,7 @@ import { useState } from "react";
 import type { AttendeeView, PartyMember, PersonPatch } from "../../api/events";
 import { Badge, Button, Dialog, Field } from "../../design/components";
 import { seatName } from "./format";
-import { NAME_MAX, hasErrors, memberName, parseAge, splitName, validatePerson } from "./partyRules";
+import { NAME_MAX, hasErrors, memberName, parseAge, partyLimitText, splitName, validatePerson } from "./partyRules";
 import type { PartyCard, PersonErrors } from "./partyRules";
 import type { AttendeeState } from "./useAttendee";
 import "./party.css";
@@ -24,7 +24,8 @@ export function YourParty({ state, view }: YourPartyProps) {
   const [editing, setEditing] = useState<PartyMember | null>(null);
   const [removing, setRemoving] = useState<PartyMember | null>(null);
   if (!party) return null;
-  const { members, places_left: placesLeft } = party;
+  const { members, places_left: placesLeft, party_size_left: sizeLeft } = party;
+  const limitText = partyLimitText(party);
   const where = (seatId: number | null) => (seatId === null ? "No seat" : seatName(seatId, view.map.seats, view.map.tables));
   const { busy } = state;
   const partyActions = state.party.actions;
@@ -67,10 +68,13 @@ export function YourParty({ state, view }: YourPartyProps) {
           })}
         </ul>
       )}
-      {placesLeft > 0 ? (
+      {limitText && <p className="ev-muted">{limitText}</p>}
+      {placesLeft > 0 && sizeLeft !== 0 ? (
         <Button variant="secondary" onClick={partyActions.startAdd}>
           Add people
         </Button>
+      ) : placesLeft > 0 ? (
+        <p className="ev-muted">Your party has every seat one person can book here. Ask the organiser if you need more.</p>
       ) : (
         <p className="ev-muted">This event has no place left for more people.</p>
       )}

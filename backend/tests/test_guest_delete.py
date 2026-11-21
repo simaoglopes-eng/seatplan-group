@@ -3,6 +3,7 @@
 from datetime import date
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from guest_helpers import (
     GUEST_PASSWORD,
@@ -59,6 +60,7 @@ def _everything(session: Session) -> list[tuple[str, str]]:
     return rows
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_a_wrong_password_changes_nothing(
     client: TestClient, organiser: Organiser, session: Session, monkeypatch: Any
 ) -> None:
@@ -75,6 +77,7 @@ def test_a_wrong_password_changes_nothing(
     assert [row for row in _everything(session) if row[0] != "rate_limits"] == before
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_deleting_the_account(
     client: TestClient, organiser: Organiser, session: Session, monkeypatch: Any
 ) -> None:
@@ -119,6 +122,7 @@ def test_deleting_the_account(
     assert all(row.status != "queued" or not row.to_email for row in outbox(session))
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_the_address_can_sign_up_again(
     client: TestClient, organiser: Organiser, session: Session, monkeypatch: Any
 ) -> None:

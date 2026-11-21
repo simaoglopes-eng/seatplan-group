@@ -51,6 +51,9 @@ class EventPatch(Strict):
     privacy_mode: PrivacyMode | None = None
     change_deadline: AwareDatetime | None = None
     event_type: EventType | None = None  # null clears it
+    # Seats one guest may book, their own included (party.py). null: the
+    # default (core/limits.DEFAULT_MAX_PARTY_SIZE); 0: no limit.
+    max_party_size: int | None = Field(default=None, ge=0, le=500, strict=True)
 
 
 class GuestIn(Strict):
@@ -121,8 +124,9 @@ class MyPartySeatIn(Strict):
 
 class PartyConfirmIn(Strict):
     me: MyPartySeatIn
-    # Not a business limit (free seats are): only a guard against huge bodies.
-    members: list[PartyMemberIn] = Field(default_factory=list, max_length=1000)
+    # Only a guard against huge bodies: the business limit is the event's
+    # party size (core/limits.py), at most MAX_PARTY_SIZE_SETTING seats.
+    members: list[PartyMemberIn] = Field(default_factory=list, max_length=500)
 
 
 class MyDetailsIn(Strict):

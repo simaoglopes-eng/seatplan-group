@@ -48,6 +48,18 @@ describe("Your party", () => {
     expect(screen.getByRole("button", { name: "Add people" })).toBeTruthy();
   });
 
+  it("shows the party limit, and no Add people once the party is full", async () => {
+    const view = bookedView();
+    Object.assign(view.party as object, { max_party_size: 2, party_size_left: 0 });
+    const backend = partyBackend(LINK, view);
+    memberRoutes(backend, LINK, 4);
+    renderLink();
+    await partyList();
+    expect(screen.getByText("You can book up to 2 seats, your own included.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Add people" })).toBeNull();
+    expect(screen.getByText("Your party has every seat one person can book here. Ask the organiser if you need more.")).toBeTruthy();
+  });
+
   it("does not let the guest release their seat while their party is coming", async () => {
     const backend = setup();
     await partyList();

@@ -16,15 +16,20 @@ seats (details.seat_ids) so the page can keep every name that was typed.
 The age typed for each person is for the organiser only: it is stored in
 guests.age_years, which nothing shown to guests or visitors reads. The booker
 gets back only `age_saved` (true or false), never the number.
+
+Two limits stop one booker from taking a whole event (core/limits.py): the
+event's party size (events.max_party_size, the booker's own seat included)
+and a lifetime number of companion rows, since each removal leaves an
+emptied row behind.
 """
 
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core import audit
+from app.core import audit, limits
 from app.core.errors import ApiError
 from app.core.text import has_letter
 from app.events_service.access import is_active, require_before_deadline
@@ -106,6 +111,46 @@ def members_of(session: Session, booker: Guest) -> list[Guest]:
     return list(session.scalars(query))
 
 
+def max_party_size(event: Event) -> int | None:
+    """Seats one guest may book, their own included; None means no limit."""
+    if event.max_party_size is None:
+        return limits.DEFAULT_MAX_PARTY_SIZE
+    return event.max_party_size or None
+
+
+def party_size_left(session: Session, event: Event, booker: Guest) -> int | None:
+    """How many more people this booker may bring under the party limit; None: no limit.
+
+    The booker counts as one, and so does each member still coming. A member
+    the organiser marked "no" or that was removed frees a place.
+    """
+    limit = max_party_size(event)
+    if limit is None:
+        return None
+    coming = sum(1 for member in members_of(session, booker) if is_active(member))
+    return max(0, limit - 1 - coming)
+
+
+def party_changes_allowed(event: Event) -> int:
+    """Companion rows one booker may create over the event's life, erased ones included."""
+    limit = max_party_size(event)
+    if limit is None:
+        return limits.PARTY_CHANGES_NO_LIMIT
+    return limits.PARTY_CHANGES_FACTOR * limit
+
+
+def companions_created(session: Session, booker: Guest) -> int:
+    """Every companion row this booker ever created, erased ones too (erase_guest keeps the link)."""
+    query = select(func.count()).where(
+        (Guest.booked_by_guest_id == booker.id) & (Guest.event_id == booker.event_id)
+    )
+    return session.scalar(query) or 0
+
+
+def _seats_word(count: int) -> str:
+    return "1 seat" if count == 1 else f"{count} seats"
+
+
 def _people(count: int) -> str:
     return "1 other person" if count == 1 else f"{count} other people"
 
@@ -150,6 +195,10 @@ def party_view(session: Session, event: Event, me: Guest) -> dict[str, Any]:
             for member in members_of(session, me)
         ],
         "places_left": party_room(session, event, me),
+        # The party limit, the booker's own seat included; None: no limit.
+        "max_party_size": max_party_size(event),
+        # How many more people the limit still allows; None: no limit.
+        "party_size_left": party_size_left(session, event, me),
     }
 
 
@@ -252,6 +301,36 @@ def _write_or_seat_taken(session: Session, seat_ids: list[int], commit: bool = F
         ) from None
 
 
+def _check_party_limits(session: Session, event: Event, me: Guest, adding: int) -> None:
+    """409 when `adding` new members would pass the party size or the lifetime limit.
+
+    Call after lock_event and session.refresh(event): both read the members
+    and the event's setting as they are now. Nothing is written before.
+    """
+    left = party_size_left(session, event, me)
+    if left is not None and adding > left:
+        limit = max_party_size(event)
+        raise ApiError(
+            409,
+            "party_too_large",
+            f"You can book up to {_seats_word(limit or 0)} for this event, your own included. "
+            + (
+                f"You can add {left} more {'person' if left == 1 else 'people'}."
+                if left
+                else "Ask the organiser if you need more."
+            ),
+            details={"max_party_size": limit, "party_size_left": left},
+        )
+    allowed = party_changes_allowed(event)
+    if companions_created(session, me) + adding > allowed:
+        raise ApiError(
+            409,
+            "party_changes_exhausted",
+            "You have added as many people as one person can for this event, "
+            "counting the people you removed. Ask the organiser to add or change people for you.",
+        )
+
+
 def _full(room: int) -> ApiError:
     if room == 0:
         message = "This event is full. Every place has a guest."
@@ -317,6 +396,8 @@ def confirm_party(
         raise ApiError(422, "validation", "Each seat can be chosen once.")
 
     lock_event(session, event)  # seats are read after it: a room setup may have moved the event
+    # The link's cap and switch and the party limit, as they are now (as share.join does).
+    session.refresh(event)
     _recheck(session, me)  # erased, re-linked or answered "no" while we waited?
     require_coming(me)
     _require_my_age(me, body.me.age)
@@ -347,6 +428,7 @@ def confirm_party(
     if taken:
         raise _seats_taken([found[i] for i in taken])
     if people:
+        _check_party_limits(session, event, me, len(people))
         room = party_room(session, event, me)
         if len(people) > room:
             raise _full(room)

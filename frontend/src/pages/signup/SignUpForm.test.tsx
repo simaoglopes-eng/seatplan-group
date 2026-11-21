@@ -64,6 +64,8 @@ describe("SignUpForm: the full set", () => {
     expect(screen.getByRole("button", { name: "Show password" })).toBeTruthy();
     expect(screen.getByRole("checkbox", { name: /\(required\)/ })).toBeTruthy();
     expect(screen.getByText("What we store")).toBeTruthy();
+    // Party booking stores an age for every seat: the privacy text says who sees it.
+    expect(screen.getByText(/These ages are seen only by the event's organiser/)).toBeTruthy();
     expect(screen.getByLabelText(/Extra: accessible/)).toBeTruthy();
     expect(screen.getByRole("link", { name: "Already have an account? Sign in" })).toBeTruthy();
 

@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import db
-from app.core import audit, live
+from app.core import audit, limits, live, work_limits
 from app.core.errors import ApiError
 from app.core.holds import commit_or_seat_taken
 from app.core.parent_venue import shown_venue, shown_venue_of
@@ -85,6 +85,9 @@ def event_dict(session: Session, event: Event) -> dict[str, Any]:
         "event_type_label": event_type_label(event.event_type),
         "listed": event.listed,
         "venue_name": venue.name if venue is not None else None,
+        # As stored: null means the default (party.max_party_size), 0 no limit.
+        "max_party_size": event.max_party_size,
+        "default_max_party_size": limits.DEFAULT_MAX_PARTY_SIZE,
     }
 
 
@@ -139,6 +142,10 @@ def create_event_with_venue(
     """Create a new event and its empty floor together, or neither on error."""
     if body.ends_at <= body.starts_at:
         raise ApiError(422, "validation", "The event must end after it starts.")
+    # First: rate_limit commits its count. Each new event makes a venue of its own.
+    rate_limit(session, f"event-create:{user.id}", limits.EVENT_CREATES_PER_HOUR, 3600)
+    work_limits.require_room_for_venue(session, user, "event")
+    work_limits.require_room_for_event(session, user)
     venue = Venue(
         organiser_id=user.id,
         kind="event",
@@ -167,6 +174,7 @@ def create_event_with_venue(
 
 @router.post("/events", status_code=201)
 def create_event(body: EventIn, user: CurrentOrganiser, session: db.SessionDep) -> dict[str, Any]:
+    rate_limit(session, f"event-create:{user.id}", limits.EVENT_CREATES_PER_HOUR, 3600)
     venue = session.scalars(select(Venue).where(Venue.public_id == body.venue_id)).first()
     if (
         venue is None
@@ -177,6 +185,8 @@ def create_event(body: EventIn, user: CurrentOrganiser, session: db.SessionDep) 
         raise ApiError(404, "not_found", "Event venue not found.")
     if body.ends_at <= body.starts_at:
         raise ApiError(422, "validation", "The event must end after it starts.")
+    # One venue may hold several events, so the venue limit alone does not bound them.
+    work_limits.require_room_for_event(session, user)
     event = Event(venue_id=venue.id, organiser_id=user.id, **body.model_dump(exclude={"venue_id"}))
     session.add(event)
     session.flush()
@@ -237,7 +247,7 @@ def patch_event(
     event = load_event(session, eid, user)
     changes = body.model_dump(exclude_unset=True)
     for name, value in changes.items():
-        if value is None and name not in ("change_deadline", "event_type"):
+        if value is None and name not in ("change_deadline", "event_type", "max_party_size"):
             raise ApiError(422, "validation", f"{name} cannot be empty.")
         setattr(event, name, value)
     if event.ends_at <= event.starts_at:
@@ -273,8 +283,13 @@ def patch_guest(
     eid: str, gid: int, body: GuestPatch, user: CurrentOrganiser, session: db.SessionDep
 ) -> dict[str, Any]:
     event = load_event(session, eid, user)
+    changes = body.model_dump(exclude_unset=True)
+    # Refused before anything is looked up: the age checks' messages depend on
+    # what is stored, and the venue's team must not learn ages that way.
+    if "age" in changes and not guests.shows_ages(event, user):
+        raise ApiError(403, "forbidden", guests.AGES_FOR_ORGANISER)
     guest = load_event_guest(session, event, gid)
-    guests.update_guest(session, event, guest, body.model_dump(exclude_unset=True), user)
+    guests.update_guest(session, event, guest, changes, user)
     session.commit()
     shown = guests.list_guests(session, event, guests.shows_ages(event, user))
     return next(item for item in shown if item["id"] == guest.id)

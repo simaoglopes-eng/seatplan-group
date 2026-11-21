@@ -7,12 +7,13 @@ step can be read and explained without a crypto package.
 import hashlib
 import hmac
 import ipaddress
+import math
 import secrets
 import time
 from typing import Annotated
 
 from fastapi import Depends, Header, Request
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from app import db
@@ -279,10 +280,19 @@ def network_of(address: str) -> str:
     return address
 
 
+# Domains whose inboxes ignore dots in the name: "a.na@gmail.com" is "ana@gmail.com".
+DOTLESS_DOMAINS = frozenset({"gmail.com", "googlemail.com"})
+
+
 def mailbox(email: str) -> str:
-    """One key per inbox: lower case, and "name+tag@domain" read as "name@domain"."""
+    """One key per inbox: lower case, "name+tag@domain" read as "name@domain",
+    and for Gmail the dots in the name dropped. The domain is kept as typed,
+    so a caller may still narrow stored rows by domain (booking_caps.py)."""
     local, _, domain = email.strip().lower().rpartition("@")
-    return f"{local.split('+', 1)[0]}@{domain}"
+    local = local.split("+", 1)[0]
+    if domain in DOTLESS_DOMAINS:
+        local = local.replace(".", "")
+    return f"{local}@{domain}"
 
 
 def _stored_key(key: str) -> str:
@@ -331,6 +341,29 @@ def rate_limit(session: Session, key: str, limit: int, window_s: int) -> None:
     session.commit()
     if count is not None and count > limit:
         raise ApiError(429, "rate_limited", "Too many attempts. Please wait a moment.")
+
+
+def seconds_since(session: Session, key: str) -> float:
+    """Seconds since mark_now(key) last ran; infinity when it never did. Reads only."""
+    last = session.scalar(
+        select(func.max(RateLimit.window_start)).where(RateLimit.key == _stored_key(key))
+    )
+    return math.inf if last is None else time.time() - last
+
+
+def mark_now(session: Session, key: str) -> None:
+    """Remember this moment for `key` (seconds_since). Commits.
+
+    Stored in rate_limits as one row whose window_start is the moment itself.
+    Two requests in the same instant may both pass seconds_since: this is a
+    courtesy wait, and the hourly counts stay the real limit.
+    """
+    stored = _stored_key(key)
+    session.execute(delete(RateLimit).where(RateLimit.key == stored))
+    db.insert_ignoring_duplicates(
+        session, RateLimit.__table__, {"key": stored, "window_start": int(time.time()), "count": 1}
+    )
+    session.commit()
 
 
 def limit_reached(session: Session, key: str, limit: int, window_s: int) -> bool:

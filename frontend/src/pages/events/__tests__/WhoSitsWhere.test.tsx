@@ -298,6 +298,31 @@ describe("Who is sitting where?", () => {
     expect((within(screen.getByRole("group", { name: "Guest 1 · Table 1, seat 3" })).getByLabelText("First name") as HTMLInputElement).value).toBe("Bea");
   });
 
+  it("shows the party limit and stops at it with a friendly message, then explains the server's refusal", async () => {
+    const view = partyView();
+    Object.assign(view.party as object, { max_party_size: 2, party_size_left: 1 });
+    const backend = partyBackend(LINK, view);
+    renderLink();
+    expect(await screen.findByText(/You can book up to 2 seats, your own included\./)).toBeTruthy();
+    await tapSeat(1);
+    await tapSeat(3);
+    await tapSeat(4);
+    const alert = await screen.findByRole("alert");
+    expect(within(alert).getByText("You can book up to 2 seats for this event, your own included, so you cannot choose more seats.")).toBeTruthy();
+    expect(within(screen.getByRole("region", { name: "Selected seat" })).getByText("2 seats selected")).toBeTruthy();
+
+    // The organiser lowered the limit meanwhile: the server refuses and says why.
+    const refusal = "You can book up to 1 seat for this event, your own included. Ask the organiser if you need more.";
+    backend.server.routes.set(`POST ${LINK}/party/confirm`, () => errorReply(409, "party_too_large", refusal, { max_party_size: 1, party_size_left: 0 }));
+    fireEvent.click(within(screen.getByRole("region", { name: "Selected seat" })).getByRole("button", { name: "Continue" }));
+    await screen.findByRole("heading", { name: "Who is sitting where?" });
+    fill("You · Table 1, seat 1", { age: "40" });
+    fill("Guest 1 · Table 1, seat 3", { first: "Bea", last: "Silva", age: "9" });
+    fireEvent.click(confirmButton(2));
+    expect(await screen.findByText(refusal)).toBeTruthy();
+    expect((within(screen.getByRole("group", { name: "Guest 1 · Table 1, seat 3" })).getByLabelText("First name") as HTMLInputElement).value).toBe("Bea");
+  });
+
   it("works the same through a guest account, on /guest/events/{eid}", async () => {
     const backend = partyBackend(ACCOUNT);
     renderAccount();

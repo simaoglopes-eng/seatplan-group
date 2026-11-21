@@ -19,6 +19,11 @@ export function PrivacyText() {
         setting; they do not see your email. The organiser does not receive your date of birth in the event management view.
       </p>
       <p>
+        <strong>Your age when you book seats.</strong> When you choose a seat, you give your age in years, and the age of each person you book a
+        seat for. These ages are seen only by the event's organiser: never by other guests, by the venue's team or on the event map. They are
+        separate from the optional date of birth above.
+      </p>
+      <p>
         We may email you about your account and seat. Seat confirmations and changes can include a room picture without other guests' names.
         We keep the words of each email for 30 days.
       </p>

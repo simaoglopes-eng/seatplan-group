@@ -1210,6 +1210,15 @@ account.
 > My account page: we free your seats and wipe the emails we keep for you. If
 > an organiser invited you, they keep their own record of that invitation.
 > Copies already in your inbox stay there.
+>
+> **Your age when you book seats.** When you choose a seat, you give your age
+> in years, and the age of each person you book a seat for. These ages are
+> seen only by the event's organiser: never by other guests, by the venue's
+> team or on the event map.
+
+(Added with party booking: every chosen seat carries an age, stored in
+`guests.age_years` for the organiser only; the app's text is
+`frontend/src/pages/account/PrivacyText.tsx`.)
 
 (Corrected after review R12: the first version said every email had a
 picture, and did not say how long the account is kept.)

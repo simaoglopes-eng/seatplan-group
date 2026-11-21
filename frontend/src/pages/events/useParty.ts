@@ -28,6 +28,8 @@ import {
   dropSeats,
   lostSeats,
   memberName,
+  noRoomMessage,
+  partyRoom,
   removeCard,
   splitName,
   toggleSeat,
@@ -191,7 +193,8 @@ export function useParty(deps: PartyDeps) {
     return true;
   };
 
-  const placesLeft = (): number | null => depsRef.current.view?.party?.places_left ?? null;
+  /** More people this guest may add now: the event's places and the party limit together. */
+  const placesLeft = (): number | null => partyRoom(depsRef.current.view?.party).room;
 
   const actions = {
     /** Tapping a seat on the map (or "Select this seat"): add it to the selection or give it back. */
@@ -211,15 +214,7 @@ export function useParty(deps: PartyDeps) {
       const me = myCard(view, locked ? view.me.seat_id : null, locked);
       const result = toggleSeat(cardsRef.current, seatId, me, placesLeft());
       if (result.outcome === "full") {
-        const room = placesLeft() ?? 0;
-        setNotice({
-          kind: "problem",
-          title: "No more places",
-          message:
-            room === 0
-              ? "This event has no place left for anyone else, so you can only choose your own seat."
-              : `This event has room for ${room} more ${room === 1 ? "person" : "people"} besides you, so you cannot choose more seats.`,
-        });
+        setNotice({ kind: "problem", title: "No more places", message: noRoomMessage(view.party) });
         setMessage(`${nameOf(seatId)} was not added: no more places.`);
         return;
       }
@@ -302,7 +297,7 @@ export function useParty(deps: PartyDeps) {
             goToPhase("map");
             return true;
           }
-          if (error.code === "event_full" || error.code === "validation") {
+          if (error.code === "event_full" || error.code === "validation" || error.code === "party_too_large" || error.code === "party_changes_exhausted") {
             setNotice({ kind: "problem", message: error.message });
             await fetchAll().catch(() => null);
             return true;

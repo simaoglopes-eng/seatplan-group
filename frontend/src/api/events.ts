@@ -31,6 +31,10 @@ export interface EventSummary {
   event_type_label?: string | null;
   listed?: boolean;
   venue_name?: string | null;
+  /** Organiser answers only: seats one guest may book, their own included. Null: the default; 0: no limit. */
+  max_party_size?: number | null;
+  /** Organiser answers only: the limit when max_party_size is null. */
+  default_max_party_size?: number;
 }
 
 /** One number per term of the optimiser objective (ScoreBreakdown in events_model.py). */
@@ -97,8 +101,12 @@ export interface PartyMember {
 export interface PartyView {
   me: PartyMe;
   members: PartyMember[];
-  /** How many more people this booker may add right now. */
+  /** How many more people the event still has room for (seats and the shared link's cap). */
   places_left: number;
+  /** Seats one guest may book here, their own included. Null: no limit. */
+  max_party_size: number | null;
+  /** How many more people the party limit still allows. Null: no limit. */
+  party_size_left: number | null;
 }
 
 /** A person with their whole name and age in years (0 to 120). */
@@ -431,6 +439,8 @@ export interface SeatingChart {
 export interface EventPatch {
   privacy_mode?: PrivacyMode;
   change_deadline?: string | null;
+  /** Null: the default limit; 0: no limit; else 1 to 500. */
+  max_party_size?: number | null;
 }
 
 // ---------- Room setups (docs/api.md, "Event room layouts") ----------

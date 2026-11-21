@@ -15,7 +15,7 @@ import { AnonymousSwitch } from "./AnonymousSwitch";
 import { seatName } from "./format";
 import { seatsNextToFriends } from "./friendSeats";
 import { HoldBar } from "./HoldBar";
-import { ME_KEY, cardLabel, memberName, splitName } from "./partyRules";
+import { ME_KEY, cardLabel, memberName, partyLimitText, splitName } from "./partyRules";
 import { RecommendationStrip } from "./RecommendationStrip";
 import { SeatNotice } from "./SeatNotice";
 import { StepTitle } from "./StepTitle";
@@ -71,11 +71,12 @@ export function SeatStep({ state, view, moved }: SeatStepProps) {
       : state.changingSeat
         ? "Choose a new seat"
         : "Choose your seat";
+  const limit = partyLimitText(view.party);
   const intro = moving
     ? `Tap one free seat, then move ${memberName(moving)} there. Their current seat stays theirs until then.`
     : party.mode.kind === "add"
-      ? "Tap a free seat for each person coming with you. Your own seat stays as it is."
-      : "Tap one seat for you, then more seats for anyone coming with you. The first person to confirm gets the seat.";
+      ? ["Tap a free seat for each person coming with you. Your own seat stays as it is.", limit].filter(Boolean).join(" ")
+      : ["Tap one seat for you, then more seats for anyone coming with you.", limit, "The first person to confirm gets the seat."].filter(Boolean).join(" ");
   const firstOf = (m: NonNullable<typeof moving>) => m.first_name ?? splitName(memberName(m)).first;
 
   return (

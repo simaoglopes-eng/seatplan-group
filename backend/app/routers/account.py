@@ -53,6 +53,7 @@ def register(body: AccountRegisterIn, request: Request, session: db.SessionDep) 
     if not body.name.strip():
         raise ApiError(422, "validation", "name: Type your name.")
     accounts.check_new_password(body.password, email)
+    accounts.require_signup_mail(email)
     accounts.count_code_send(session, request, email, "register")
     accounts.count_app_send(session)
     form = accounts.SignUp(body.name.strip(), email, body.password, False)
