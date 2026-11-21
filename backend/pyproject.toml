@@ -1,5 +1,21 @@
 # Tool settings for the backend. Run both tools from this backend/ folder.
 
+# Vercel installs the backend from this [project] table, not from
+# requirements.txt. Keep these pins aligned with requirements.txt.
+[project]
+name = "seatplan-backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.162.2",
+    "sqlalchemy==2.1.8",
+    "pydantic==2.14.3",
+    "email-validator==2.3.0",
+    "psycopg[binary]==3.3.8",
+    "httpx==0.28.1",
+    "tzdata==2026.6",
+]
+
 [tool.pytest.ini_options]
 # pythonpath makes "import app" work, the same way the app is imported on
 # Vercel (api/index.py) and by the seed command.
