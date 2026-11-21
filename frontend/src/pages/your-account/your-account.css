@@ -1,0 +1,29 @@
+/* /account: the one account panel. Tokens only; the forms come from account.css,
+   the bookings list from dinerAccount.css, the rows from events-public.css. */
+.ya-page { max-width: 48rem; margin: var(--space-4) auto 0; display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.ya-signed-out { display: flex; flex-direction: column; gap: var(--space-4); max-width: 30rem; width: 100%; margin-inline: auto; }
+.ya-signed-out .acc-title { font-family: var(--font-display); font-weight: 400; font-size: 2.5rem; line-height: 1.1; }
+.ya-form-title { margin: 0; font-size: var(--fs-xl); }
+.discover-view-switch.ya-switch { display: inline-flex; align-self: flex-start; }
+.ya-who { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-3); border-bottom: var(--border-width) solid var(--c-border); }
+.ya-who > div { min-width: 0; overflow-wrap: anywhere; }
+.ya-who .acc-title { font-family: var(--font-display); font-weight: 400; font-size: 2.25rem; line-height: 1.1; }
+.ya-panel { display: flex; flex-direction: column; gap: var(--space-5); min-width: 0; }
+.ya-panel .diner-dashboard { margin-block: 0; }
+.ya-section h2, .ya-missing h2 { color: var(--c-heading); margin: 0 0 var(--space-2); }
+.ya-section > p { margin: 0 0 var(--space-3); }
+.ya-more { margin: var(--space-2) 0 0; }
+.ya-more a, .ya-owner-links a { display: inline-flex; align-items: center; min-height: var(--touch-target); }
+.ya-owner-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); margin-top: var(--space-1); }
+.ya-missing { display: flex; flex-direction: column; gap: var(--space-3); max-width: 30rem; }
+.ya-missing p { margin: 0; }
+/* Direction E: round 44px switch buttons; signed out, the switch sits on the glass panel. */
+.ya-page .discover-view-switch.ya-switch .btn { min-height: var(--touch-target); padding-inline: var(--space-4); }
+.ap-route .ya-signed-out { margin-top: var(--space-2); }
+.ap-route .discover-view-switch.ya-switch { border-color: var(--glass-border); background: rgb(var(--photo-veil-ink) / 0.35); }
+.ap-route .ya-signed-out .acc-title { font-size: clamp(2rem, 4vw, 2.75rem); }
+.ap-route .ya-form-title { color: var(--glass-text); }
+@media (max-width: 40rem) {
+  .ya-signed-out .acc-title, .ya-who .acc-title { font-size: 1.875rem; }
+  .ep-staff-row > .btn { width: 100%; justify-content: center; }
+}

@@ -22,14 +22,17 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.core import audit
 from app.core.errors import ApiError
+from app.core.parent_venue import shown_venue
 from app.core.privacy import display_name
 from app.events_service.access import (
     MAX_TOKEN_LENGTH,
     deadline_passed,
+    is_active,
     load_venue,
 )
+from app.events_service.age import visible_age
 from app.events_service.attendee_view import event_summary
-from app.events_service.problem import active_guests, current_rows, event_guests, venue_seats
+from app.events_service.problem import current_rows, event_guests, venue_seats
 from app.events_service.seating import lock_event
 from app.events_service.seatmap import live_holds, map_frame, seat_base
 from app.models import Event, Guest, GuestAccount, Seat, Venue
@@ -44,6 +47,8 @@ REMOVED = "The organiser removed you from this event. Ask them if you think this
 # New guest rows through one event's link (docs/guest-accounts.md, 8.1).
 JOINS_PER_HOUR = 30
 MEMBER_STATUSES = ("joined", "linked", "already_member")
+_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"  # Crockford base32: no I, L, O or U.
+_CODE_SIGNATURE_LENGTH = 10  # 50 bits of HMAC output.
 
 # ---------------------------------------------------------------- the token
 
@@ -68,6 +73,53 @@ def share_path(event: Event) -> str | None:
     if event.share_token_hash is None or needs_new_link(event):
         return None
     return f"/j/{derive_token(event)}"
+
+
+def _encode_event_id(event_id: int) -> str:
+    """Encode the internal id compactly so code lookup needs one indexed DB read."""
+    value = event_id
+    encoded = ""
+    while value:
+        value, digit = divmod(value, len(_CODE_ALPHABET))
+        encoded = _CODE_ALPHABET[digit] + encoded
+    return encoded or "0"
+
+
+def derive_join_code(event: Event) -> str:
+    """A readable, signed invitation code that changes when the link is regenerated."""
+    key = get_settings().secret_key.encode("utf-8")
+    message = f"share-code:{event.public_id}:{event.share_version}".encode()
+    digest = hmac.new(key, message, hashlib.sha256).digest()
+    number = int.from_bytes(digest, "big")
+    signature = ""
+    for _ in range(_CODE_SIGNATURE_LENGTH):
+        number, digit = divmod(number, len(_CODE_ALPHABET))
+        signature = _CODE_ALPHABET[digit] + signature
+    return f"{_encode_event_id(event.id)}-{signature}"
+
+
+def load_shared_code(session: Session, code: str) -> Event:
+    """Resolve a short join code without revealing whether another event exists."""
+    if not code or len(code) > 32:
+        raise ApiError(404, "not_found", LINK_NOT_VALID)
+    normalized = code.strip().upper()
+    parts = normalized.split("-")
+    if len(parts) != 2 or not parts[0] or len(parts[1]) != _CODE_SIGNATURE_LENGTH:
+        raise ApiError(404, "not_found", LINK_NOT_VALID)
+    try:
+        event_id = 0
+        for char in parts[0]:
+            event_id = event_id * len(_CODE_ALPHABET) + _CODE_ALPHABET.index(char)
+        if event_id <= 0:
+            raise ValueError
+    except ValueError:
+        raise ApiError(404, "not_found", LINK_NOT_VALID) from None
+    event = session.get(Event, event_id)
+    if event is None or not tokens_match(normalized, derive_join_code(event)):
+        raise ApiError(404, "not_found", LINK_NOT_VALID)
+    if not event.share_enabled or share_path(event) is None:
+        raise ApiError(404, "not_found", LINK_NOT_VALID)
+    return event
 
 
 def switch_on(event: Event) -> None:
@@ -113,14 +165,40 @@ def _open_seats(session: Session, event: Event) -> tuple[int, int]:
     return len(seats), sum(1 for seat in seats if seat.reserved_tag is not None)
 
 
+def _came_by_link(guest: Guest, everyone: dict[int, Guest]) -> bool:
+    """Joined with the link, or a party member booked by someone who did.
+
+    `everyone` holds erased rows too: a member keeps counting after the
+    organiser deleted only their booker (party=keep).
+    """
+    if guest.source == "self_registered":
+        return True
+    booker = everyone.get(guest.booked_by_guest_id) if guest.booked_by_guest_id else None
+    return guest.source == "companion" and booker is not None and booker.source == "self_registered"
+
+
+def _counted_guests(session: Session, event: Event) -> list[Guest]:
+    """The rows place_counts needs: every guest but the erased party members.
+
+    An erased member is never active and never anyone's booker, so leaving
+    it out changes no count; it only keeps the read small when a booker
+    adds and removes people again and again. Erased bookers stay in: a
+    member they left behind (party=keep) still counts as joined by the link.
+    """
+    erased_member = (Guest.source == "companion") & Guest.token_revoked_at.is_not(None)
+    query = select(Guest).where((Guest.event_id == event.id) & ~erased_member).order_by(Guest.id)
+    return list(session.scalars(query))
+
+
 def place_counts(session: Session, event: Event) -> dict[str, int]:
     """capacity (seats not blocked), guests (active) and joined (active, by the link)."""
     capacity, _reserved = _open_seats(session, event)
-    coming = active_guests(session, event)
+    everyone = {guest.id: guest for guest in _counted_guests(session, event)}
+    coming = [guest for guest in everyone.values() if is_active(guest)]
     return {
         "capacity": capacity,
         "guests": len(coming),
-        "joined": sum(1 for guest in coming if guest.source == "self_registered"),
+        "joined": sum(1 for guest in coming if _came_by_link(guest, everyone)),
     }
 
 
@@ -133,7 +211,7 @@ def _seats_for_newcomers(session: Session, event: Event) -> int:
     more of them than reserved seats.
     """
     capacity, reserved = _open_seats(session, event)
-    coming = active_guests(session, event)
+    coming = [guest for guest in _counted_guests(session, event) if is_active(guest)]
     tagged = sum(1 for guest in coming if guest.reserved_tag is not None)
     untagged = len(coming) - tagged
     spill_over = max(0, tagged - reserved)
@@ -152,6 +230,21 @@ def places_left(session: Session, event: Event) -> int:
     if event.share_cap is not None:
         left = min(left, event.share_cap - counts["joined"])
     return max(0, left)
+
+
+def party_room(session: Session, event: Event, booker: Guest) -> int:
+    """How many more people this booker may bring right now (events_service/party.py).
+
+    Each party member is a new guest, so the rule of places_left applies:
+    invited guests who have not chosen yet keep their places, and seats
+    reserved for a tag are not for members (they have none). The link's cap
+    counts only when the booker came in with the link. Call after lock_event.
+    """
+    counts = place_counts(session, event)
+    room = min(counts["capacity"] - counts["guests"], _seats_for_newcomers(session, event))
+    if booker.source == "self_registered" and event.share_cap is not None:
+        room = min(room, event.share_cap - counts["joined"])
+    return max(0, room)
 
 
 def room_to_come_back(session: Session, event: Event, guest: Guest) -> bool:
@@ -185,9 +278,11 @@ def join_state(session: Session, event: Event) -> dict[str, Any]:
 
 def share_settings(session: Session, event: Event) -> dict[str, Any]:
     """ShareSettings for the organiser (docs/guest-accounts.md, 6.3)."""
+    link = share_path(event)
     return {
         "enabled": event.share_enabled,
-        "link": share_path(event),
+        "link": link,
+        "code": derive_join_code(event) if link is not None and event.share_enabled else None,
         "needs_new_link": needs_new_link(event),
         "cap": event.share_cap,
         **place_counts(session, event),
@@ -218,6 +313,9 @@ def visitor_map(session: Session, event: Event, venue: Venue) -> dict[str, Any]:
         occupant = None
         if owner is not None:
             occupant = display_name(owner.name, event.privacy_mode, owner.wants_anonymous)
+            age = visible_age(owner, event)
+            if age is not None:
+                occupant = f"{occupant}, {age}"
         state = _visitor_state(seat, owner is not None, seat.id in holds)
         seats.append({**seat_base(seat), "state": state, "occupant": occupant})
     return {**map_frame(session, venue), "seats": seats}
@@ -225,9 +323,10 @@ def visitor_map(session: Session, event: Event, venue: Venue) -> dict[str, Any]:
 
 def visitor_view(session: Session, event: Event) -> dict[str, Any]:
     venue = load_venue(session, event)
+    shown = shown_venue(session, venue) or venue
     return {
         "event": event_summary(event),
-        "venue": {"name": venue.name},
+        "venue": {"name": shown.name},
         "map": visitor_map(session, event, venue),
         "join": join_state(session, event),
     }

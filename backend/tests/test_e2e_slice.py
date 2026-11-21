@@ -12,6 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from test_events_setup import give_details
 
 from app.config import get_settings
 from app.models import EmailOutbox
@@ -80,14 +81,14 @@ def test_events_slice(client: TestClient, session: Session, links: dict[str, str
     # name from known_nearby, after the privacy rules have already been applied.
     assert any("you know" in reason for reason in best["reasons"])
 
-    # Hold, then confirm that seat.
+    # Hold, then confirm that seat (a chosen seat carries a name and an age).
     seat_id = best["seat_id"]
-    assert client.post(f"/api/a/{me_token}/hold", json={"seat_id": seat_id}).status_code == 200
+    give_details(me["id"])
     confirmed = client.post(f"/api/a/{me_token}/confirm", json={"seat_id": seat_id})
     assert confirmed.status_code == 200 and confirmed.json()["seat_id"] == seat_id
 
     # A second attendee cannot have the same seat.
-    clash = client.post(f"/api/a/{other_token}/hold", json={"seat_id": seat_id})
+    clash = client.post(f"/api/a/{other_token}/confirm", json={"seat_id": seat_id})
     assert clash.status_code == 409
     assert clash.json()["error"]["code"] == "seat_taken"
 

@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core import audit
 from app.core.errors import ApiError
+from app.core.text import has_letter
 from app.events_service.access import attendee_link
 from app.events_service.mailer import forget_guest_emails
 from app.events_service.problem import current_rows, event_guests
@@ -28,8 +29,14 @@ def group_names(session: Session, event: Event) -> dict[int, str]:
     return {group.id: group.name for group in groups}
 
 
-def guest_dict(guest: Guest, group: str | None, seat_id: int | None) -> dict[str, Any]:
-    """Everything the ORGANISER may see about a guest. Never the token or its hash."""
+def guest_dict(
+    guest: Guest, group: str | None, seat_id: int | None, show_age: bool = True
+) -> dict[str, Any]:
+    """Everything the ORGANISER may see about a guest. Never the token or its hash.
+
+    `show_age` is false for the venue's team (core/members.py): ages, often
+    of children, are for the event's own organiser only (shows_ages).
+    """
     return {
         "id": guest.id,
         "name": guest.name,
@@ -45,10 +52,23 @@ def guest_dict(guest: Guest, group: str | None, seat_id: int | None) -> dict[str
         # row. Never the account's id or email.
         "source": guest.source,
         "has_account": guest.account_id is not None,
+        # Party booking (party.py). The age is shown to the organiser only.
+        "first_name": guest.first_name,
+        "last_name": guest.last_name,
+        "age": guest.age_years if show_age else None,
+        "booked_by_guest_id": guest.booked_by_guest_id,
     }
 
 
-def list_guests(session: Session, event: Event) -> list[dict[str, Any]]:
+AGES_FOR_ORGANISER = "Only the event's organiser can see or change ages."
+
+
+def shows_ages(event: Event, user: Organiser) -> bool:
+    """Only the event's own organiser sees ages; the venue's team members do not."""
+    return event.organiser_id == user.id
+
+
+def list_guests(session: Session, event: Event, show_age: bool = True) -> list[dict[str, Any]]:
     groups = group_names(session, event)
     rows = current_rows(session, event)
     return [
@@ -56,6 +76,7 @@ def list_guests(session: Session, event: Event) -> list[dict[str, Any]]:
             guest,
             groups.get(guest.group_id) if guest.group_id else None,
             rows[guest.id].seat_id if guest.id in rows else None,
+            show_age,
         )
         for guest in event_guests(session, event)
         if guest.token_revoked_at is None
@@ -110,14 +131,34 @@ def add_guest(session: Session, event: Event, body: GuestIn) -> tuple[Guest, str
 def update_guest(
     session: Session, event: Event, guest: Guest, changes: dict[str, Any], user: Organiser
 ) -> None:
-    """Apply only the fields the organiser sent. Answering "no" frees the seat."""
+    """Apply only the fields the organiser sent. Answering "no" frees the seat.
+
+    `first_name`, `last_name` and `age` (stored as age_years) are the party
+    booking details; both names together also set `name`. A party member
+    (source "companion") always keeps both names and an age, and never gets
+    an address: an address would let an account with it take the row over.
+    """
+    person = {key: changes.pop(key) for key in ("first_name", "last_name", "age") if key in changes}
+    row = current_rows(session, event).get(guest.id)
+    _check_person_changes(
+        guest, changes, person, chose_seat=row is not None and row.source == "self"
+    )
     if changes.get("email") and email_in_use(session, event, changes["email"], guest.id):
         raise ApiError(409, "conflict", f"{changes['email']} is already on the guest list.")
     lock_event(session, event)  # before any other write, see seating.py
     if "group" in changes:
         guest.group_id = group_id_for(session, event, changes.pop("group"), False)
+    if "name" in changes:
+        guest.first_name = guest.last_name = None
     for name, value in changes.items():
         setattr(guest, name, value)
+    if "age" in person:
+        guest.age_years = person["age"]
+    if "first_name" in person or "last_name" in person:
+        guest.first_name = person.get("first_name", guest.first_name)
+        guest.last_name = person.get("last_name", guest.last_name)
+        if guest.first_name and guest.last_name:
+            guest.name = f"{guest.first_name} {guest.last_name}"
     if guest.rsvp == "no":
         drop_assignment(session, event, guest, actor=user.email)
     audit.record(
@@ -126,8 +167,57 @@ def update_guest(
         action="guest.update",
         entity="guest",
         entity_id=str(guest.id),
-        detail={"fields": sorted(changes)},
+        detail={"fields": sorted([*changes, *person])},
     )
+
+
+PARTY_MEMBER = "Party members are managed by the guest who booked them."
+
+
+def _check_person_changes(
+    guest: Guest, changes: dict[str, Any], person: dict[str, Any], chose_seat: bool = False
+) -> None:
+    """Refuse what update_guest must not write, before anything is changed.
+
+    `person` holds the first_name, last_name and age the organiser sent;
+    names are trimmed in place. `chose_seat` is true when the guest booked
+    their current seat themselves: every chosen seat carries a first name, a
+    last name and an age (party.py), so once those are saved the organiser
+    may correct them but not empty them.
+    """
+    is_member = guest.source == "companion"
+    booked_whole = (
+        chose_seat
+        and has_letter(guest.first_name)
+        and has_letter(guest.last_name)
+        and guest.age_years is not None
+    )
+    if is_member and changes.get("email"):
+        raise ApiError(409, "party_member", PARTY_MEMBER)
+    if is_member and "name" in changes:
+        raise ApiError(422, "validation", "Edit the first and last name of a party member.")
+    if booked_whole and "name" in changes:
+        raise ApiError(
+            422, "validation", "Edit the first and last name of a guest who chose their seat."
+        )
+    if is_member and "age" in person and person["age"] is None:
+        raise ApiError(422, "validation", "age: A party member needs an age from 0 to 120.")
+    if booked_whole and "age" in person and person["age"] is None:
+        raise ApiError(
+            422, "validation", "age: A guest who chose their seat needs an age from 0 to 120."
+        )
+    for key, label in (("first_name", "first name"), ("last_name", "last name")):
+        if key in person:
+            value = (person[key] or "").strip()
+            if not has_letter(value):
+                raise ApiError(422, "validation", f"{key}: Enter a {label}.")
+            person[key] = value
+    first = person.get("first_name", guest.first_name) or ""
+    last = person.get("last_name", guest.last_name) or ""
+    if len(first) + 1 + len(last) > 120:
+        raise ApiError(
+            422, "validation", "Shorten the first or last name (120 characters together at most)."
+        )
 
 
 def erase_guest(session: Session, event: Event, guest: Guest, actor: str) -> None:
@@ -152,11 +242,15 @@ def erase_guest(session: Session, event: Event, guest: Guest, actor: str) -> Non
             or_(Acquaintance.guest_id == guest.id, Acquaintance.knows_guest_id == guest.id)
         )
     )
+    guest.first_name = guest.last_name = None
     guest.name = ERASED_NAME
     guest.dietary_note = None
     guest.needs_accessible = False
     guest.reserved_tag = None
     guest.wants_anonymous = True
+    guest.birth_date = None
+    guest.share_age = False
+    guest.age_years = None
     guest.group_id = None
     guest.rsvp = "no"
     # A random hash nobody holds the token for: the old link can never match.
@@ -169,7 +263,12 @@ def erase_guest(session: Session, event: Event, guest: Guest, actor: str) -> Non
 
 
 def new_link(session: Session, event: Event, guest: Guest, user: Organiser) -> dict[str, str]:
-    """Replace the guest's token. The old link stops working at once."""
+    """Replace the guest's token. The old link stops working at once.
+
+    A party member gets no link: it would be a login to the booker's party.
+    """
+    if guest.source == "companion":
+        raise ApiError(409, "party_member", PARTY_MEMBER)
     token = new_token()
     guest.token_hash = hash_token(token)
     audit.record(

@@ -1,0 +1,215 @@
+/* Home page layout. Tokens only. */
+
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: var(--space-7);
+  align-items: center;
+  margin: var(--space-7) 0 var(--space-8);
+}
+
+.home-hero h1 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  font-size: clamp(2.5rem, 1.5rem + 3.2vw, 4.25rem);
+  line-height: 1.02;
+  letter-spacing: var(--ls-display);
+  margin-bottom: var(--space-5);
+}
+
+/* The sample room sits in a linen frame (direction E: no glass, there is no photo behind
+   it); the floor itself stays solid so every seat glyph keeps its checked contrast. */
+.home-hero-map {
+  padding: var(--space-2);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-line);
+  box-shadow: var(--shadow-sm);
+}
+
+.home-hero-map .seatmap-viewport {
+  height: min(60vh, 26rem);
+  border-color: transparent;
+}
+
+.home-hero-map .seatmap-caption {
+  margin: var(--space-2) var(--space-2) var(--space-1);
+}
+
+/* The legend is the key printed under a seating plan: a quiet pane of its own. */
+.home-hero-text .legend {
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-line);
+}
+
+.home-eyebrow {
+  margin: 0 0 var(--space-2);
+  font-size: 0.75rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+
+.home-lede {
+  font-size: var(--fs-lg);
+  margin-bottom: var(--space-5);
+}
+
+.home-muted {
+  color: var(--c-text-muted);
+}
+
+.home-demo,
+.home-how {
+  margin-bottom: var(--space-8);
+}
+
+.home-demo > h2,
+.home-how > h2,
+.home-card h3,
+.home-steps h3 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-display);
+}
+.home-demo > h2,
+.home-how > h2 {
+  font-size: clamp(2rem, 1.5rem + 1.4vw, 2.75rem);
+}
+
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.home-card {
+  padding: var(--space-6) var(--space-5) var(--space-5);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-line);
+  box-shadow: var(--shadow-sm);
+}
+
+.home-card h3 {
+  font-size: var(--fs-2xl);
+  margin-bottom: var(--space-2);
+}
+
+.home-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-link {
+  display: grid;
+  /* minmax(0, ...) lets the text column shrink below its longest word, so one
+     long word can never push the card wider than a phone screen. */
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-3);
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-input);
+  border: var(--border-width) solid var(--c-line);
+  background: var(--c-bg);
+  color: var(--c-text);
+  text-decoration: none;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-instant) var(--ease-out);
+}
+
+.home-link:hover {
+  background: var(--c-surface-sunk);
+  border-color: var(--c-primary);
+  color: var(--c-text);
+}
+
+.home-link:active {
+  transform: translateY(1px);
+}
+
+.home-link-label {
+  font-weight: var(--fw-bold);
+  overflow-wrap: anywhere;
+}
+
+.home-link-desc {
+  grid-column: 1;
+  overflow-wrap: anywhere;
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.home-link-arrow {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--c-primary);
+  font-size: var(--fs-lg);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.home-link:hover .home-link-arrow {
+  transform: translateX(3px);
+}
+
+/* The small "Browse ..." link under each demo card's two entries. */
+.home-browse {
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-sm);
+}
+
+.home-browse a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+}
+
+.home-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.home-steps li {
+  counter-increment: step;
+  padding-top: var(--space-4);
+  border-top: 2px solid var(--c-heading);
+}
+
+/* Big numerals, like a printed programme: the order is the point (see, choose, hold). */
+.home-steps li::before {
+  content: counter(step, decimal-leading-zero);
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--c-text-muted);
+  line-height: 1;
+  margin-bottom: var(--space-3);
+}
+
+.home-steps h3 {
+  font-size: var(--fs-lg);
+}
+
+@media (max-width: 52rem) {
+  .home-hero {
+    grid-template-columns: 1fr;
+  }
+}

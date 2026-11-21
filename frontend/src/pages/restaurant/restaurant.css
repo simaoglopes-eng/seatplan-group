@@ -392,6 +392,16 @@
   }
 }
 
+/* The booking inside a restaurant's public page has the whole width: a bigger plan, the side panel with the details form next to it. */
+.rp-book .rb-page { max-width: none; }
+.rp-book .rb-step { max-width: none; }
+@media (min-width: 64rem) {
+  .rp-book .rb-map-layout { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .rp-book .rb-map-layout .seatmap-viewport { height: min(72vh, 36rem); }
+}
+
+.rb-details-panel .rb-actions { margin-top: var(--space-2); }
+
 /* ---------- Staff: laptop first, but it still works on a tablet ---------- */
 
 .st-page {
@@ -836,3 +846,134 @@
     grid-template-columns: auto minmax(16rem, 1fr) auto;
   }
 }
+
+/* ---------- Rooms, the ambience card and the light cursor ---------- */
+
+.rb-room-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.rb-room-tab {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.rb-room-tab[aria-selected="true"] {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.rb-room-tab-count {
+  font-size: var(--fs-sm);
+}
+
+.rb-view-photo {
+  display: block;
+  width: 100%;
+  max-height: 11rem;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+.rb-table-light {
+  margin: var(--space-1) 0 0;
+}
+
+.rb-light-cursor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* The track is the booked stay, in brass; the sunset is a tick on it. */
+.rb-light-track { display: flex; flex-direction: column; gap: var(--space-1); }
+.rb-light-stay { align-self: flex-start; padding: 0 var(--space-3); border-radius: 999px; background: var(--c-accent-soft); color: var(--c-accent); font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.rb-light-range { position: relative; flex: 1 1 auto; display: flex; align-items: center; }
+.rb-light-range input[type="range"] { flex: 1 1 auto; accent-color: var(--c-accent); }
+.rb-light-sunset { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.rb-light-sunset-mark { width: 2px; height: 0.6rem; background: var(--c-accent); }
+.rb-light-sunset-label { margin-top: calc(var(--touch-target) - 0.6rem - 0.2rem); font-size: var(--fs-xs); color: var(--c-accent); white-space: nowrap; }
+
+/* A table the diner is looking at (chosen or suggested) is outlined in green with a tick, so it never reads as held. */
+.rb-map-layout .ring-selected { stroke: var(--c-primary); stroke-width: 3; }
+.selected-tick-disc { fill: var(--c-primary); }
+.selected-tick-mark { fill: none; stroke: var(--c-on-primary); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.legend-scene-sun {
+  stroke: var(--c-border-strong);
+  stroke-width: 1;
+}
+
+.legend-scene-floor {
+  fill: var(--c-surface);
+  stroke: var(--c-border-strong);
+  stroke-width: 1;
+}
+
+.legend-scene-night {
+  fill: var(--c-info);
+  opacity: 0.38;
+}
+
+.rb-seat-choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.rb-seat-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target);
+}
+
+/* ---------- Table step v3: one card, the light preview under the plan, the chair folded into the form ---------- */
+.rb-map-main { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.rb-table-card { display: flex; flex-direction: column; gap: var(--space-2); }
+.rb-table-card-top { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.rb-table-card-top .rb-eyebrow { margin: 0; }
+.rb-table-card-reason { margin: 0; }
+.rb-table-card-more { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.rb-details-summary { margin: 0; }
+.rb-chair-request { border-top: 1px solid var(--c-border); padding-top: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
+.rb-chair-request-title { margin: 0; font-size: var(--fs-md); }
+.rb-chair-request p { margin: 0; }
+.rb-chair-request-chosen { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.rb-table-row.is-focus { background: var(--c-primary-soft); border-radius: var(--radius-md); }
+.rb-light-cursor { padding: var(--space-3); border: 1px solid var(--c-border); border-radius: var(--radius-lg); background: var(--c-surface); }
+
+/* ---------- Confirmation v3: the result first, the next action right under it ---------- */
+.rb-confirm-actions { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+.rb-confirm-actions p { margin: 0; }
+.rb-copy { display: flex; flex-direction: column; gap: var(--space-2); }
+.rb-copy-details summary { cursor: pointer; min-height: var(--touch-target); display: inline-flex; align-items: center; color: var(--c-primary); }
+
+.rb-slot-near { border-width: 2px; border-color: var(--c-accent-bright); }
+.rb-slot-near-tag { display: block; margin-top: var(--space-1); font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--c-accent); }
+
+/* ---------- Manage booking v3: what the diner wants to do, one at a time ---------- */
+.rb-manage-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.rb-manage-actions .rb-danger-link { margin-left: auto; color: var(--c-danger); }
+
+/* On a phone the card of the table in front of the diner (and, once a table is held, the summary and the form) come before the
+   plan: the action is on the first screen, and the plan is one swipe below it. */
+@media (max-width: 47.99rem) {
+  .rb-map-layout .rb-map-side { display: contents; }
+  .rb-map-layout .rb-map-main { order: 1; }
+  .rb-map-layout .rb-map-side > .legend, .rb-map-layout .rb-map-side > .rb-scene-note { order: 2; }
+}
+.rb-done > .badge { align-self: flex-start; }
+
+/* The date line with "Change time" next to it, instead of a second bar at the bottom of a phone. */
+.rb-step-context { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.rb-step-context > p { margin: 0; }

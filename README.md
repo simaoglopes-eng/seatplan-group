@@ -1,5 +1,7 @@
 # SeatPlan
 
+> **Independent project status (2026-11-16):** This is Federico’s personal event application in the private `f3deric0/seatplan-events` repository, deployed at [seatplan-events-federico.vercel.app](https://seatplan-events-federico.vercel.app/). Neon is connected and the schema is ready. Real email delivery and verified sign-up are not configured or verified yet; do not use this site for real attendees until those checks pass. See [independent setup](docs/INDEPENDENT_SETUP.md) and [implementation plan](PIANO_SEATPLAN.md).
+
 SeatPlan lets people choose their own seat on a live 2D map. Two verticals share
 one core:
 
@@ -19,9 +21,15 @@ hard rules (one person per seat, accessibility, reserved seats, table sizes)
 are never broken. The database itself makes double booking impossible: every
 seat, table slot and hold is protected by a UNIQUE constraint.
 
-It is a university project (Introduction to Programming, Nova SBE). The design
-agreement between all modules is [`docs/CONTRACT.md`](docs/CONTRACT.md); every
+This personal application is based on the existing SeatPlan codebase and focuses
+on event seating. Restaurant booking remains available on its own routes. The
+design agreement between modules is [`docs/CONTRACT.md`](docs/CONTRACT.md); every
 deviation from it is explained in [`docs/decisions-log.md`](docs/decisions-log.md).
+
+The restaurant platform adds owner accounts, profile and photos, a room editor, publication checks, sunlight and view descriptions, wishes,
+optional chair choice (and changing it later), restaurant search with a public page per restaurant, and booking emails with a photo and a map of
+the room. `/` is the restaurant search and `/demo` the original home page with the demo links. See the
+[acceptance matrix and rehearsal](docs/restaurant-final-review.md) and the [night report](docs/superpowers/plans/relatorio-noite.md) for the verified scope.
 
 ## Quick start
 
@@ -44,8 +52,8 @@ both demo verticals, and prints the entry links (for example `/e/<token>` for an
 attendee or `/r/<id>` for the restaurant). Run it from `backend/`: the backend
 package is imported as `app` everywhere (tests, seed, `api/index.py`).
 
-Check it works: `curl http://127.0.0.1:8000/api/health` answers
-`{"status":"ok","database":"ok",...}`.
+Check it works: `curl http://127.0.0.1:8000/api/health` answers with
+`status: ok`, `database: ok` and `schema: ready` after a migration.
 
 ### 2. Frontend
 
@@ -57,9 +65,9 @@ npm ci
 npm run dev
 ```
 
-Open <http://localhost:5173>. The home page lists the demo links. The dev
-server forwards `/api` to the backend on port 8000, so the browser only ever
-talks to one address (as on Vercel).
+Open <http://localhost:5173>. The dev server forwards `/api` to the backend on
+port 8000, so the browser only ever talks to one address (as on Vercel). With
+demo mode enabled, `GET /api/demo/links` returns the temporary event links.
 
 ### 3. Demo accounts
 
@@ -129,7 +137,7 @@ locally `export` the ones you need before starting it.
 | `PUBLIC_BASE_URL` | Base of the links written in emails | `http://localhost:5173` |
 | `DEMO_MODE` | `1` turns on `/api/demo/*` (demo links and reset) | off |
 | `DEMO_KEY` | The only way to call `POST /api/demo/reset` (header `X-Demo-Key`); empty means nobody can | empty |
-| `DEMO_ORGANISER_PASSWORD`, `DEMO_STAFF_PASSWORD` | Demo account passwords; required on Postgres and whenever `DEMO_MODE` is off | public demo values (local SQLite only) |
+| `DEMO_ORGANISER_PASSWORD`, `DEMO_STAFF_PASSWORD`, `DEMO_MEMBER_PASSWORD` | Demo account passwords; required on Postgres and whenever `DEMO_MODE` is off | public demo values (local SQLite only) |
 | `CRON_SECRET` | Header `X-Cron-Secret` for `POST /api/internal/email/process`; empty rejects every call | empty |
 | `EMAIL_PROVIDER` | `console` (prints emails) or `resend` | `console` |
 | `RESEND_API_KEY` | Only for `EMAIL_PROVIDER=resend` | empty |
@@ -242,7 +250,7 @@ questions. On the frontend there is one in `frontend/` and one in each of
 | [`docs/design-system.md`](docs/design-system.md), [`docs/ux-events.md`](docs/ux-events.md), [`docs/ux-restaurant.md`](docs/ux-restaurant.md) | Design tokens, seat states and the screen-by-screen UX notes |
 | [`docs/accessibility.md`](docs/accessibility.md) | Accessibility statement (no conformance claim), WCAG 2.2 A and AA review, heuristic review |
 | [`docs/usability/`](docs/usability/README.md) | Usability test kit; no session has been run yet |
-| User guides: [attendee](docs/user-guide-attendee.md), [organiser](docs/user-guide-organiser.md), [diner](docs/user-guide-diner.md), [staff](docs/user-guide-staff.md) | How to use each screen |
+| User guides: [attendee](docs/user-guide-attendee.md), [organiser](docs/user-guide-organiser.md), [restaurant owner](docs/user-guide-owner.md), [diner](docs/user-guide-diner.md), [staff](docs/user-guide-staff.md) | How to use each screen |
 | [`docs/guest-accounts.md`](docs/guest-accounts.md) | The shared event link and guest accounts: decisions, API, emails with the seat picture, GDPR, review fixes |
 | [`docs/security.md`](docs/security.md) | Threat model, findings (fixed and open), who may call each route |
 | [`docs/test-report.md`](docs/test-report.md) | Every test layer, how to run it and today's results |
@@ -306,3 +314,9 @@ buffers the live stream), real email delivery through Resend (not done yet),
 usability sessions with real people (not done yet), the gitleaks scan and the
 new `e2e` CI job (they run only on GitHub and have not run yet), screen readers
 and real touch devices.
+
+**Restaurant platform** (2026-11-13): `/` is now a restaurant search (name or cuisine, near me or a city, filters, a free time, list and map);
+`/restaurants/:slug` is a restaurant's public page with the booking; the owner draws rooms in the room editor and publishes; the diner sees
+the sun, view and night per table, may pick a chair, and gets an email with a photo and a map of the room. The old home page with the demo
+links is at `/demo`. Details: [`docs/superpowers/specs/2026-11-13-restaurantes-plataforma-design.md`](docs/superpowers/specs/2026-11-13-restaurantes-plataforma-design.md)
+and [`docs/decisions-log.md`](docs/decisions-log.md).

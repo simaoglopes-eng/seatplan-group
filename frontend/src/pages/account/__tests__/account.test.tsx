@@ -10,6 +10,7 @@ import AccountPage from "../AccountPage";
 import GuestSignInPage from "../GuestSignInPage";
 import MyEventsPage from "../MyEventsPage";
 import MySeatPage from "../MySeatPage";
+import ResetPage from "../ResetPage";
 
 const ME: MyAccount = { account: { name: "Nina Lopes", email: "nina@example.com", created_at: "2026-11-10T10:00:00Z" }, events: [] };
 
@@ -21,6 +22,7 @@ function renderAt(path: string): void {
           <Route path="/my" element={<MyEventsPage />} />
           <Route path="/my/account" element={<AccountPage />} />
           <Route path="/my/sign-in" element={<GuestSignInPage />} />
+          <Route path="/my/reset" element={<ResetPage />} />
           <Route path="/my/:eventId" element={<MySeatPage />} />
           <Route path="*" element={<WhereAmI />} />
         </Routes>
@@ -36,6 +38,19 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   window.sessionStorage.clear();
+});
+
+describe("ResetPage", () => {
+  it("has the eye inside the new-password field", () => {
+    startFakeServer();
+    renderAt("/my/reset?email=nina%40example.com");
+    const input = screen.getByLabelText("New password") as HTMLInputElement;
+    const eye = screen.getByRole("button", { name: "Show password" });
+    expect(input.parentElement?.contains(eye)).toBe(true);
+    fireEvent.click(eye);
+    expect(input.type).toBe("text");
+    expect(screen.getByRole("button", { name: "Hide password" }).getAttribute("aria-pressed")).toBe("true");
+  });
 });
 
 describe("MyEventsPage", () => {
@@ -142,7 +157,7 @@ describe("MySeatPage", () => {
     server.routes.set("GET /guest/events/spring", () => ({ body: accountView() }));
     server.routes.set("GET /guest/events/spring/recommendations", () => ({ body: [] }));
     renderAt("/my/spring");
-    expect(await screen.findByRole("button", { name: "Hold this seat for 5 minutes" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Select this seat" })).toBeTruthy();
     expect(screen.getByText("Table T1, seat 5")).toBeTruthy();
     expect(await screen.findByText("nina@example.com")).toBeTruthy();
     expect(callsTo(server, "GET", "/a/spring")).toEqual([]);

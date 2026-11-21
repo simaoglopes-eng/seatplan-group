@@ -1,6 +1,7 @@
 // A small, fixed sample floor for the home page, so visitors can try the
 // map before opening the demo. It never talks to the server.
 import type { MapSeat, MapTable, SeatState, TableShape } from "../api/types";
+import type { DirectoryKind } from "../api/venueDirectory";
 import { seatPositions, sizeFor } from "../seatmap/seatPositions";
 
 interface SampleTable {
@@ -51,3 +52,24 @@ export function buildSampleFloor(): { tables: MapTable[]; seats: MapSeat[] } {
 
 /** The sample's "recommended" seats: next to the friends. */
 export const SAMPLE_RECOMMENDED: ReadonlySet<number> = new Set([102, 307]);
+
+/** The three photo tiles of "The rooms": each opens the directory filtered to its kind.
+    The photos are real directory venues (HOME_TILE_VENUES in src/data/venuePhotos.ts),
+    mostly seen from outside, so the blurbs name buildings rather than rooms. */
+export const ROOM_TILES: { kind: DirectoryKind; blurb: string }[] = [
+  { kind: "estate", blurb: "Vineyards, manors and country houses" },
+  { kind: "hall", blurb: "Event halls and banquet venues" },
+  { kind: "conference", blurb: "Auditoriums and meeting rooms" },
+];
+
+/** Where the home guest card goes: /participant, with the trimmed code when one was typed
+    (ParticipantStartPage reads ?code=, fills its field and opens the invitation). */
+export function guestHref(code: string): string {
+  const value = code.trim();
+  return value ? `/participant?code=${encodeURIComponent(value)}` : "/participant";
+}
+
+/** 1835 -> "1,835", the same on every machine (no reliance on the browser's locale). */
+export function formatCount(n: number): string {
+  return n.toLocaleString("en-GB");
+}

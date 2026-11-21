@@ -118,7 +118,8 @@ describe("Organiser page", () => {
     server.routes.set("GET /events/ev1", () => errorReply(401, "unauthorised", "Please log in again."));
     renderPage();
     expect(await screen.findByRole("heading", { level: 1, name: "Please sign in" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toContain("/login?next=");
+    // The header's own "Sign in" (the public navigation) goes to /account; this is the page's.
+    expect(within(screen.getByRole("main")).getByRole("link", { name: "Sign in" }).getAttribute("href")).toContain("/login?next=");
   });
 
   it("previews auto-fill on the map, then applies it", async () => {
@@ -163,6 +164,42 @@ describe("Organiser page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save privacy setting" }));
     expect((await screen.findAllByText(/Privacy setting saved/)).length).toBeGreaterThan(0);
     expect(callsTo(server, "PATCH", "/events/ev1")).toEqual([{ privacy_mode: "first_initial" }]);
+  });
+
+  it("sets the seats one person can book, or no limit", async () => {
+    const server = organiserServer(makeEvent());
+    renderPage();
+    fireEvent.click(await screen.findByRole("tab", { name: "Settings" }));
+    expect(screen.getByRole("heading", { name: "Seats one person can book" })).toBeTruthy();
+    expect(screen.getByText("Now: 8 seats (the default).")).toBeTruthy();
+    const field = screen.getByLabelText("Seats per person");
+    fireEvent.change(field, { target: { value: "0" } });
+    expect(screen.getByText("Enter a number from 1 to 500.")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Save seat limit" }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(field, { target: { value: "4" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save seat limit" }));
+    expect((await screen.findAllByText(/Seat limit saved: 4 seats per person/)).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "No limit" }));
+    expect((await screen.findAllByText(/No limit saved\. One person can still add at most 1500 people/)).length).toBeGreaterThan(0);
+    expect(callsTo(server, "PATCH", "/events/ev1")).toEqual([{ max_party_size: 4 }, { max_party_size: 0 }]);
+  });
+
+  it("never puts the default back by an untouched Save after No limit", async () => {
+    const event = makeEvent();
+    event.detail.event = { ...event.detail.event, max_party_size: 0 };
+    const server = organiserServer(event);
+    renderPage();
+    fireEvent.click(await screen.findByRole("tab", { name: "Settings" }));
+    const save = screen.getByRole("button", { name: "Save seat limit" }) as HTMLButtonElement;
+    expect(screen.getByText(/^No limit on seats at once/)).toBeTruthy();
+    // "No limit" is never stricter than the largest setting: 3 x 500 people over the event.
+    expect(screen.getByText(/at most 1500 people\./)).toBeTruthy();
+    expect(save.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText("Seats per person"), { target: { value: "6" } });
+    expect(save.disabled).toBe(false);
+    fireEvent.click(save);
+    expect((await screen.findAllByText(/Seat limit saved: 6 seats per person/)).length).toBeGreaterThan(0);
+    expect(callsTo(server, "PATCH", "/events/ev1")).toEqual([{ max_party_size: 6 }]);
   });
 
   it("places a guest with the keyboard alternative: Place, then a seat", async () => {

@@ -1,144 +1,237 @@
-/* Home page layout. Tokens only. */
+/* The participant entry (/participant), direction E: one full screen of the credited terrace
+   photo (hero-terrace-assisi.jpg) under a dark green legibility gradient, the words on the
+   left and the invitation form in a glass panel on the right. Glass only sits over the photo.
+   Text on glass is white; the input stays light (a fixed light fill with fixed dark ink, so it
+   reads the same in both colour schemes) and the button is glass green. */
 
-.home-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-  gap: var(--space-6);
-  align-items: center;
-  margin-bottom: var(--space-8);
-}
-
-.home-hero-map .seatmap-viewport {
-  height: min(60vh, 26rem);
-}
-
-.home-eyebrow {
-  margin: 0 0 var(--space-2);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--c-accent);
-}
-
-.home-lede {
-  font-size: var(--fs-lg);
-  margin-bottom: var(--space-5);
-}
-
-.home-muted {
-  color: var(--c-text-muted);
-}
-
-.home-demo,
-.home-how {
-  margin-bottom: var(--space-7);
-}
-
-.home-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  gap: var(--space-4);
-}
-
-.home-card {
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  background: var(--c-surface);
-  border: var(--border-width) solid var(--c-border);
-  box-shadow: var(--shadow-sm);
-}
-
-.home-links {
+.pt-page {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  background: #18241f; /* the gradient's dark, behind the photo while it loads */
+  color: #fff;
 }
 
-.home-link {
-  display: grid;
-  /* minmax(0, ...) lets the text column shrink below its longest word, so one
-     long word can never push the card wider than a phone screen. */
-  grid-template-columns: minmax(0, 1fr) auto;
+.pt-photo {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 60% center;
+}
+.pt-page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgb(24 36 31 / 0.74) 0%, rgb(24 36 31 / 0.5) 50%, rgb(24 36 31 / 0.42) 100%),
+    linear-gradient(180deg, rgb(24 36 31 / 0.3) 0%, rgb(24 36 31 / 0) 30%, rgb(24 36 31 / 0.55) 100%);
+}
+
+.pt-wrap {
+  width: 100%;
+  max-width: var(--frame-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.pt-header .pt-wrap {
+  display: flex;
   align-items: center;
-  column-gap: var(--space-3);
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 5.25rem;
+}
+.pt-header .wordmark { color: #fff; }
+/* "Back to home": a glass pill over the photo. */
+.pt-header-link {
+  display: inline-flex;
+  align-items: center;
   min-height: var(--touch-target);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  border: var(--border-width) solid var(--c-border-strong);
-  color: var(--c-text);
+  padding-inline: 1.125rem;
+  border: 1px solid var(--glass-border, rgb(255 255 255 / 0.34));
+  border-radius: 999px;
+  background: var(--glass-bg, rgb(255 255 255 / 0.14));
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   text-decoration: none;
-  transition:
-    background-color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+  transition: background-color var(--dur-fast) var(--ease-out);
 }
+.pt-header-link:hover { background: var(--glass-bg-hover, rgb(255 255 255 / 0.22)); color: #fff; }
 
-.home-link:hover {
-  background: var(--c-primary-soft);
-  border-color: var(--c-primary);
-  color: var(--c-text);
+.pt-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding-block: var(--space-6) var(--space-7);
 }
-
-.home-link-label {
-  font-weight: var(--fw-bold);
-  overflow-wrap: anywhere;
-}
-
-.home-link-desc {
-  grid-column: 1;
-  overflow-wrap: anywhere;
-  font-size: var(--fs-sm);
-  color: var(--c-text-muted);
-}
-
-.home-link-arrow {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  color: var(--c-primary);
-  font-size: var(--fs-lg);
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-
-.home-link:hover .home-link-arrow {
-  transform: translateX(3px);
-}
-
-.home-steps {
+.pt-main:focus { outline: none; }
+.pt-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: var(--space-5);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: step;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 30rem);
+  align-items: center;
+  gap: var(--space-7) clamp(3rem, 6vw, 6rem);
 }
 
-.home-steps li {
-  counter-increment: step;
-  padding-top: var(--space-4);
-  border-top: 2px solid var(--c-text);
+.pt-eyebrow {
+  margin: 0 0 var(--space-3);
+  color: #f3e4c4;
+  font-size: 0.75rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
-
-/* Big old-style numerals, like a printed programme. */
-.home-steps li::before {
-  content: counter(step);
-  display: block;
+.pt-copy h1 {
+  margin: 0 0 var(--space-4);
+  max-width: 12ch;
+  color: #fff;
   font-family: var(--font-display);
-  font-size: var(--fs-2xl);
-  color: var(--c-accent);
-  line-height: 1;
-  margin-bottom: var(--space-2);
+  font-size: clamp(2.75rem, 1.6rem + 4.4vw, 4.75rem);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.005em;
 }
-
-.home-steps h3 {
-  font-size: var(--fs-lg);
+.pt-lede {
+  margin: 0;
+  max-width: 30rem;
+  color: rgb(255 255 255 / 0.92);
+  font-size: 1.1875rem;
+  line-height: 1.55;
 }
+.pt-copy { text-shadow: 0 1px 3px rgb(0 0 0 / 0.3); }
 
-@media (max-width: 52rem) {
-  .home-hero {
-    grid-template-columns: 1fr;
-  }
+/* The panel: glass over the photo, 14px corners. */
+.pt-card {
+  padding: clamp(1.5rem, 3.5vw, 2.5rem);
+  border: 1px solid var(--glass-border, rgb(255 255 255 / 0.34));
+  border-radius: var(--radius, 14px);
+  background: var(--glass-bg, rgb(255 255 255 / 0.14));
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow, inset 0 1px 0 rgb(255 255 255 / 0.35), 0 18px 40px rgb(10 16 13 / 0.28));
+  color: #fff;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .pt-card { background: rgb(24 36 31 / 0.78); }
+}
+.pt-card h2 { margin: 0 0 var(--space-2); color: #fff; font-family: var(--font-display); font-size: 1.875rem; font-weight: 400; line-height: 1.1; letter-spacing: -0.005em; }
+.pt-card-lede { margin: 0 0 var(--space-5); color: rgb(255 255 255 / 0.88); }
+.pt-form label { display: block; margin: 0 0 var(--space-2); color: #f3e4c4; font-size: 0.6875rem; font-weight: var(--fw-medium); letter-spacing: 0.12em; text-transform: uppercase; }
+/* The :not() chain outranks premium.css's input:not(...) rule (0,3,1), so the light fill holds in dark mode. */
+.pt-form input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]) {
+  display: block;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 var(--space-3);
+  border: 1px solid rgb(255 255 255 / 0.6);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.94);
+  color: #1f2b26;
+  font: inherit;
+}
+.pt-form input::placeholder { color: #5e655f; }
+.pt-form input:focus-visible { outline: var(--focus-width) solid #fff; outline-offset: var(--focus-offset); }
+.pt-form input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])[aria-invalid="true"] { border-color: #f3b4a8; box-shadow: 0 0 0 1px #f3b4a8; }
+/* The button: brass glass (the guest's colour, as on the landing), fully round. */
+.pt-form button {
+  width: 100%;
+  margin-top: var(--space-3);
+  min-height: 3rem;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: var(--radius-button);
+  background: var(--glass-brass);
+  -webkit-backdrop-filter: var(--glass-blur-button);
+  backdrop-filter: var(--glass-blur-button);
+  box-shadow: var(--glass-shadow-button);
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+}
+.pt-form button:hover:not(:disabled) { background: var(--glass-brass-hover); border-color: var(--glass-border-hover); color: #fff; }
+.pt-form button:focus-visible { outline: var(--focus-width) solid #fff; outline-offset: var(--focus-offset); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .pt-form button { background: var(--glass-brass-solid); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .pt-card { background: var(--glass-fallback); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .pt-form button { background: var(--glass-brass-solid); }
+}
+.pt-hint { margin: var(--space-3) 0 0; color: rgb(255 255 255 / 0.88); font-size: var(--fs-sm); }
+/* An error on glass: a light note with dark red ink (a fixed pair, legible on any photo). */
+.pt-error { margin: var(--space-3) 0 0; padding: var(--space-2) var(--space-3); border-radius: 10px; background: #fbe9e5; color: #8f1d12; font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+
+.pt-account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-4);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgb(255 255 255 / 0.3);
+  color: rgb(255 255 255 / 0.88);
+  font-size: var(--fs-sm);
+}
+.pt-account span { flex-basis: 100%; }
+.pt-account a { display: inline-flex; align-items: center; min-height: var(--touch-target); color: #fff; font-weight: var(--fw-medium); text-decoration: underline; text-underline-offset: 4px; }
+
+.pt-footer .pt-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0 var(--space-5);
+  padding-block: var(--space-2) var(--space-4);
+  color: rgb(255 255 255 / 0.88);
+  font-size: var(--fs-sm);
+}
+.pt-footer p { margin: 0; max-width: none; }
+.pt-footer a { display: inline-flex; align-items: center; min-height: var(--touch-target); color: #fff; font-weight: var(--fw-medium); }
+.pt-footer { text-shadow: 0 1px 2px rgb(0 0 0 / 0.4); }
+
+.pt-header :focus-visible,
+.pt-footer :focus-visible,
+.pt-copy :focus-visible,
+.pt-card a:focus-visible { outline-color: #fff; }
+
+/* Motion: the photo settles from a slow zoom and the words rise once. Off for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .pt-photo { animation: pt-settle 9s linear both; }
+  .pt-copy > *, .pt-card { animation: pt-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .pt-copy > :nth-child(2) { animation-delay: 0.08s; }
+  .pt-copy > :nth-child(3) { animation-delay: 0.16s; }
+  .pt-card { animation-delay: 0.22s; }
+}
+@keyframes pt-settle { from { transform: scale(1.1); } to { transform: none; } }
+@keyframes pt-rise { from { transform: translateY(18px); opacity: 0.2; } to { transform: none; opacity: 1; } }
+
+@media (max-width: 56rem) {
+  .pt-page::after { background: linear-gradient(180deg, rgb(24 36 31 / 0.45) 0%, rgb(24 36 31 / 0.6) 40%, rgb(24 36 31 / 0.8) 100%); }
+  .pt-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+  .pt-main { align-items: flex-end; padding-block: var(--space-4) var(--space-5); }
+  .pt-header .pt-wrap { min-height: 4.25rem; }
+  .pt-copy h1 { font-size: 2.625rem; margin-bottom: var(--space-2); }
+  .pt-lede { font-size: 1rem; }
+}
+/* Phones: the panel loses its repeated help lines so the whole entry fits one screen. */
+@media (max-width: 56rem) and (max-height: 900px) {
+  .pt-card-lede, .pt-hint, .pt-credit-text { display: none; }
+}
+@media (max-width: 56rem) and (max-height: 700px) {
+  .pt-copy h1 { font-size: 2.125rem; }
+  .pt-lede { display: none; }
+  .pt-footer .pt-wrap { padding-block: 0 var(--space-2); }
+  .pt-main { padding-block: var(--space-2) var(--space-3); }
+  .pt-card { padding: var(--space-5); }
+  .pt-account { margin-top: var(--space-4); padding-top: var(--space-2); }
 }

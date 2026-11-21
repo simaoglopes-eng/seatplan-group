@@ -475,9 +475,11 @@
   overflow-x: auto;
 }
 
+/* Five tabs fit the side panel on a laptop; on a phone the list scrolls sideways if needed. */
 .ev-tab {
+  flex: 0 0 auto;
   min-height: var(--touch-target);
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-3);
   font: inherit;
   font-weight: var(--fw-medium);
   color: var(--c-text-muted);
@@ -495,6 +497,13 @@
 
 .ev-tabpanel {
   padding-top: var(--space-4);
+}
+
+/* Phone width: tighter tabs, so all five stay in view. */
+@media (max-width: 30rem) {
+  .ev-tab {
+    padding-inline: var(--space-2);
+  }
 }
 
 /* ---------- Organiser: guests ---------- */
@@ -551,8 +560,29 @@
 }
 
 .ev-file {
+  max-width: 100%;
   font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
   min-height: var(--touch-target);
+}
+
+/* The native "Choose file" control, drawn as the secondary pill button. */
+.ev-file::file-selector-button {
+  min-height: var(--touch-target);
+  margin-right: var(--space-3);
+  padding: 0 var(--space-5);
+  font: inherit;
+  font-weight: var(--fw-medium);
+  color: var(--c-text);
+  background: transparent;
+  border: var(--border-width) solid var(--c-border-strong);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+}
+
+.ev-file::file-selector-button:hover {
+  background: var(--c-surface-sunk);
 }
 
 .ev-report {
@@ -731,6 +761,116 @@
 .ev-place-seat {
   font-size: var(--fs-sm);
   color: var(--c-text-muted);
+}
+
+/* ---------- Organiser: layout tab (room setups) ---------- */
+
+.ev-layout-grid {
+  display: grid;
+  /* Two columns even at phone width: the thumbnails stay readable, the list stays short. */
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ev-layout-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.ev-layout-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-3);
+  font: inherit;
+  color: var(--c-text);
+  text-align: left;
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.ev-layout-card:hover:not(:disabled) {
+  border-color: var(--c-border-strong);
+}
+
+/* Chosen: a thick primary outline, plus aria-pressed for screen readers. */
+.ev-layout-card[aria-pressed="true"] {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 calc(var(--border-width) * 2) var(--c-primary);
+}
+
+.ev-layout-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.ev-layout-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--fw-bold);
+}
+
+.ev-layout-desc {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+}
+
+.ev-layout-fit {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+/* Too few seats: the words say it, the colour only repeats it. */
+.ev-layout-fit.is-short {
+  color: var(--c-danger);
+}
+
+.ev-layout-result {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--c-primary-soft);
+  border-radius: var(--radius-sm);
+}
+
+.ev-thumb {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  margin-bottom: var(--space-1);
+}
+
+.ev-thumb-room {
+  fill: var(--c-surface-sunk);
+  stroke: var(--c-border-strong);
+  stroke-width: 6;
+}
+
+.ev-thumb-zone {
+  fill: var(--c-accent-soft);
+  stroke: var(--c-accent);
+  stroke-width: 4;
+}
+
+.ev-thumb-table {
+  fill: var(--c-surface);
+  stroke: var(--c-text-muted);
+  stroke-width: 4;
+}
+
+.ev-thumb-seat {
+  fill: var(--c-primary);
 }
 
 /* ---------- Wider screens ---------- */

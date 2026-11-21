@@ -8,17 +8,20 @@ export interface FakeReply {
   body?: unknown;
 }
 
-export type Handler = (body: unknown) => FakeReply;
+/** A handler may answer later (a Promise), to play a slow request that something overtakes. */
+export type Handler = (body: unknown) => FakeReply | Promise<FakeReply>;
 
 export interface FakeServer {
   routes: Map<string, Handler>;
-  calls: { method: string; path: string; body: unknown }[];
+  /** `url` keeps the query string, which `path` leaves out. */
+  calls: { method: string; path: string; body: unknown; url?: string }[];
   /** The live version; tests bump it to simulate someone else's change. */
   version: number;
 }
 
-export function errorReply(status: number, code: string, message: string): FakeReply {
-  return { status, body: { error: { code, message } } };
+/** `details` is the extra facts some errors carry, for example `{ seat_ids: [13] }`. */
+export function errorReply(status: number, code: string, message: string, details?: Record<string, unknown>): FakeReply {
+  return { status, body: { error: details ? { code, message, details } : { code, message } } };
 }
 
 /** Installs the fake fetch and returns the server so tests can add routes. */
@@ -28,10 +31,11 @@ export function startFakeServer(): FakeServer {
     const method = init?.method ?? "GET";
     const path = String(input).replace(/^\/api/, "").split("?")[0];
     const body = readBody(init?.body);
-    server.calls.push({ method, path, body });
+    server.calls.push({ method, path, body, url: String(input).replace(/^\/api/, "") });
     if (path.startsWith("/live/")) return json(200, { version: server.version });
     const handler = server.routes.get(`${method} ${path}`);
-    const reply = handler ? handler(body) : errorReply(404, "not_found", `No fake route for ${method} ${path}`);
+    // Always awaited, so every reply keeps the same timing whether a route exists or not.
+    const reply = await (handler ? handler(body) : errorReply(404, "not_found", `No fake route for ${method} ${path}`));
     return json(reply.status ?? 200, reply.body ?? null);
   };
   vi.stubGlobal("fetch", vi.fn(fakeFetch));

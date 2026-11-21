@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AttendeeView, SeatRecommendation } from "../../../api/events";
+import type { AttendeeView, PartyConfirmIn, SeatRecommendation } from "../../../api/events";
 import type { MapSeat, SeatState } from "../../../api/types";
 import { ToastProvider } from "../../../design/components";
 import AttendeePage from "../AttendeePage";
@@ -90,6 +90,13 @@ function attendeeServer(view: AttendeeView): FakeServer {
     view.me.seat_id = id;
     return { body: {} };
   });
+  // The page books through the party route, also for one seat (design D3).
+  server.routes.set("POST /a/tok/party/confirm", (body) => {
+    const { me } = body as PartyConfirmIn;
+    setSeat(view, me.seat_id, "mine");
+    view.me.seat_id = me.seat_id;
+    return { body: {} };
+  });
   return server;
 }
 
@@ -143,55 +150,53 @@ describe("Attendee page", () => {
     expect(within(strip).getByText("Best match")).toBeTruthy();
     expect(screen.getAllByText("Saved 1 person. Seats near them are suggested below.").length).toBeGreaterThan(0);
     fireEvent.click(within(strip).getByRole("button", { name: /Table 1, seat 3/ }));
-    fireEvent.click(await screen.findByRole("button", { name: "Hold this seat for 5 minutes" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Select this seat" }));
 
     // The hold bar shows the seat and a countdown near 5:00.
-    const bar = await screen.findByRole("region", { name: "Seat on hold" });
+    const bar = await screen.findByRole("region", { name: "Selected seat" });
     expect(within(bar).getByText("Table 1, seat 3")).toBeTruthy();
-    expect(within(bar).getByText(/^(5:00|4:59)$/)).toBeTruthy();
-    fireEvent.click(within(bar).getByRole("button", { name: "Confirm this seat" }));
+    expect(within(bar).getByText("Available until someone confirms it.")).toBeTruthy();
+    expect(callsTo(server, "POST", "/a/tok/hold")).toEqual([]);
+    fireEvent.click(within(bar).getByRole("button", { name: "Continue" }));
+
+    // 3b. Who is sitting where? (design D3): my card, named from the invitation; Confirm waits for my age.
+    const who = await screen.findByRole("region", { name: "Confirm your seats" });
+    const confirm = within(who).getByRole("button", { name: "Confirm 1 seat" });
+    expect(confirm.getAttribute("aria-disabled")).toBe("true");
+    const card = screen.getByRole("group", { name: "You · Table 1, seat 3" });
+    expect((within(card).getByLabelText("First name") as HTMLInputElement).value).toBe("Ana");
+    expect((within(card).getByLabelText("Last name") as HTMLInputElement).value).toBe("Silva");
+    fireEvent.change(within(card).getByLabelText("Age"), { target: { value: "34" } });
+    fireEvent.click(within(who).getByRole("button", { name: "Confirm 1 seat" }));
 
     // 4. Done: seat label and the email promise.
     expect(await screen.findByRole("heading", { name: "You are all set" })).toBeTruthy();
-    expect(screen.getByText(/confirmation email with a calendar invite is on its way/)).toBeTruthy();
-    expect(callsTo(server, "POST", "/a/tok/confirm")).toEqual([{ seat_id: 13 }]);
+    expect(screen.getByText(/Your seat is confirmed/)).toBeTruthy();
+    // The seat is booked once, through the party route, with the age as a number.
+    expect(callsTo(server, "POST", "/a/tok/party/confirm")).toEqual([{ me: { seat_id: 13, first_name: "Ana", last_name: "Silva", age: 34 }, members: [] }]);
+    expect(callsTo(server, "POST", "/a/tok/confirm")).toEqual([]);
     expect(screen.getByRole("button", { name: "Change seat" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Release my seat" })).toBeTruthy();
   });
 
-  it("keeps the countdown of a hold made before the page was reloaded", async () => {
-    const view = seatStepView();
-    setSeat(view, 13, "held");
-    view.me.held_seat_id = 13;
-    view.me.held_until = new Date(Date.now() + 3 * 60 * 1000).toISOString();
-    attendeeServer(view);
-    renderPage();
-    const bar = await screen.findByRole("region", { name: "Seat on hold" });
-    expect(within(bar).getByText("Table 1, seat 3")).toBeTruthy();
-    expect(within(bar).getByText(/^(3:00|2:59)$/)).toBeTruthy();
-  });
-
-  it("explains a 409 conflict kindly and offers the next best seat", async () => {
+  it("explains when another guest confirms first", async () => {
     const view = seatStepView();
     const server = attendeeServer(view);
-    // Someone else takes seat 13 a moment before us.
-    server.routes.set("POST /a/tok/hold", (body) => {
-      if ((body as { seat_id: number }).seat_id === 13) {
-        setSeat(view, 13, "taken");
-        return errorReply(409, "seat_taken", "That seat was just taken.");
-      }
-      return { body: { seat_id: 14, expires_at: new Date(Date.now() + 300000).toISOString() } };
+    server.routes.set("POST /a/tok/party/confirm", () => {
+      setSeat(view, 13, "taken");
+      return errorReply(409, "seat_taken", "That seat was just taken.", { seat_ids: [13] });
     });
     renderPage();
-
     fireEvent.click(await screen.findByRole("option", { name: /Table 1, seat 3, free/ }));
+    const bar = await screen.findByRole("region", { name: "Selected seat" });
+    fireEvent.click(within(bar).getByRole("button", { name: "Continue" }));
+    const card = await screen.findByRole("group", { name: "You · Table 1, seat 3" });
+    fireEvent.change(within(card).getByLabelText("Age"), { target: { value: "34" } });
+    fireEvent.click(screen.getByRole("button", { name: "Confirm 1 seat" }));
     const alert = await screen.findByRole("alert");
     expect(within(alert).getByText("That seat was just taken")).toBeTruthy();
-    expect(within(alert).getByText(/Sorry about that/)).toBeTruthy();
-    // The next best free recommendation is seat 4 (id 14).
-    fireEvent.click(within(alert).getByRole("button", { name: "Hold Table 1, seat 4" }));
-    expect(await screen.findByRole("region", { name: "Seat on hold" })).toBeTruthy();
-    expect(callsTo(server, "POST", "/a/tok/hold")).toEqual([{ seat_id: 13 }, { seat_id: 14 }]);
+    fireEvent.click(within(alert).getByRole("button", { name: "Select Table 1, seat 4" }));
+    expect(await screen.findByRole("region", { name: "Selected seat" })).toBeTruthy();
   });
 
   it("warns when a live update shows my held seat was taken by someone else", async () => {
@@ -199,30 +204,14 @@ describe("Attendee page", () => {
     const server = attendeeServer(view);
     renderPage();
     fireEvent.click(await screen.findByRole("option", { name: /Table 1, seat 3, free/ }));
-    await screen.findByRole("region", { name: "Seat on hold" });
+    await screen.findByRole("region", { name: "Selected seat" });
 
     // Another attendee's change arrives through the live version (polled every 2 s in tests).
     setSeat(view, 13, "taken");
     server.version += 1;
     const alert = await screen.findByRole("alert", {}, { timeout: 4000 });
     expect(within(alert).getByText("That seat was just taken")).toBeTruthy();
-    expect(screen.queryByRole("region", { name: "Seat on hold" })).toBeNull();
-  });
-
-  it("tells the attendee when the 5-minute hold has expired", async () => {
-    const view = seatStepView();
-    const server = attendeeServer(view);
-    server.routes.set("POST /a/tok/confirm", () => errorReply(409, "hold_expired", "Your hold has expired."));
-    renderPage();
-
-    fireEvent.click(await screen.findByRole("option", { name: /Table 1, seat 3, free/ }));
-    const bar = await screen.findByRole("region", { name: "Seat on hold" });
-    fireEvent.click(within(bar).getByRole("button", { name: "Confirm this seat" }));
-
-    const alert = await screen.findByRole("alert");
-    expect(within(alert).getByText("Your 5 minutes ran out")).toBeTruthy();
-    expect(within(alert).getByRole("button", { name: "Hold it again" })).toBeTruthy();
-    expect(screen.queryByRole("region", { name: "Seat on hold" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Selected seat" })).toBeNull();
   });
 
   it("shows a clear message for an invalid or revoked link, without a pointless retry", async () => {
@@ -266,17 +255,4 @@ describe("Attendee page", () => {
     expect(map.getAttribute("aria-activedescendant")).toMatch(/-t13$/);
   });
 
-  it("does not announce my own restored hold as someone else's change", async () => {
-    const view = seatStepView();
-    view.me.held_seat_id = 13;
-    view.me.held_until = new Date(Date.now() + 3 * 60 * 1000).toISOString();
-    const server = attendeeServer(view);
-    renderPage();
-    await screen.findByRole("region", { name: "Seat on hold" });
-    // The server now reports my own hold as "held"; nothing about it is a conflict.
-    setSeat(view, 13, "held");
-    server.version += 1;
-    await screen.findByRole("option", { name: /Table 1, seat 3, on hold/ }, { timeout: 4000 });
-    expect(screen.queryByText(/by someone else/)).toBeNull();
-  }, 6000);
 });

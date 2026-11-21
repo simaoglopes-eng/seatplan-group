@@ -8,7 +8,17 @@
 // - the account holder's event calls (/guest/events/{eid}), which mirror the
 //   attendee calls of api/events.ts one to one.
 import { api, clearGuestToken, setGuestToken } from "./client";
-import type { AttendeeView, EventSummary, HoldResponse, SeatRecommendation, VisiblePerson } from "./events";
+import type {
+  AttendeeView,
+  EventSummary,
+  HoldResponse,
+  MyDetailsIn,
+  PartyConfirmIn,
+  PartyView,
+  PersonPatch,
+  SeatRecommendation,
+  VisiblePerson,
+} from "./events";
 import type { SeatMapPayload } from "./types";
 
 // ---------- Shapes (section 6.1) ----------
@@ -216,4 +226,30 @@ export function confirmAccountSeat(eventId: string, seatId: number): Promise<unk
 
 export function releaseAccountSeat(eventId: string): Promise<unknown> {
   return api.delete(accountEventPath(eventId, "/seat"), "guest");
+}
+
+// Party booking: the same bodies and answers as the /a/{token}/party calls in api/events.ts.
+
+export function getAccountParty(eventId: string): Promise<PartyView> {
+  return api.get<PartyView>(accountEventPath(eventId, "/party"), "guest");
+}
+
+export function confirmAccountParty(eventId: string, body: PartyConfirmIn): Promise<PartyView> {
+  return api.post<PartyView>(accountEventPath(eventId, "/party/confirm"), body, "guest");
+}
+
+export function saveAccountPartyDetails(eventId: string, body: MyDetailsIn): Promise<PartyView> {
+  return api.post<PartyView>(accountEventPath(eventId, "/party/me"), body, "guest");
+}
+
+export function editAccountPartyMember(eventId: string, memberId: number, patch: PersonPatch): Promise<PartyView> {
+  return api.patch<PartyView>(accountEventPath(eventId, `/party/${memberId}`), patch, "guest");
+}
+
+export function moveAccountPartyMember(eventId: string, memberId: number, seatId: number): Promise<PartyView> {
+  return api.put<PartyView>(accountEventPath(eventId, `/party/${memberId}/seat`), { seat_id: seatId }, "guest");
+}
+
+export function removeAccountPartyMember(eventId: string, memberId: number): Promise<PartyView> {
+  return api.delete<PartyView>(accountEventPath(eventId, `/party/${memberId}`), "guest");
 }

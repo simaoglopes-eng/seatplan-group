@@ -11,7 +11,7 @@
 .shell-inner {
   width: 100%;
   margin: 0 auto;
-  padding-inline: var(--space-4);
+  padding-inline: var(--gutter);
 }
 
 .shell-normal { max-width: var(--layout-max); }
@@ -33,6 +33,7 @@
   top: var(--space-3);
 }
 
+/* A plain bar in the page colour with one hairline under it. */
 .shell-header {
   position: sticky;
   top: 0;
@@ -40,6 +41,104 @@
   background: var(--c-bg);
   border-bottom: var(--border-width) solid var(--c-border);
 }
+
+/* variant="overlay" (the home page only): the bar sits transparent over the hero
+   photo with white text, and scrolls away with it. */
+/* The public header links (PublicHeaderActions): small capitals, round buttons. */
+.site-nav .site-nav-links .btn,
+.site-nav .site-nav-toggle,
+.site-nav .site-nav-login {
+  font-size: 0.8125rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+/* One height for every item in the bar: premium.css gives .btn 46px, the account and
+   create buttons use the 44px touch target, so the links take it too. */
+.site-nav .site-nav-links .btn { color: var(--c-text); min-height: var(--touch-target); }
+/* The account link is an outline button on every page (the home hero makes it white). */
+.site-nav .site-nav-login {
+  min-height: var(--touch-target);
+  padding-inline: var(--space-4);
+  background: transparent;
+  color: var(--c-text);
+  border-color: var(--c-text);
+  box-shadow: none;
+}
+.site-nav .site-nav-login:hover:not(:disabled) { background: var(--c-text); color: var(--c-bg); border-color: var(--c-text); }
+/* "Create your own event": the one filled button in the public header (and the first
+   thing in the phone menu). Its own class, so the ghost-link colours never repaint it. */
+.site-nav .site-nav-links .btn.site-nav-create,
+.site-nav .btn.site-nav-create {
+  min-height: var(--touch-target);
+  padding-inline: var(--space-4);
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  border: var(--border-width) solid var(--c-primary);
+  border-radius: var(--radius-button);
+  box-shadow: none;
+  white-space: nowrap;
+}
+.site-nav .site-nav-links .btn.site-nav-create:hover:not(:disabled) {
+  background: var(--c-primary-hover);
+  border-color: var(--c-primary-hover);
+  color: var(--c-on-primary);
+}
+.site-nav-links.is-open .btn.site-nav-create { order: -1; justify-content: center; margin-bottom: var(--space-2); }
+
+.shell-overlay { position: relative; }
+.shell-overlay .shell-header {
+  position: absolute;
+  inset: 0 0 auto;
+  background: transparent;
+  border-bottom-color: transparent;
+  color: var(--c-on-band);
+}
+.shell-overlay .shell-header .wordmark,
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn,
+.shell-overlay .shell-header .site-nav-toggle { color: var(--c-on-band); }
+/* Over the hero photo "Sign in" is clear glass and "Create your own event" green
+   glass (the .btn-glass recipes below). The open phone menu is a solid panel, so
+   its create button keeps the plain primary fill: glass never sits on a flat colour. */
+.shell-overlay .shell-header .site-nav-login,
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create {
+  color: var(--glass-text);
+  border: var(--border-width) solid var(--glass-border);
+  box-shadow: var(--glass-shadow-button);
+  -webkit-backdrop-filter: var(--glass-blur-button);
+  backdrop-filter: var(--glass-blur-button);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+}
+.shell-overlay .shell-header .site-nav-login { background: var(--glass-bg); }
+.shell-overlay .shell-header .site-nav-login:hover:not(:disabled) { background: var(--glass-bg-hover); color: var(--glass-text); border-color: var(--glass-border-hover); }
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create { background: var(--glass-green); }
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create:hover:not(:disabled) {
+  background: var(--glass-green-hover);
+  border-color: var(--glass-border-hover);
+  color: var(--glass-text);
+}
+.shell-overlay .shell-header .site-nav-toggle:hover:not(:disabled),
+.shell-overlay .shell-header .site-nav-toggle[aria-expanded="true"],
+.shell-overlay .shell-header .site-nav-links:not(.is-open) .btn:not(.site-nav-create):hover:not(:disabled) {
+  background: var(--glass-bg);
+  color: var(--glass-text);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .shell-overlay .shell-header .site-nav-login { background: var(--glass-fallback); }
+}
+/* Less transparency asked for: the two header buttons turn solid, hover included. */
+@media (prefers-reduced-transparency: reduce) {
+  .shell-overlay .shell-header .site-nav-login,
+  .shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .shell-overlay .shell-header .site-nav-login,
+  .shell-overlay .shell-header .site-nav-login:hover:not(:disabled) { background: var(--glass-fallback); }
+  .shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create,
+  .shell-overlay .shell-header .site-nav-links:not(.is-open) .btn.site-nav-create:hover:not(:disabled) { background: var(--glass-green-solid); }
+}
+.shell-overlay .shell-header :focus-visible { outline-color: var(--c-on-band); }
+/* The open phone menu is a white panel: its links keep the normal ring. */
+.shell-overlay .shell-header .site-nav-links.is-open :focus-visible { outline-color: var(--c-focus); }
+.shell-overlay .shell-main { padding: 0; max-width: none; width: 100%; }
 
 .shell-header .shell-inner {
   display: flex;
@@ -66,13 +165,27 @@
 
 .shell-footer {
   border-top: var(--border-width) solid var(--c-border);
+  background: var(--c-bg);
   color: var(--c-text-muted);
   font-size: var(--fs-sm);
-  padding-block: var(--space-4);
+  padding-block: var(--space-3);
 }
+
+.shell-footer-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-5); }
+.shell-footer a { color: var(--c-text-muted); display: inline-flex; align-items: center; min-height: var(--touch-target); }
+.shell-footer a:hover { color: var(--c-text); }
 
 .shell-footer p {
   margin: 0;
+  max-width: none;
+}
+
+/* The notes in the footer (the project line, map and photo credits) sit side by side and only wrap when they must. */
+.shell-footer .shell-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-5);
 }
 
 .wordmark {
@@ -83,21 +196,44 @@
   color: var(--c-text);
   text-decoration: none;
 }
+.wordmark:hover { color: var(--c-text); }
 
-.wordmark-mark {
-  width: 28px;
-  height: 28px;
+.wordmark-logo {
+  flex: none;
+  display: block;
+  height: 40px;
+  width: auto;
+}
+@media (max-width: 30rem) {
+  .wordmark-logo { height: 34px; }
+}
+@media (prefers-color-scheme: dark) {
+  /* The logo is dark purple: on a dark page it sits on a light plate so it stays readable. */
+  :root:not([data-surface="restaurants"]) .wordmark-logo,
+  :root[data-surface="restaurants"][data-theme="dark"] .wordmark-logo {
+    background: #f6f3ff;
+    border-radius: var(--radius-md);
+    padding: 3px 8px;
+  }
 }
 
-.wordmark-table { fill: var(--c-primary); }
-.wordmark-seat { fill: var(--c-text); }
-.wordmark-seat-mine { fill: var(--c-accent-bright); }
+.restaurant-brand-text { display:grid;gap:.15rem;line-height:1.05; }
+.restaurant-brand-label { color:var(--c-text-muted);font:600 .6875rem/1.05 var(--font-body); }
+
+/* Federico's mark (the favicon artwork, PageShell.tsx) beside "SeatPlan" in Gloock. */
+.wordmark-mark {
+  flex: none;
+  display: block;
+  width: 30px;
+  height: 30px;
+}
 
 .wordmark-text {
   font-family: var(--font-display);
-  font-size: var(--fs-xl);
-  font-weight: var(--fw-bold);
-  letter-spacing: -0.01em;
+  font-size: 1.5rem;
+  font-weight: var(--fw-display);
+  line-height: 1;
+  letter-spacing: var(--ls-display);
 }
 
 /* ---------- Button ---------- */
@@ -120,11 +256,13 @@
   transition:
     background-color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
     transform var(--dur-instant) var(--ease-out);
 }
 
 .btn:active:not(:disabled) {
   transform: translateY(1px);
+  box-shadow: none;
 }
 
 .btn:disabled {
@@ -141,12 +279,15 @@
 .btn-primary {
   background: var(--c-primary);
   color: var(--c-on-primary);
+  box-shadow: var(--btn-sheen);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--c-primary-hover);
+  box-shadow: var(--btn-sheen), var(--shadow-press);
 }
 
+/* An outlined box on the page colour. */
 .btn-secondary {
   background: var(--c-surface);
   color: var(--c-text);
@@ -154,7 +295,8 @@
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--c-primary-soft);
+  background: var(--c-surface-sunk);
+  border-color: var(--c-text);
 }
 
 .btn-ghost {
@@ -163,7 +305,7 @@
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--c-primary-soft);
+  background: var(--c-surface-sunk);
 }
 
 .btn-danger {
@@ -213,10 +355,17 @@
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   border: var(--border-width) solid var(--c-border-strong);
-  background: var(--c-surface);
+  background: var(--glass-fill-soft);
+  box-shadow: var(--glass-highlight);
   color: var(--c-text);
   font: inherit;
-  transition: border-color var(--dur-fast) var(--ease-out);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.field-input:focus {
+  background: var(--glass-fill-hover);
 }
 
 .field-input:hover {
@@ -263,6 +412,23 @@
   background-repeat: no-repeat;
 }
 
+@supports (appearance:base-select) {
+  :is(select.select-themed,.select-themed select) { appearance:base-select;cursor:pointer; }
+  .select-themed .select-input { background-image:none;padding-inline-end:var(--space-3); }
+  :is(select.select-themed,.select-themed select)::picker(select) {
+    appearance:base-select;max-height:min(18rem,50vh);overflow-y:auto;margin-block:.375rem;padding:.375rem;
+    min-inline-size:max(anchor-size(self-inline),8.5rem);border:1px solid var(--c-border);
+    border-radius:var(--radius-md);background:var(--c-surface);color:var(--c-text);
+    box-shadow:var(--shadow-lg);font:.875rem/1.3 var(--font-body);overscroll-behavior:contain;
+  }
+  :is(select.select-themed,.select-themed select)::picker-icon { color:var(--c-primary); }
+  :is(select.select-themed,.select-themed select) option {
+    min-height:2.25rem;gap:.5rem;padding:.375rem .5rem;border-radius:var(--radius-sm);
+  }
+  :is(select.select-themed,.select-themed select) option:checked { color:var(--c-primary);font-weight:700; }
+  :is(select.select-themed,.select-themed select) option:is(:focus,:hover) { background:var(--c-primary-soft); }
+}
+
 /* ---------- Checkbox ---------- */
 
 .checkbox {
@@ -303,7 +469,12 @@
   place-items: center;
   padding: var(--space-4);
   background: var(--c-overlay);
-  animation: fade-in var(--dur-base) var(--ease-out);
+  animation: backdrop-in var(--dur-base) var(--ease-out);
+}
+
+/* Only the dimming fades in. Fading the whole backdrop (opacity) would also fade the dialog's text for a few frames. */
+@keyframes backdrop-in {
+  from { background-color: transparent; }
 }
 
 .dialog {
@@ -319,6 +490,26 @@
 
 .dialog:focus {
   outline: none;
+}
+
+/* A drawer from the right edge: used for the discovery filters. */
+.dialog-backdrop-side {
+  place-items: stretch end;
+  padding: 0;
+}
+
+.dialog-side {
+  width: min(100%, 24rem);
+  max-height: none;
+  height: 100%;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  animation: slide-in-right var(--dur-base) var(--ease-out);
+}
+
+/* The panel slides; it never fades, so its text keeps full contrast from the first frame (the backdrop does the fading). */
+@keyframes slide-in-right {
+  from { transform: translateX(2rem); }
+  to { transform: none; }
 }
 
 .dialog-title {
@@ -592,4 +783,147 @@
 /* A legend is a picture of a rule, not a live seat: no pulsing. */
 .legend-static {
   animation: none;
+}
+
+/* Site frame: consistent spacing across the event and account journeys. */
+.shell-header .shell-inner { min-height: 4.5rem; }
+.shell-main { padding-block: clamp(1.5rem, 4vw, 3rem) 4rem; }
+.shell-footer { padding-block: 1.5rem; }
+
+/* ---------- Glass over photographs (direction E) ----------
+   Rule: glass only ever sits on a photograph, never on a flat colour. Every class
+   here assumes a photo behind it (usually under a --photo-veil). Text is white;
+   the focus ring is white too, because the blue ring cannot be relied on over a
+   photo. Without backdrop-filter, or when the visitor asks for less transparency,
+   the panel becomes a solid dark green-black (--glass-fallback). */
+.glass-panel {
+  color: var(--glass-text);
+  background: var(--glass-bg);
+  border: var(--border-width) solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.22);
+}
+.glass-panel :is(h1, h2, h3, strong) { color: var(--glass-text); }
+.glass-panel :is(p, li, span) { color: inherit; }
+.glass-panel .glass-muted { color: var(--glass-text-muted); }
+.glass-panel .glass-eyebrow { color: var(--glass-eyebrow); }
+.glass-panel a:not(.btn) { color: var(--glass-text); }
+.glass-panel :focus-visible,
+.photo-band :focus-visible,
+:is(.btn-glass, .btn-glass-green, .btn-glass-brass):focus-visible { outline-color: var(--glass-text); }
+
+/* Glass buttons: round, white text, a thinner blur than panels. */
+.btn.btn-glass,
+.btn.btn-glass-green,
+.btn.btn-glass-brass {
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-button);
+  border: var(--border-width) solid rgba(255, 255, 255, 0.4);
+  background: var(--glass-bg);
+  color: var(--glass-text);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  box-shadow: var(--glass-shadow-button);
+  -webkit-backdrop-filter: var(--glass-blur-button);
+  backdrop-filter: var(--glass-blur-button);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.btn.btn-glass-green { background: var(--glass-green); }
+.btn.btn-glass-brass { background: var(--glass-brass); }
+.btn.btn-glass:hover:not(:disabled) { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); color: var(--glass-text); }
+.btn.btn-glass-green:hover:not(:disabled) { background: var(--glass-green-hover); border-color: var(--glass-border-hover); color: var(--glass-text); }
+.btn.btn-glass-brass:hover:not(:disabled) { background: var(--glass-brass-hover); border-color: var(--glass-border-hover); color: var(--glass-text); }
+
+/* A field on glass: a clearer pane with white text and a light placeholder. */
+.glass-field {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border: var(--border-width) solid var(--glass-field-border);
+  border-radius: var(--radius-input);
+  background: var(--glass-field);
+  color: var(--glass-text);
+  font: inherit;
+  letter-spacing: 0.04em;
+}
+.glass-field::placeholder { color: rgba(255, 255, 255, 0.7); opacity: 1; }
+.glass-field:hover { border-color: var(--glass-border-hover); }
+.glass-field:focus { border-color: var(--glass-text); background: rgba(255, 255, 255, 0.18); }
+
+/* A block with a full-bleed cover photo, a legibility veil and a glass panel for
+   its content. Markup: .photo-band > .photo-band-photo (img) + .photo-band-inner > .glass-panel */
+.photo-band {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--glass-text);
+  background: var(--c-band);
+}
+.photo-band-photo { position: absolute; inset: 0; z-index: -2; overflow: hidden; }
+.photo-band-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.photo-band::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--photo-veil);
+  pointer-events: none;
+}
+.photo-band-inner { position: relative; }
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel, .btn.btn-glass { background: var(--glass-fallback); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel, .btn.btn-glass { background: var(--glass-fallback); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .btn.btn-glass-green { background: var(--glass-green-solid); }
+  .btn.btn-glass-brass { background: var(--glass-brass-solid); }
+}
+/* ---------- A control inside an input (PasswordField's eye) ----------
+   The input keeps room on the right for a 44px tap target, so typed text never runs under it. */
+.field-control { position: relative; display: flex; }
+.field-control .field-input { flex: 1 1 auto; min-width: 0; padding-inline-end: 2.9rem; }
+.field-eye {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-input);
+  background: none;
+  color: var(--c-text-muted);
+  cursor: pointer;
+}
+.field-eye:hover { color: var(--c-text); }
+.field-eye:focus-visible { outline: var(--focus-width) solid var(--c-focus); outline-offset: -4px; }
+.field-eye[aria-pressed="true"] { color: var(--c-primary); }
+.field-eye-icon { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Autofill and a revealed password stay readable ----------
+   Browsers paint an autofilled field with their own fill (pale yellow or blue) and, in a dark
+   colour scheme, their own text colour (white), which left the typed or revealed text unreadable.
+   Painting the field's own fill as an inset shadow and fixing the text colour makes the ink
+   always the theme's. One rule per pseudo-class: a browser that does not know one drops the whole
+   rule, so the two must not share a selector list. */
+.field-input:-webkit-autofill {
+  -webkit-text-fill-color: var(--c-text);
+  caret-color: var(--c-text);
+  box-shadow: 0 0 0 100vmax var(--c-surface) inset;
+}
+.field-input:autofill {
+  -webkit-text-fill-color: var(--c-text);
+  caret-color: var(--c-text);
+  box-shadow: 0 0 0 100vmax var(--c-surface) inset;
 }

@@ -10,6 +10,7 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core import members
 from app.core.errors import ApiError
 from app.models import Event, Guest, Organiser, Venue, utc_now
 from app.security import hash_token
@@ -31,9 +32,12 @@ def attendee_link(token: str) -> str:
 
 
 def load_event(session: Session, public_id: str, user: Organiser) -> Event:
-    """The event if this organiser owns it, else 404 (missing and forbidden look alike)."""
+    """The event if this organiser owns it, or works at its venue as a member
+    (core/members.py), else 404 (missing and forbidden look alike)."""
     event = session.scalars(select(Event).where(Event.public_id == public_id)).first()
-    if event is None or event.organiser_id != user.id:
+    if event is None or (
+        event.organiser_id != user.id and not members.is_member(session, event.venue_id, user.email)
+    ):
         raise ApiError(404, "not_found", "Event not found.")
     return event
 

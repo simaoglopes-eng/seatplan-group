@@ -54,3 +54,20 @@
   max-width: 40rem;
   margin: var(--space-5) auto 0;
 }
+
+/* Direction E (the event header and the shared surfaces come from pages/events/attendee.css):
+   linen panels with a hairline, Gloock headings, round buttons, no glass. */
+.join-page .join-status { gap: var(--space-3); padding: clamp(1.25rem, 3vw, 2rem); }
+.join-page .join-places { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: var(--fw-display); letter-spacing: var(--ls-display); }
+.join-page .join-status > p:not(.join-places) { color: var(--c-text-muted); }
+.join-page .join-actions .btn { min-height: 48px; }
+.join-page .join-panel {
+  padding: var(--space-5);
+  border: var(--border-width) solid var(--c-line);
+  border-left: calc(var(--border-width) * 4) solid var(--c-primary);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+.join-page .join-panel-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: var(--fw-display); letter-spacing: var(--ls-display); }
+.join-closed h1 { font-family: var(--font-display); font-weight: var(--fw-display); letter-spacing: var(--ls-display); }
+.join-closed .btn { border-radius: var(--radius-button); }

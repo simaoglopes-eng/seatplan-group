@@ -23,7 +23,7 @@ from guest_helpers import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from test_events_setup import add_guest
+from test_events_setup import add_guest, give_account_details
 
 from app.config import get_settings
 from app.events_service import accounts
@@ -86,6 +86,7 @@ def test_an_account_made_with_a_shown_code_never_takes_an_invitation(
 # ---------------------------------------------------------------- S31: the sign-up id
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_a_code_works_only_with_the_sign_up_id_of_the_same_browser(
     client: TestClient, organiser: Organiser, session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -152,8 +153,17 @@ def test_a_wrong_link_does_not_use_up_the_inbox_limit(
     assert register(client, token, "vic@example.com").status_code == 202
 
 
-def test_reset_codes_do_not_use_up_sign_up_codes(client: TestClient, organiser: Organiser) -> None:
-    """S33: three "forgot password" calls blocked the sign-up of that address."""
+@pytest.mark.usefixtures("no_resend_wait")
+def test_a_few_reset_codes_leave_room_for_a_sign_up_code(
+    client: TestClient, organiser: Organiser
+) -> None:
+    """S33: three "forgot password" calls blocked the sign-up of that address.
+
+    Since the email limits review every kind of code email shares one count
+    of 5 an hour per inbox (accounts.CODE_SENDS_PER_MAILBOX_HOUR): three
+    resets still leave room for a sign-up, but five of any kind block all
+    kinds for the hour (test_email_limits.py).
+    """
     _setup, token = shared_event(client, organiser)
     for _ in range(3):
         sent = client.post("/api/guest/password/forgot", json={"email": "vic@example.com"})
@@ -459,6 +469,7 @@ def test_the_mailer_passes_the_png_width(
     base = f"/api/guest/events/{setup.eid}"
     seat = setup.seats[0][0]
     client.post(f"{base}/hold", headers=headers, json={"seat_id": seat})
+    give_account_details(client, base, headers)  # a chosen seat carries a name and an age
     assert (
         client.post(f"{base}/confirm", headers=headers, json={"seat_id": seat}).status_code == 200
     )

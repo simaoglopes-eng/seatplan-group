@@ -6,7 +6,7 @@ else, so a reviewer only has to read one file to know what can be configured.
 
 import os
 import secrets
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -34,8 +34,19 @@ class Settings:
     email_from: str
     email_allowlist: tuple[str, ...]
     public_base_url: str
+    email_allow_all: bool = False
     # True only on Vercel, which writes X-Forwarded-For itself (see security.client_ip).
     trust_forwarded_for: bool = False
+    # Deposits: "demo" (no money moves, the default) or "stripe". The keys are
+    # hidden from repr() so they can never end up in a log line.
+    payment_provider: str = "demo"
+    stripe_secret_key: str = field(default="", repr=False)
+    stripe_webhook_secret: str = field(default="", repr=False)
+    # Empty: charge the platform's own Stripe account. "acct_...": charge that
+    # connected account instead (the restaurant is the seller).
+    stripe_account_id: str = ""
+    # Empty: use the Stripe account's own API version.
+    stripe_api_version: str = ""
 
     @property
     def is_postgres(self) -> bool:
@@ -125,10 +136,34 @@ def _choose_database_url() -> str:
     return _normalise_database_url(raw or DEFAULT_DATABASE_URL)
 
 
+def _check_payment_settings(provider: str, key: str, webhook_secret: str, base_url: str) -> None:
+    """Refuse to start with a half-set or unsafe payment set-up.
+
+    Without any PAYMENT_PROVIDER the demo provider is used and nothing here
+    applies: no keys are needed and no money can move.
+    """
+    if provider not in ("demo", "stripe"):
+        raise RuntimeError("PAYMENT_PROVIDER must be 'demo' or 'stripe'.")
+    if provider == "stripe":
+        if not key or not webhook_secret:
+            raise RuntimeError(
+                "PAYMENT_PROVIDER=stripe needs STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET."
+            )
+        if key.startswith("sk_live_") and not base_url.startswith("https://"):
+            # Stripe sends the diner back to PUBLIC_BASE_URL; a live key on a plain
+            # http address would put a payment page behind an unencrypted link.
+            raise RuntimeError("A live Stripe key needs an https:// PUBLIC_BASE_URL.")
+
+
 def load_settings() -> Settings:
     """Build a fresh Settings object from the current environment."""
     database_url = _choose_database_url()
     is_postgres = database_url.startswith("postgresql")
+    payment_provider = os.environ.get("PAYMENT_PROVIDER", "demo").strip().lower() or "demo"
+    stripe_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+    stripe_webhook = os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip()
+    public_base_url = os.environ.get("PUBLIC_BASE_URL", "http://localhost:5173")
+    _check_payment_settings(payment_provider, stripe_key, stripe_webhook, public_base_url)
     return Settings(
         database_url=database_url,
         secret_key=_choose_secret_key(is_postgres),
@@ -140,9 +175,15 @@ def load_settings() -> Settings:
         resend_api_key=os.environ.get("RESEND_API_KEY", ""),
         email_from=os.environ.get("EMAIL_FROM", "SeatPlan <noreply@example.com>"),
         email_allowlist=_read_list("EMAIL_ALLOWLIST"),
-        public_base_url=os.environ.get("PUBLIC_BASE_URL", "http://localhost:5173"),
+        email_allow_all=_read_bool("EMAIL_ALLOW_ALL"),
+        public_base_url=public_base_url,
         # Vercel sets VERCEL=1 in every function it runs.
         trust_forwarded_for=bool(os.environ.get("VERCEL")),
+        payment_provider=payment_provider,
+        stripe_secret_key=stripe_key,
+        stripe_webhook_secret=stripe_webhook,
+        stripe_account_id=os.environ.get("STRIPE_ACCOUNT_ID", "").strip(),
+        stripe_api_version=os.environ.get("STRIPE_API_VERSION", "").strip(),
     )
 
 

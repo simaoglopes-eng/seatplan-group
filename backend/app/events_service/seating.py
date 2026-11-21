@@ -1,15 +1,9 @@
-"""An attendee holds, confirms and releases a seat.
+"""Event seat confirmation and release.
 
-The database decides who gets a seat (contract section 4): a hold is a row in
-`holds` and a confirmed seat is a row in `seat_assignments`, and both tables
-have UNIQUE constraints. We never "check, then insert" without that guard; the
-checks below only exist to give a friendlier message earlier.
-
-Lock order: every write transaction on an event starts with lock_event(),
-which updates the event's row in live_versions. Postgres then makes a second
-writer wait at that first step, so two writers never hold one lock each while
-waiting for the other's (a deadlock). If the database still gives up on a
-transaction, main.py turns that into a calm 409 "please try again".
+Selecting a seat in the UI is non-exclusive. Confirmation takes the event
+write lock and inserts or updates the assignment; the database unique
+constraint is the final guard against two guests getting the same seat.
+All event writes take the same lock first to prevent deadlocks.
 """
 
 from sqlalchemy import delete
@@ -18,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core import audit, live
 from app.core.errors import ApiError, SeatTaken
-from app.core.holds import commit_or_seat_taken, confirm_hold, take_hold
+from app.core.holds import commit_or_seat_taken
 from app.events_service.access import event_scope, require_before_deadline
 from app.events_service.mailer import queue_seat_email, sync_reminder
 from app.events_service.problem import current_rows, guest_specs, seat_spec
@@ -34,8 +28,35 @@ def lock_event(session: Session, event: Event) -> None:
     one open transaction update a row. Doing it first gives every transaction
     on the event the same lock order. It also tells listeners about the change
     when we commit, so later bumps in the same transaction are not needed.
+
+    The event's room is read again once the lock is held: a room setup
+    (layouts.py) moves the event to another venue, and a request that loaded
+    the event before that commit would otherwise check seats against the old
+    room. Only `venue_id` is reloaded, so field changes the caller made before
+    the lock are kept. Read seats and other room data after this call.
     """
     live.bump(session, event_scope(event))
+    session.refresh(event, ["venue_id"])
+
+
+GUEST_GONE = "Guest not found."
+
+
+def recheck_after_lock(session: Session, guest: Guest) -> None:
+    """Read the acting guest again now that the event lock is held. Call it
+    straight after lock_event, before writing anything on the guest.
+
+    The route found the guest before the lock (by link or by account). While
+    the request waited for the lock, the organiser may have erased the row or
+    given it a new link, or the account may have left the event. Writing on
+    the old copy would put names, an age and a seat back on an erased row,
+    where nobody can see or delete them again. So the row must still be the
+    one the caller proved they own: not erased, same link, same account.
+    """
+    proved = (guest.token_hash, guest.account_id)
+    session.refresh(guest)
+    if guest.token_revoked_at is not None or (guest.token_hash, guest.account_id) != proved:
+        raise ApiError(404, "not_found", GUEST_GONE)
 
 
 def taken_message(seat: Seat) -> str:
@@ -67,55 +88,39 @@ def require_coming(guest: Guest) -> None:
 
 
 def hold_seat(session: Session, event: Event, guest: Guest, seat_id: int) -> Hold:
-    """Hold one seat for five minutes. Taking a new hold drops this guest's other holds."""
-    require_before_deadline(event)
-    require_coming(guest)
-    seat = seat_for_guest(session, event, guest, seat_id)
-    lock_event(session, event)
-    # Checked after the lock, so a confirm that just committed is already visible.
-    if _owned_by_other(session, event, guest, seat):
-        raise SeatTaken(taken_message(seat))
-    scope = event_scope(event)
-    # One seat at a time, so nobody can sit on a whole table "just in case".
-    session.execute(
-        delete(Hold).where(
-            (Hold.scope == scope)
-            & (Hold.holder_key == holder_key(guest))
-            & (Hold.resource_id != seat.id)
-        )
+    """Reject obsolete clients that assume a selection reserves a seat."""
+    raise ApiError(
+        410,
+        "hold_removed",
+        "Seat holds are no longer used. Update the page and confirm your selection.",
     )
-    _audit(session, guest, "seat.hold", seat)
-    # take_hold commits all of the above together, or rolls it all back.
-    try:
-        return take_hold(
-            session,
-            scope=scope,
-            resource_kind="seat",
-            resource_id=seat.id,
-            holder_key=holder_key(guest),
-        )
-    except SeatTaken:
-        raise SeatTaken(taken_message(seat)) from None
 
 
 def confirm_seat(
     session: Session, event: Event, guest: Guest, seat_id: int, token: str | None = None
 ) -> SeatAssignment:
-    """Turn the guest's hold into their seat. Changing seat frees the old one at once.
+    """Assign the seat to the first guest to confirm. Changing seat frees the old one at once.
 
     `token` is the guest's own link token, so their email can link straight back.
+    The guest's first name, last name and age must be saved first (422
+    details_required); the page sends them with POST .../party/confirm.
     """
+    # Imported here: party.py imports this module.
+    from app.events_service.party import require_details
+
     require_before_deadline(event)
     require_coming(guest)
-    seat = seat_for_guest(session, event, guest, seat_id)
     lock_event(session, event)
-    confirm_hold(
-        session,
-        scope=event_scope(event),
-        resource_kind="seat",
-        resource_id=seat.id,
-        holder_key=holder_key(guest),
-    )
+    recheck_after_lock(session, guest)  # erased or answered "no" meanwhile?
+    require_coming(guest)
+    seat = seat_for_guest(session, event, guest, seat_id)  # after the lock: the room in use
+    # The event lock serialises confirmations; uniqueness remains the final guard.
+    # A preview is never exclusive, and confirmation does not require one.
+    if _owned_by_other(session, event, guest, seat):
+        raise SeatTaken(taken_message(seat))
+    # Every chosen seat carries a first name, a last name and an age (party.py).
+    # Checked after the seat, so a taken seat still answers "seat_taken".
+    require_details(guest)
     row = current_rows(session, event).get(guest.id)
     old_seat_id = row.seat_id if row else None
     if row is None:
@@ -173,8 +178,13 @@ def queue_change_email(
 
 
 def release_seat(session: Session, event: Event, guest: Guest, token: str | None = None) -> None:
-    """The guest gives their seat back (also used when they answer "no")."""
+    """The guest gives their seat back. Refused while their party members are coming."""
+    # Imported here: party.py imports this module.
+    from app.events_service.party import refuse_while_party_coming
+
     require_before_deadline(event)
+    lock_event(session, event)  # the party is counted under the lock (drop_assignment locks too)
+    refuse_while_party_coming(session, guest)
     if not drop_assignment(session, event, guest, actor=f"guest:{guest.id}", token=token):
         raise ApiError(404, "not_found", "You do not have a seat to release.")
     session.commit()

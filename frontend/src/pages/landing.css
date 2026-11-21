@@ -1,0 +1,733 @@
+/* The home page (Home.tsx), direction E "relaxed + glass": one block per screen. A
+   full-bleed hero whose dinner photos cross-fade, with two glass choice cards; photo
+   tiles with glass captions and the venue search in their header; a strip of six real
+   venues; the organisers band on a photo with its copy on glass; the sample seat map
+   on plain linen. Glass (components.css) only ever sits on a photograph.
+   Motion: one per block, everything readable at rest, nothing moves under reduced motion. */
+
+/* One content width for the header, every block and the footer. */
+.ld-route .shell-header .shell-inner,
+.ld-route .shell-footer .shell-inner { max-width: var(--frame-max); }
+.ld-route .shell-overlay .shell-header .shell-inner { min-height: 5.25rem; }
+.ld-route { --ld-header: 5.25rem; }
+.ld-wrap {
+  width: 100%;
+  max-width: var(--frame-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.ld-eyebrow {
+  margin: 0 0 var(--space-3);
+  color: var(--c-accent);
+  font-size: 0.75rem;
+  font-weight: var(--fw-medium);
+  line-height: 1.3;
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+}
+.ld-count { font-variant-numeric: tabular-nums; }
+
+/* Display type on this page: Gloock at its one weight. */
+.ld-route :is(h1, h2, h3),
+.ld-tile-title,
+.ld-pick-title { font-family: var(--font-display); font-weight: var(--fw-display); letter-spacing: var(--ls-display); }
+
+/* ---------- One block, one screen ----------
+   The overlay header scrolls away with the hero (it is not sticky here), so every
+   block is a full screen tall. No vertical scroll-snap (it fought the search). */
+.ld-block {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.ld-section { padding-block: 3.5rem; }
+
+/* ---------- Tones, block by block ----------
+   No two neighbours share a ground: photo hero / linen rooms / sunk directory /
+   photo band / linen seat map / green footer. In dark mode the sunk block steps up
+   to a lifted green-grey (#26302c, 1.34:1 to the page) so the rhythm still reads. */
+.ld-route { --ld-bg: var(--c-bg); --ld-sunk: var(--c-surface-sunk); }
+@media (prefers-color-scheme: dark) {
+  .ld-route { --ld-sunk: #26302c; }
+}
+.ld-tone-bg { background: var(--ld-bg); }
+.ld-tone-sunk { background: var(--ld-sunk); }
+
+/* The footer on this page is a bottle-green block, distinct from the linen seat map above. */
+.ld-route .shell-footer {
+  background: var(--c-band);
+  border-top-color: transparent;
+  color: var(--c-on-band-muted);
+  padding-block: 2.5rem;
+}
+.ld-route .shell-footer a { color: var(--c-on-band); }
+.ld-route .shell-footer a:hover { color: var(--c-on-band-muted); }
+.ld-route .shell-footer :focus-visible { outline: var(--focus-width) solid var(--c-on-band); outline-offset: 2px; }
+.ld-route .shell-footer .ld-drift.ld-pre { transform: translateY(16px); opacity: 0.2; }
+
+/* Drift in: visible at rest, nudged only while waiting below the fold (useReveal). */
+.ld-drift { transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.8s ease; }
+.ld-drift.ld-pre { transform: translateY(28px); opacity: 0.35; }
+
+/* Round buttons on this page share one height. */
+.ld-route .btn.ld-go,
+.ld-route .btn.ld-btn { min-height: 48px; padding-inline: 1.375rem; border-radius: var(--radius-button); }
+.ld-go { gap: 0.5rem; }
+
+/* ---------- Hero ---------- */
+.ld-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--c-band);
+  color: var(--glass-text);
+  justify-content: flex-start;
+}
+.ld-slides { position: absolute; inset: 0; z-index: -2; overflow: hidden; }
+.ld-slides img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.12);
+  transition: opacity 1.6s ease, transform 9s linear;
+}
+/* Framing per photo, so the tables stay in view on tall phones. */
+.ld-slides img:nth-child(1) { object-position: 62% 50%; }
+.ld-slides img:nth-child(2) { object-position: 50% 60%; }
+.ld-slides img:nth-child(3) { object-position: 50% 55%; }
+.ld-slides img.is-on { opacity: 1; transform: scale(1); }
+.ld-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--photo-veil);
+}
+.ld-hero-copy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-block: calc(var(--ld-header) + 1rem) 2.25rem;
+}
+.ld-hero-copy > .ld-wrap > * { animation: ld-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.ld-hero-copy > .ld-wrap > :nth-child(2) { animation-delay: 0.08s; }
+.ld-hero-copy > .ld-wrap > :nth-child(3) { animation-delay: 0.16s; }
+.ld-hero-copy > .ld-wrap > :nth-child(4) { animation-delay: 0.24s; }
+.ld-hero-copy > .ld-wrap > :nth-child(5) { animation-delay: 0.32s; }
+@keyframes ld-rise { from { transform: translateY(18px); opacity: 0.2; } to { transform: none; opacity: 1; } }
+
+.ld-hero .ld-eyebrow { color: var(--glass-eyebrow); text-shadow: 0 1px 2px rgb(0 0 0 / 0.3); }
+.ld-hero h1 {
+  max-width: 47.5rem;
+  margin: var(--space-3) 0 0.875rem;
+  color: var(--glass-text);
+  font-size: clamp(2.5rem, 5.2vw, 4.125rem);
+  line-height: 1.02;
+  text-wrap: balance;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.25);
+}
+.ld-lede {
+  max-width: 33rem;
+  margin: 0;
+  color: var(--glass-text);
+  font-size: 1.1875rem;
+  line-height: 1.55;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+}
+.ld-hero :focus-visible { outline: var(--focus-width) solid var(--glass-text); outline-offset: 2px; }
+
+/* The two glass choice cards. */
+.ld-choose {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  max-width: 57.5rem;
+  margin-top: 1.75rem;
+}
+.ld-hero .ld-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 1.5rem 1.625rem;
+  border-radius: 18px;
+  transition: background-color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+}
+.ld-hero .ld-pick:hover,
+.ld-hero .ld-pick:focus-within { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); }
+.ld-pick p { margin: 0; max-width: none; }
+.ld-pick-cap {
+  font-size: 0.75rem;
+  font-weight: var(--fw-medium);
+  line-height: 1.3;
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+}
+.ld-hero .ld-pick-title {
+  margin: 0;
+  color: var(--glass-text);
+  font-size: 2.125rem;
+  line-height: 1.1;
+}
+.ld-pick-text { font-size: 0.9375rem; line-height: 1.55; }
+.ld-pick .ld-go { margin-top: auto; }
+.ld-pick-text + .ld-go { margin-top: auto; }
+.ld-pick-sub { font-size: 0.8125rem; }
+.ld-pick-sub a {
+  display: inline-block;
+  padding-block: 0.375rem;
+  color: var(--glass-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+  text-decoration-thickness: 1px;
+}
+.ld-pick-sub a:hover { color: var(--glass-text); }
+.ld-code { display: grid; gap: var(--space-1); width: 100%; margin-top: var(--space-1); }
+.ld-code label { color: var(--glass-text-muted); font-size: 0.75rem; font-weight: var(--fw-medium); }
+/* premium.css styles every input on the page; on glass the field stays a clear pane. */
+.ld-route .ld-hero .ld-code input.glass-field {
+  min-height: 46px;
+  border-color: var(--glass-field-border);
+  border-radius: var(--radius-input);
+  background: var(--glass-field);
+  color: var(--glass-text);
+  font-size: 1rem;
+}
+.ld-route .ld-hero .ld-code input.glass-field:focus { border-color: var(--glass-text); background: rgb(255 255 255 / 0.18); }
+.ld-code + .ld-go { margin-top: var(--space-2); }
+
+/* Slide picker: thin bars with a 44px hit area. */
+.ld-dots { display: flex; gap: var(--space-2); margin-top: 1.25rem; }
+.ld-dots button {
+  position: relative;
+  width: 36px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.ld-dots button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 21px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.4);
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+.ld-dots button:hover::after { background: rgb(255 255 255 / 0.75); }
+.ld-dots button[aria-pressed="true"]::after { background: var(--glass-text); }
+
+/* ---------- Section heads ---------- */
+.ld-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.25rem 2.5rem;
+  margin-bottom: 2.25rem;
+}
+.ld-head h2 {
+  max-width: 40rem;
+  margin: 0;
+  font-size: clamp(2.125rem, 1.2rem + 2.3vw, 3.25rem);
+  line-height: 1.08;
+  text-wrap: balance;
+}
+.ld-head > p { max-width: 24rem; margin: 0; color: var(--c-text-muted); }
+.ld-swipe { display: none; margin: var(--space-2) 0 0; color: var(--c-text-muted); font-size: 0.8125rem; }
+
+/* ---------- The rooms: search in the header, three photo tiles ---------- */
+/* Title left, note right (as in the mock), the search on its own row under them. */
+.ld-rooms-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 24rem); align-items: end; }
+.ld-rooms-head .ld-bar { grid-column: 1 / -1; width: 100%; max-width: 46rem; }
+.ld-head-note { max-width: 24rem; margin: 0; color: var(--c-text-muted); }
+
+/* The venue search: a linen pill bar, two selects and the round primary button. */
+.ld-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.375rem;
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+}
+.ld-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0.5rem 0.875rem 0.125rem;
+  border-radius: var(--radius-input);
+}
+.ld-field + .ld-field { border-left: var(--border-width) solid var(--c-line); border-radius: 0; }
+.ld-field label {
+  color: var(--c-text-muted);
+  font-size: 0.6875rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+}
+.ld-route .ld-field select {
+  appearance: none;
+  width: 100%;
+  min-height: var(--touch-target);
+  margin: 0;
+  padding: 0 var(--space-6) 0 0;
+  border: 0;
+  border-radius: var(--radius-input);
+  background-color: transparent;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--c-text) 50%),
+    linear-gradient(135deg, var(--c-text) 50%, transparent 50%);
+  background-position: calc(100% - 10px) 50%, calc(100% - 5px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  color: var(--c-text);
+  font-size: 1rem;
+  font-weight: var(--fw-medium);
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.ld-route .btn.ld-bar-submit {
+  min-height: 52px;
+  padding-inline: 1.5rem;
+  border-radius: var(--radius-button);
+  white-space: nowrap;
+}
+
+.ld-tiles {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+.ld-tile {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  height: clamp(20rem, calc(100svh - 28rem), 38.75rem);
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--c-band);
+  color: var(--glass-text);
+  text-decoration: none;
+}
+.ld-tile:hover { color: var(--glass-text); }
+.ld-tile:focus-visible { outline-offset: 3px; }
+/* Three real venues per tile, cross-fading slowly (RoomSlides.tsx): the block's motion. */
+.ld-tile-slides { position: absolute; inset: 0; z-index: -2; transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.ld-tile-slides img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1.6s ease;
+}
+.ld-tile-slides img.is-on { opacity: 1; }
+.ld-tile:hover .ld-tile-slides, .ld-tile:focus-visible .ld-tile-slides { transform: scale(1.05); }
+.ld-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0) 50%, rgb(var(--photo-veil-ink) / 0.35) 100%);
+  pointer-events: none;
+}
+/* The venue on show, small and on glass in the top corner, so a photo is never taken for another place. */
+.ld-tile-venue {
+  position: absolute;
+  top: 0.875rem;
+  left: 0.875rem;
+  max-width: calc(100% - 1.75rem);
+  padding: 0.3125rem 0.625rem;
+  border: var(--border-width) solid var(--glass-border);
+  border-radius: var(--radius-button);
+  /* 0.7 ink keeps the 12px white label at 6:1 or more even over pure white sky. */
+  background: rgb(var(--photo-veil-ink) / 0.7);
+  -webkit-backdrop-filter: var(--glass-blur-button);
+  backdrop-filter: var(--glass-blur-button);
+  color: var(--glass-text);
+  font-size: 0.75rem;
+  font-weight: var(--fw-medium);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The caption: a glass panel over the photo (.glass-panel in components.css). */
+.ld-tile .ld-tile-text {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  padding: 1.125rem 1.25rem;
+  /* A touch more tint than the hero cards: tiles can be bright sky or white stone. */
+  background: rgb(var(--photo-veil-ink) / 0.22);
+}
+.ld-tile-count { color: var(--glass-eyebrow); font-size: 0.75rem; font-weight: var(--fw-medium); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }
+.ld-tile-title { margin: 0.5rem 0 0.25rem; font-size: 2rem; line-height: 1.1; }
+.ld-tile-blurb { font-size: var(--fs-sm); color: var(--glass-text-muted); }
+
+/* ---------- In the directory: a strip of six real venues ---------- */
+.ld-strip-nav { display: flex; align-items: center; gap: 0.625rem; }
+.ld-all {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  margin-right: 0.875rem;
+  color: var(--c-text);
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.35em;
+  text-decoration-thickness: 1px;
+}
+.ld-all:hover { color: var(--c-text-muted); }
+.ld-arrow {
+  width: 48px;
+  height: 48px;
+  border: var(--border-width) solid var(--c-border-strong);
+  border-radius: var(--radius-button);
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.ld-arrow:hover:not(:disabled) { background: var(--c-primary); border-color: var(--c-primary); color: var(--c-on-primary); }
+.ld-arrow:disabled { opacity: 0.35; cursor: default; }
+
+/* position: relative so the visually hidden link text (absolutely positioned) is clipped
+   by the strip instead of widening the page. */
+.ld-strip {
+  position: relative;
+  list-style: none;
+  margin: 0 calc(-1 * var(--space-2));
+  padding: var(--space-2);
+  display: flex;
+  gap: var(--space-5);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--space-2);
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.ld-strip::-webkit-scrollbar { display: none; }
+.ld-card { flex: 0 0 calc((100% - 2 * var(--space-5)) / 3); min-width: 0; scroll-snap-align: start; }
+.ld-card-photo {
+  position: relative;
+  isolation: isolate;
+  aspect-ratio: 4 / 3;
+  max-height: calc(100svh - 24rem);
+  min-height: 11rem;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--c-surface-strong);
+}
+.ld-card-photo img {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.ld-card:hover .ld-card-photo img, .ld-card:focus-within .ld-card-photo img { transform: scale(1.06); }
+/* "Plan an event here", on the photo: green glass at its foot. */
+.ld-route .btn.ld-card-plan {
+  position: absolute;
+  left: 0.875rem;
+  bottom: 0.875rem;
+  min-height: var(--touch-target);
+  max-width: calc(100% - 1.75rem);
+  padding-inline: 1.125rem;
+  font-size: var(--fs-sm);
+}
+.ld-card-eyebrow {
+  margin: var(--space-4) 0 0;
+  color: var(--c-accent);
+  font-size: 0.6875rem;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+}
+.ld-card h3 { margin: 0.5rem 0 var(--space-1); font-size: 1.625rem; line-height: 1.15; }
+.ld-card-place { margin: 0; color: var(--c-text-muted); font-size: 0.9375rem; }
+.ld-card-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-5); margin: var(--space-1) 0 0; font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+.ld-card-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: var(--touch-target);
+  color: var(--c-text);
+  text-decoration: underline;
+  text-underline-offset: 0.35em;
+  text-decoration-thickness: 1px;
+}
+.ld-card-links a:hover { color: var(--c-text-muted); }
+.ld-strip-empty { color: var(--c-text-muted); }
+/* The block's motion: the cards slide in from the right one after another as it arrives. */
+.ld-card { transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.7s ease; }
+.ld-card:nth-child(2) { transition-delay: 0.09s; }
+.ld-card:nth-child(3) { transition-delay: 0.18s; }
+.ld-card:nth-child(4) { transition-delay: 0.27s; }
+.ld-card:nth-child(5) { transition-delay: 0.36s; }
+.ld-card:nth-child(6) { transition-delay: 0.45s; }
+.ld-drift.ld-pre .ld-card { transform: translateX(48px); opacity: 0.15; }
+
+/* ---------- For organisers: a photo band with its copy on glass ---------- */
+.ld-band { padding-block: 3.5rem; }
+/* The block's motion: a slow Ken Burns, the photo drifting and zooming over half a minute. */
+.ld-band-photo img {
+  transform-origin: 60% 40%;
+  animation: ld-kenburns 28s ease-in-out infinite alternate;
+}
+@keyframes ld-kenburns {
+  from { transform: scale(1) translate3d(0, 0, 0); }
+  to { transform: scale(1.12) translate3d(-2%, -1.5%, 0); }
+}
+.ld-band-panel { max-width: 34rem; padding: 2.5rem; }
+.ld-band .ld-eyebrow { color: var(--glass-eyebrow); }
+.ld-band h2 {
+  margin: 0 0 1rem;
+  color: var(--glass-text);
+  font-size: clamp(2.125rem, 1.2rem + 2.1vw, 3rem);
+  line-height: 1.1;
+  text-wrap: balance;
+}
+.ld-band-lede { max-width: 30rem; margin: 0; }
+.ld-steps { list-style: none; margin: 1.5rem 0 2rem; padding: 0; display: grid; gap: var(--space-3); }
+.ld-steps li {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  padding-top: 0.75rem;
+  border-top: var(--border-width) solid rgb(255 255 255 / 0.28);
+}
+.ld-step-n { color: var(--glass-eyebrow); font-size: 0.8125rem; font-variant-numeric: tabular-nums; line-height: 1.75; }
+
+/* ---------- Try choosing a seat: copy on glass over a dinner photo, the map on a solid card ---------- */
+/* The photo sits still (the organisers band below already drifts); the block's motion is the seats lighting up. */
+.ld-try-photo img { object-position: 50% 45%; }
+.ld-try-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 2.5rem; align-items: center; }
+.ld-try-copy { padding: 2.25rem; }
+.ld-try h2 { margin: 0 0 1rem; color: var(--glass-text); font-size: clamp(2.125rem, 1.2rem + 2.1vw, 3rem); line-height: 1.1; text-wrap: balance; }
+.ld-try-lede { max-width: 30rem; margin: 0; }
+.ld-try-picked { margin: var(--space-4) 0 0; color: var(--glass-text); font-weight: var(--fw-medium); min-height: 1.6em; }
+.ld-try .ld-text-link { color: var(--glass-text); }
+/* The map never sits on glass: a solid surface keeps every seat state at full contrast. */
+.ld-try-card {
+  min-width: 0;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  color: var(--c-text);
+  box-shadow: 0 24px 60px rgb(10 16 13 / 0.35);
+}
+.ld-try-card .legend { margin-top: var(--space-3); grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2) var(--space-3); }
+.ld-try .legend-hint { display: none; }
+.ld-try-links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); margin: var(--space-6) 0 0; }
+.ld-text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  color: var(--c-text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.35em;
+  text-decoration-thickness: 1px;
+}
+.ld-try-map { min-width: 0; }
+/* The block's motion, once as it arrives: the seats light up in four quick waves.
+   Opacity only, on .target-inner, so the seat's own position transform is untouched. */
+.ld-try-map .target-inner { transition: opacity 0.45s ease; }
+.ld-try-map .target:nth-child(4n+2) .target-inner { transition-delay: 0.22s; }
+.ld-try-map .target:nth-child(4n+3) .target-inner { transition-delay: 0.44s; }
+.ld-try-map .target:nth-child(4n) .target-inner { transition-delay: 0.66s; }
+.ld-drift.ld-pre .ld-try-map .target-inner { opacity: 0.12; transition-delay: 0s; }
+.ld-try-map .seatmap-viewport { height: clamp(18rem, calc(100svh - 12rem), 34rem); }
+/* The zoom buttons follow the shape rule here: round, 44px, a small gap between them.
+   Scoped to this map: premium.css's .map-control is shared with the editor and the demo. */
+.ld-try-map .seatmap-controls { gap: 0.375rem; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; }
+.ld-try-map .seatmap-controls .map-control { border-radius: var(--radius-button); box-shadow: var(--shadow-sm, none); }
+
+.ld-footer-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-5); }
+
+/* ---------- Tablets ---------- */
+@media (max-width: 1100px) {
+  .ld-rooms-head { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- Tablets and phones ---------- */
+@media (max-width: 900px) {
+  .ld-route { --ld-header: 4.5rem; }
+  .ld-route .shell-overlay .shell-header .shell-inner { min-height: 4.5rem; }
+  .ld-section, .ld-band { padding-block: 2.5rem; }
+  .ld-head { margin-bottom: 1.25rem; }
+  .ld-head-note { font-size: 0.9375rem; }
+  /* The copy spans the width here, so the veil stays denser on the right. */
+  .ld-hero::after {
+    background:
+      linear-gradient(90deg, rgb(var(--photo-veil-ink) / 0.7) 0%, rgb(var(--photo-veil-ink) / 0.5) 100%),
+      linear-gradient(180deg, rgb(var(--photo-veil-ink) / 0.2) 0%, rgb(var(--photo-veil-ink) / 0) 30%, rgb(var(--photo-veil-ink) / 0.5) 100%);
+  }
+  .ld-hero-copy { padding-block: calc(var(--ld-header) + 0.5rem) 1rem; }
+
+  /* Rows become swipe strips, so each block still fits one screen. */
+  .ld-tiles, .ld-strip {
+    display: flex;
+    gap: 0.875rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--gutter));
+    padding: var(--space-2) var(--gutter);
+    scroll-padding-inline: var(--gutter);
+  }
+  .ld-tiles::-webkit-scrollbar { display: none; }
+  .ld-tiles > li, .ld-card { flex: 0 0 82%; scroll-snap-align: start; }
+  .ld-tile { height: clamp(15rem, calc(100svh - 29rem), 32.5rem); }
+  .ld-swipe { display: block; }
+  .ld-arrow { display: none; }
+  .ld-strip-nav { width: 100%; }
+  .ld-card-photo { max-height: calc(100svh - 25rem); }
+
+  .ld-band-panel { max-width: none; padding: 1.5rem; }
+  .ld-band h2 { margin-bottom: 0.625rem; }
+  .ld-steps { margin: 1rem 0 1.375rem; gap: 0.5rem; }
+  /* Try it, one column: the glass copy first, then the map card, which takes every pixel the words leave free. */
+  .ld-try-grid { flex: 1 1 auto; display: flex; flex-direction: column; align-items: stretch; gap: var(--space-3); }
+  .ld-try-copy { padding: 1.125rem 1.25rem; }
+  .ld-try h2 { margin-bottom: 0.375rem; font-size: 2rem; }
+  .ld-try-lede { font-size: var(--fs-sm); }
+  .ld-try-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: var(--space-2); }
+  .ld-try-card .legend { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: var(--space-2); }
+  .ld-try-map { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .ld-try-map .seatmap { flex: 1 1 auto; min-height: 0; }
+  .ld-try-map .seatmap-viewport { flex: 1 1 auto; height: auto; min-height: 15rem; }
+  /* The viewport's height comes from flex here, which a 100% tall SVG cannot read, so the drawing is pinned to its edges. */
+  .ld-try-map .seatmap-svg { position: absolute; inset: 0; }
+  /* A 2x2 block in the map's bottom corner, where the fitted sample room leaves space (the
+     top-right stack sat on table 2's seats on phones). The map becomes a grid so the block is
+     placed in the viewport's own cell, above the caption whatever its height. */
+  .ld-try-map .seatmap { display: grid; grid-template-rows: minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); }
+  .ld-try-map .seatmap-viewport { grid-area: 1 / 1; }
+  .ld-try-map .seatmap-caption { grid-area: 2 / 1; }
+  .ld-try-map .seatmap-controls {
+    grid-area: 1 / 1;
+    align-self: end;
+    justify-self: end;
+    position: relative;
+    top: auto;
+    right: auto;
+    margin: var(--space-2);
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+  }
+  .ld-try-picked { margin: var(--space-2) 0 0; min-height: 0; }
+  .ld-try-links { margin-top: var(--space-2); }
+}
+
+/* Phones: the cards keep only eyebrow, title and button (the approved mock). */
+@media (max-width: 760px) {
+  .ld-choose { grid-template-columns: minmax(0, 1fr); gap: 0.625rem; margin-top: 1.125rem; }
+  .ld-hero .ld-pick { padding: 1rem 1.125rem 1.125rem; gap: 0.375rem; }
+  .ld-pick-text, .ld-pick-sub, .ld-code { display: none; }
+  .ld-hero .ld-pick-title { font-size: 1.875rem; }
+  .ld-pick .ld-go, .ld-code + .ld-go { margin-top: 0.25rem; }
+  .ld-route .btn.ld-go { min-height: 44px; padding-inline: 1.125rem; }
+}
+
+@media (max-width: 560px) {
+  .ld-hero h1 { font-size: 2.5rem; }
+  .ld-lede { font-size: 1.0625rem; }
+  .ld-dots { margin-top: 0.5rem; }
+  /* The search: the two selects side by side, the button under them. */
+  .ld-bar { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ld-route .btn.ld-bar-submit { grid-column: 1 / -1; min-height: 46px; }
+  .ld-field { padding: 0.375rem 0.625rem 0; }
+  .ld-route .ld-field select { font-size: 0.9375rem; }
+  .ld-head-note { display: none; }
+  .ld-tile-title { font-size: 1.75rem; }
+  .ld-tile .ld-tile-text { left: 0.75rem; right: 0.75rem; bottom: 0.75rem; padding: 0.875rem 1rem; }
+  .ld-try-card .legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
+  .ld-try .legend-swatch { width: 24px; height: 24px; }
+}
+
+/* Short phones (375x667): the whole hero still fits one screen. */
+@media (max-width: 900px) and (max-height: 740px) {
+  .ld-hero h1 { font-size: 2.25rem; margin-block: var(--space-2) var(--space-2); }
+  .ld-hero .ld-eyebrow { margin-bottom: 0; }
+  .ld-lede { font-size: 1rem; line-height: 1.45; }
+  .ld-choose { margin-top: 0.875rem; gap: 0.5rem; }
+  .ld-hero .ld-pick { padding: 0.75rem 1rem 0.875rem; gap: 0.25rem; }
+  .ld-hero .ld-pick-title { font-size: 1.625rem; }
+  .ld-hero-copy { padding-bottom: 0.25rem; }
+  .ld-dots { margin-top: 0; }
+  .ld-tile { height: max(13rem, calc(100svh - 27rem)); }
+  .ld-tile-blurb { display: none; }
+  .ld-try-map .seatmap-viewport { min-height: 13rem; }
+  .ld-try-lede { display: none; }
+  .ld-try-picked { margin: var(--space-1) 0; font-size: 0.9375rem; }
+  /* Every pixel goes to the map: the caption goes, the legend tightens, the two links share a row. */
+  .ld-try .seatmap-caption { display: none; }
+  .ld-try-card .legend { gap: 0 var(--space-3); font-size: var(--fs-xs); }
+  .ld-try-card .legend .legend-swatch { width: 20px; height: 20px; }
+  .ld-try-links { flex-wrap: nowrap; gap: var(--space-3); }
+  .ld-try-links .btn.ld-btn { padding-inline: 1rem; white-space: nowrap; }
+  .ld-try-links .ld-text-link { font-size: var(--fs-xs); white-space: nowrap; }
+  .ld-card-photo { max-height: calc(100svh - 26.5rem); }
+  .ld-section, .ld-band { padding-block: 1.5rem; }
+  .ld-band-lede { display: none; }
+}
+
+/* No backdrop-filter, or less transparency asked for: the landing's own glass (which
+   outranks .glass-panel) turns solid too, so text never sits on a bare photo. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ld-tile .ld-tile-text, .ld-hero .ld-pick, .ld-hero .ld-pick:hover, .ld-hero .ld-pick:focus-within, .ld-tile-venue { background: var(--glass-fallback); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .ld-tile .ld-tile-text, .ld-hero .ld-pick, .ld-hero .ld-pick:hover, .ld-hero .ld-pick:focus-within, .ld-tile-venue { background: var(--glass-fallback); }
+}
+
+/* On touch screens a vertical swipe over the sample map scrolls the page (so the map cannot hold the
+   visitor in this block); taps still choose seats and the zoom buttons still work. */
+@media (pointer: coarse) {
+  .ld-try-map .seatmap-viewport { touch-action: pan-y; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ld-slides img, .ld-drift, .ld-tile-slides, .ld-tile-slides img, .ld-card, .ld-card-photo img, .ld-try-map .target-inner, .ld-arrow, .ld-pick, .ld-dots button::after { transition: none !important; }
+  .ld-slides img.is-on, .ld-tile:hover .ld-tile-slides, .ld-tile:focus-visible .ld-tile-slides, .ld-card:hover .ld-card-photo img, .ld-card:focus-within .ld-card-photo img { transform: none; }
+  .ld-hero-copy > .ld-wrap > *, .ld-band-photo img { animation: none !important; }
+  .ld-drift.ld-pre, .ld-drift.ld-pre .ld-card, .ld-drift.ld-pre .ld-try-map .target-inner { transform: none; opacity: 1; }
+  .ld-strip { scroll-behavior: auto; }
+}

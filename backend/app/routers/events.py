@@ -4,17 +4,32 @@ Each route: check the login and the body, call one helper from
 app/events_service, bump the live scope, write the audit log, commit once.
 """
 
-from typing import Annotated, Any
+from datetime import UTC, datetime
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Body, Query, Response
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import db
-from app.core import audit, live
+from app.core import audit, limits, live, work_limits
 from app.core.errors import ApiError
 from app.core.holds import commit_or_seat_taken
-from app.events_service import chart, csv_io, exact_check, guests, optimise, plans, share
+from app.core.parent_venue import shown_venue, shown_venue_of
+from app.core.text import PlainText
+from app.events_service import (
+    chart,
+    csv_io,
+    exact_check,
+    guests,
+    layouts,
+    optimise,
+    party,
+    plans,
+    share,
+    work,
+)
 from app.events_service.access import (
     attendee_link,
     deadline_passed,
@@ -23,6 +38,7 @@ from app.events_service.access import (
     load_event_guest,
     load_venue,
 )
+from app.events_service.event_types import event_type_label
 from app.events_service.problem import active_guests, current_rows
 from app.events_service.schemas import (
     EmptyIn,
@@ -31,6 +47,7 @@ from app.events_service.schemas import (
     ExactCheckIn,
     GuestIn,
     GuestPatch,
+    LayoutPresetIn,
     OptimiseIn,
     SeatChoice,
     SharePatch,
@@ -45,12 +62,17 @@ from app.events_service.seating import (
 )
 from app.events_service.seatmap import organiser_map
 from app.models import AuditLog, Event, Guest, Organiser, Seat, SeatAssignment, Venue
-from app.security import CurrentOrganiser
+from app.security import CurrentOrganiser, rate_limit
 
 router = APIRouter(tags=["events"])
 
+# Each apply runs the re-seat (up to about 15 s under the event lock) and can
+# email every seated guest; a person switching setups by hand needs far fewer.
+LAYOUT_APPLIES_PER_MINUTE = 20
 
-def event_dict(event: Event) -> dict[str, Any]:
+
+def event_dict(session: Session, event: Event) -> dict[str, Any]:
+    venue = shown_venue_of(session, event.venue_id)  # the hall, not the event's setup copy
     return {
         "public_id": event.public_id,
         "name": event.name,
@@ -60,7 +82,19 @@ def event_dict(event: Event) -> dict[str, Any]:
         "change_deadline": event.change_deadline,
         "deadline_passed": deadline_passed(event),
         "live_scope": event_scope(event),
+        "event_type": event.event_type,
+        "event_type_label": event_type_label(event.event_type),
+        "listed": event.listed,
+        "venue_name": venue.name if venue is not None else None,
+        # As stored: null means the default (party.max_party_size), 0 no limit.
+        "max_party_size": event.max_party_size,
+        "default_max_party_size": limits.DEFAULT_MAX_PARTY_SIZE,
     }
+
+
+def _shown_name(session: Session, venue: Venue) -> str:
+    shown = shown_venue(session, venue)
+    return shown.name if shown is not None else venue.name
 
 
 def _changed(
@@ -90,25 +124,108 @@ def _changed(
 # ---------------------------------------------------------------- events
 
 
+class NewEventIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: PlainText = Field(min_length=1, max_length=120)
+    starts_at: AwareDatetime
+    ends_at: AwareDatetime
+    # Where it happens. Any place, listed in the directory or not: it is stored only on
+    # this organiser's own private floor (no slug), never added to the public directory.
+    venue_name: PlainText | None = Field(default=None, max_length=120)
+    venue_address: PlainText | None = Field(default=None, max_length=200)
+
+
+def _require_not_ended(ends_at: datetime) -> None:
+    """422 for a new event that has already ended: it would never count in the
+    limit on events that have not ended (core/work_limits.py)."""
+    if ends_at <= datetime.now(UTC):
+        raise ApiError(422, "validation", "The event must end in the future.")
+
+
+@router.post("/events/create-with-venue", status_code=201)
+def create_event_with_venue(
+    body: NewEventIn, user: CurrentOrganiser, session: db.SessionDep
+) -> dict[str, Any]:
+    """Create a new event and its empty floor together, or neither on error."""
+    if body.ends_at <= body.starts_at:
+        raise ApiError(422, "validation", "The event must end after it starts.")
+    _require_not_ended(body.ends_at)
+    # First: rate_limit commits its count. Each new event makes a place of its own,
+    # marked made_with_event so the event venue limit leaves it out: only the
+    # limit on events that have not ended applies here.
+    rate_limit(session, f"event-create:{user.id}", limits.EVENT_CREATES_PER_HOUR, 3600)
+    work_limits.require_room_for_event(session, user)
+    venue = Venue(
+        organiser_id=user.id,
+        kind="event",
+        made_with_event=True,
+        name=(body.venue_name or "").strip() or body.name,
+        address=(body.venue_address or "").strip(),
+        timezone="UTC",
+        width=1000,
+        height=800,
+    )
+    session.add(venue)
+    session.flush()
+    event = Event(
+        venue_id=venue.id,
+        organiser_id=user.id,
+        name=body.name,
+        starts_at=body.starts_at,
+        ends_at=body.ends_at,
+        privacy_mode="first_initial",
+    )
+    session.add(event)
+    session.flush()
+    _changed(session, event, user, "event.create", event.public_id)
+    session.commit()
+    return {**event_dict(session, event), "venue_id": venue.public_id}
+
+
 @router.post("/events", status_code=201)
 def create_event(body: EventIn, user: CurrentOrganiser, session: db.SessionDep) -> dict[str, Any]:
+    rate_limit(session, f"event-create:{user.id}", limits.EVENT_CREATES_PER_HOUR, 3600)
     venue = session.scalars(select(Venue).where(Venue.public_id == body.venue_id)).first()
-    if venue is None or venue.organiser_id != user.id or venue.kind != "event":
+    if (
+        venue is None
+        or venue.organiser_id != user.id
+        or venue.kind != "event"
+        or venue.parent_venue_id is not None  # another event's setup copy
+        # The place create-with-venue made for one event: it is not counted as
+        # an event venue, so it must not hold more events than its own.
+        or venue.made_with_event is True
+    ):
         raise ApiError(404, "not_found", "Event venue not found.")
     if body.ends_at <= body.starts_at:
         raise ApiError(422, "validation", "The event must end after it starts.")
+    _require_not_ended(body.ends_at)
+    # One venue may hold several events, so the venue limit alone does not bound them.
+    work_limits.require_room_for_event(session, user)
     event = Event(venue_id=venue.id, organiser_id=user.id, **body.model_dump(exclude={"venue_id"}))
     session.add(event)
     session.flush()
     _changed(session, event, user, "event.create", event.public_id)
     session.commit()
-    return event_dict(event)
+    return event_dict(session, event)
 
 
 @router.get("/events")
 def list_events(user: CurrentOrganiser, session: db.SessionDep) -> list[dict[str, Any]]:
-    query = select(Event).where(Event.organiser_id == user.id).order_by(Event.starts_at)
-    return [event_dict(event) for event in session.scalars(query)]
+    """The organiser's events, then those at venues where they are a member (`role`).
+
+    `venue_id` is the event's own room (its setup copy once a layout is
+    applied), so "Edit floor plan" opens the floor this event actually uses.
+    """
+    rows = work.runnable_events(session, user)
+    room_ids = {event.venue_id for event, _venue, _role in rows}
+    rooms = dict(
+        session.execute(select(Venue.id, Venue.public_id).where(Venue.id.in_(room_ids))).all()
+    ) if room_ids else {}
+    return [
+        {**event_dict(session, event), "role": role, "venue_id": rooms.get(event.venue_id)}
+        for event, _venue, role in rows
+    ]
 
 
 @router.get("/events/{eid}")
@@ -124,8 +241,10 @@ def get_event(eid: str, user: CurrentOrganiser, session: db.SessionDep) -> dict[
         if g.id not in rows or rows[g.id].source != "self"
     ]
     return {
-        "event": event_dict(event),
-        "venue": {"public_id": venue.public_id, "name": venue.name},
+        "event": event_dict(session, event),
+        # public_id: the venue holding this event's map (its setup copy once a
+        # preset is applied: the one to open in the editor); name: the hall's.
+        "venue": {"public_id": venue.public_id, "name": _shown_name(session, venue)},
         "map": organiser_map(session, event, venue),
         "not_chosen": not_chosen,
         "counts": {
@@ -142,15 +261,23 @@ def patch_event(
 ) -> dict[str, Any]:
     event = load_event(session, eid, user)
     changes = body.model_dump(exclude_unset=True)
+    # An ended event moved back into the future counts again in the limit on
+    # events that have not ended. Checked before any change, so the event does
+    # not count itself, and against the event's owner (a venue member may edit).
+    new_end = changes.get("ends_at") or event.ends_at
+    if event.ends_at <= datetime.now(UTC) < new_end and not load_venue(session, event).is_demo:
+        owner = session.get(Organiser, event.organiser_id)
+        if owner is not None:
+            work_limits.require_room_for_event(session, owner)
     for name, value in changes.items():
-        if value is None and name != "change_deadline":
+        if value is None and name not in ("change_deadline", "event_type", "max_party_size"):
             raise ApiError(422, "validation", f"{name} cannot be empty.")
         setattr(event, name, value)
     if event.ends_at <= event.starts_at:
         raise ApiError(422, "validation", "The event must end after it starts.")
     _changed(session, event, user, "event.update", event.public_id, {"fields": sorted(changes)})
     session.commit()
-    return event_dict(event)
+    return event_dict(session, event)
 
 
 # ---------------------------------------------------------------- guests
@@ -158,7 +285,8 @@ def patch_event(
 
 @router.get("/events/{eid}/guests")
 def list_guests(eid: str, user: CurrentOrganiser, session: db.SessionDep) -> list[dict[str, Any]]:
-    return guests.list_guests(session, load_event(session, eid, user))
+    event = load_event(session, eid, user)
+    return guests.list_guests(session, event, guests.shows_ages(event, user))
 
 
 @router.post("/events/{eid}/guests", status_code=201)
@@ -178,22 +306,39 @@ def patch_guest(
     eid: str, gid: int, body: GuestPatch, user: CurrentOrganiser, session: db.SessionDep
 ) -> dict[str, Any]:
     event = load_event(session, eid, user)
+    changes = body.model_dump(exclude_unset=True)
+    # Refused before anything is looked up: the age checks' messages depend on
+    # what is stored, and the venue's team must not learn ages that way.
+    if "age" in changes and not guests.shows_ages(event, user):
+        raise ApiError(403, "forbidden", guests.AGES_FOR_ORGANISER)
     guest = load_event_guest(session, event, gid)
-    guests.update_guest(session, event, guest, body.model_dump(exclude_unset=True), user)
+    guests.update_guest(session, event, guest, changes, user)
     session.commit()
-    return next(item for item in guests.list_guests(session, event) if item["id"] == guest.id)
+    shown = guests.list_guests(session, event, guests.shows_ages(event, user))
+    return next(item for item in shown if item["id"] == guest.id)
 
 
 @router.delete("/events/{eid}/guests/{gid}")
 def delete_guest(
-    eid: str, gid: int, user: CurrentOrganiser, session: db.SessionDep
+    eid: str,
+    gid: int,
+    user: CurrentOrganiser,
+    session: db.SessionDep,
+    party_choice: Annotated[Literal["erase", "keep"] | None, Query(alias="party")] = None,
 ) -> dict[str, Any]:
-    """GDPR erasure: personal data overwritten, seat freed, link revoked."""
+    """GDPR erasure: personal data overwritten, seat freed, link revoked.
+
+    A guest who booked seats for a party needs ?party=erase (the members go
+    too) or ?party=keep (they stay seated); without it the answer is 409
+    has_party (events_service/party.py).
+    """
     event = load_event(session, eid, user)
     guest = load_event_guest(session, event, gid)
-    guests.erase_guest(session, event, guest, user.email)
+    erased = party.erase_with_party(session, event, guest, user.email, party_choice)
     session.commit()
-    return {"erased": True, "guest_id": gid}
+    if erased is None:
+        return {"erased": True, "guest_id": gid}
+    return {"erased": True, "guest_id": gid, "party_erased": erased}
 
 
 @router.post("/events/{eid}/guests/{gid}/new-link")
@@ -247,6 +392,39 @@ def export_guests(eid: str, user: CurrentOrganiser, session: db.SessionDep) -> R
 @router.get("/events/{eid}/chart")
 def get_chart(eid: str, user: CurrentOrganiser, session: db.SessionDep) -> dict[str, Any]:
     return chart.chart(session, load_event(session, eid, user))
+
+
+# ---------------------------------------------------------------- room setup
+
+
+@router.get("/events/{eid}/layouts")
+def get_layouts(eid: str, user: CurrentOrganiser, session: db.SessionDep) -> dict[str, Any]:
+    """The seven one-click setups fitted to the hall, and the one in use."""
+    return layouts.overview(session, load_event(session, eid, user))
+
+
+@router.post("/events/{eid}/layout")
+def apply_layout(
+    eid: str, body: LayoutPresetIn, user: CurrentOrganiser, session: db.SessionDep
+) -> dict[str, Any]:
+    """Give the event its own copy of the hall laid out as a preset.
+
+    With guests seated it needs confirm=true (else 409 guests_seated); then
+    everyone is re-seated and told. See events_service/layouts.py.
+    """
+    # First: rate_limit commits its count.
+    rate_limit(session, f"event-layout:{user.id}", LAYOUT_APPLIES_PER_MINUTE, 60)
+    event = load_event(session, eid, user)
+    result = layouts.apply_preset(session, event, body.preset, body.confirm, user.email)
+    detail = {
+        "preset": body.preset,
+        "venue_id": result["venue_id"],
+        "reseated": result["reseated"],
+        "unseated": result["unseated"],
+    }
+    _changed(session, event, user, "event.layout", event.public_id, detail)
+    commit_or_seat_taken(session)
+    return result
 
 
 # ---------------------------------------------------------------- shared link
@@ -314,8 +492,8 @@ def assign_seat(
     guest = load_event_guest(session, event, gid)
     if guest.rsvp == "no":
         raise ApiError(409, "conflict", "This guest said they are not coming.")
-    seat = seat_for_guest(session, event, guest, body.seat_id)
     lock_event(session, event)
+    seat = seat_for_guest(session, event, guest, body.seat_id)  # after the lock: the room in use
     plans.ensure_baseline(session, event)
     old_seat_id = _place(session, event, guest, seat)
     detail = {"seat_id": seat.id, "old_seat_id": old_seat_id}

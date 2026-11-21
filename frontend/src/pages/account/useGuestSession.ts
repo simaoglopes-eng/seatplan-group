@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ApiError, getGuestToken } from "../../api/client";
-import { getMyAccount, guestLogout } from "../../api/guest";
+import { accountSignOut } from "../../api/account";
+import { getMyAccount } from "../../api/guest";
 import type { MyAccount } from "../../api/guest";
 import { useToast } from "../../design/components";
 import { asApiError } from "./FormProblem";
@@ -41,16 +42,15 @@ export function useSessionExpired(): (error: unknown) => boolean {
   );
 }
 
-/** Signs out on every device, then shows the sign-in page. */
+/**
+ * Signs out on every device, then shows the sign-in page. Both sessions of the tab go: /account
+ * keeps the work session next to this one, and must not stay open for the next person.
+ */
 export function useSignOut(): () => Promise<void> {
   const navigate = useNavigate();
   const toast = useToast();
   return useCallback(async () => {
-    try {
-      await guestLogout();
-    } catch {
-      // The token is forgotten in this browser either way; the server ends it at its expiry.
-    }
+    await accountSignOut(); // never throws; both tokens are forgotten here even when offline
     toast.show("You are signed out.", "success");
     navigate("/my/sign-in");
   }, [navigate, toast]);

@@ -1,0 +1,227 @@
+/* Restaurant discovery and the public event pages. Palette and type remain owned by the theme.
+   The page width is the shared frame (PageShell); nothing here narrows .shell-inner. */
+.discover-route .shell-main { padding-top:1.5rem; }
+.discover-route .shell-header { height:4rem; }
+.site-nav { display:flex;align-items:center;position:relative;gap:var(--space-2); }
+.site-nav-links { display:flex;gap:var(--space-2);align-items:center; }
+.site-nav .site-nav-toggle { display:none; }
+.site-nav-links .btn, .site-nav .site-nav-toggle { color:var(--c-text-muted);font-weight:500; }
+.site-nav-login { white-space:nowrap; }
+.discover-top { margin:2rem 0 2.75rem; }
+.discover-top h1 { font-family:var(--font-display);font-size:clamp(2.5rem,1.6rem + 3vw,4.5rem);line-height:1;font-weight:400;letter-spacing:-.03em;margin:0 0 .75rem; }
+.discover-top p { color:var(--c-text-muted);margin:0;font-size:1.0625rem; }
+.discover-mobile-title { display:none; }
+.discover-bar { margin:0 0 3rem; }
+/* The command bar is the one heavily frosted pane on the page. It sits above the
+   cards (z-index) so the calendar it opens is never painted over by them. */
+.discover-primary {
+  position:relative;z-index:5;display:flex;gap:1rem;align-items:center;padding:.625rem .625rem .625rem .375rem;
+  background:var(--glass-fill);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-edge);border-radius:1.5rem;box-shadow:var(--glass-highlight),var(--shadow-glass);
+}
+.discover-capsule { display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr;flex:1;min-width:0; }
+.discover-capsule > label,.discover-capsule > .discover-date { min-width:0;padding:.25rem 1rem;border-right:1px solid var(--c-border); }
+.discover-capsule > label > span,.discover-capsule .discover-date > label { display:block;font-size:.6875rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--c-text-muted);margin-bottom:.25rem; }
+.discover-capsule select,.discover-capsule input { border:0;background:transparent;color:var(--c-text);font:inherit;font-size:.875rem;font-weight:600;min-height:1.5rem;width:100%;min-width:0; }
+.discover-capsule-clear { display:none; }
+.discover-date { position:relative; }
+.discover-date-control { position:relative;display:block;min-width:0; }
+.discover-date-control input { display:block;width:100%;padding-inline-end:1.5rem;pointer-events:none; }
+.discover-date-control input::-webkit-calendar-picker-indicator { display:none; }
+.discover-date-control input:not(:focus-visible) { color:transparent; }
+.discover-date-control input:not(:focus-visible)::-webkit-datetime-edit { opacity:0; }
+.discover-date-preview { position:absolute;inset-inline:0 1.75rem;top:50%;transform:translateY(-50%);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;color:var(--c-text);font-size:.875rem;font-weight:600; }
+.discover-date .field-input + .discover-date-preview { inset-inline-start:.75rem; }
+.discover-date-control input:focus-visible + .discover-date-preview { visibility:hidden; }
+.discover-calendar-toggle {
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;padding:0 .125rem;
+  background:transparent;color:var(--c-primary);border:0;border-radius:var(--radius-sm);cursor:pointer;
+}
+.discover-stacked .discover-calendar-toggle { padding-inline-end:.75rem; }
+.discover-calendar-toggle span { width:.875rem;height:.8rem;border:1px solid currentColor;border-radius:.15rem; }
+.discover-calendar-toggle span::before { content:"";display:block;border-top:1px solid currentColor;margin-top:.2rem; }
+.discover-calendar {
+  position:absolute;z-index:8;top:calc(100% + .5rem);inset-inline-start:0;
+  width:min(17.5rem,calc(100vw - 5rem));padding:.625rem;
+  border:1px solid var(--c-border);border-radius:var(--radius-lg);background:var(--c-surface);
+  box-shadow:var(--shadow-lg);color:var(--c-text);font:.875rem/1.3 var(--font-body);
+}
+.discover-calendar-header { display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.25rem;margin-bottom:.375rem;text-align:center; }
+.discover-calendar-header button,.discover-calendar-grid button {
+  min-width:0;min-height:2.25rem;padding:0 .125rem;border:0;border-radius:var(--radius-sm);
+  background:transparent;color:var(--c-primary);font:inherit;cursor:pointer;
+}
+.discover-calendar-header button { width:2.25rem;font-size:1.375rem; }
+.discover-calendar-grid { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.125rem;text-align:center; }
+.discover-calendar-grid span { padding-block:.25rem;color:var(--c-text-muted);font-size:.75rem; }
+.discover-calendar button:hover:not(:disabled) { background:var(--c-primary-soft); }
+.discover-calendar-grid button[aria-current="date"] { box-shadow:inset 0 0 0 1px var(--c-primary); }
+.discover-calendar-grid button[aria-pressed="true"],.discover-calendar-grid button[aria-pressed="true"]:hover { background:var(--c-primary);color:var(--c-on-primary); }
+.discover-calendar button:disabled { color:var(--c-text-muted);opacity:.5;cursor:default; }
+.discover-calendar-clear {
+  min-height:2.25rem;margin-top:.25rem;padding:0 .5rem;border:0;border-radius:var(--radius-sm);
+  background:transparent;color:var(--c-primary);font:inherit;cursor:pointer;
+}
+.discover-primary > .btn { min-height:3rem;padding-inline:1.5rem;border-radius:1rem;font-size:.9375rem;font-weight:600;white-space:nowrap; }
+.discover-secondary { display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem;align-items:center; }
+.discover-secondary > .btn { min-height:2.75rem;font-size:.875rem; }
+.discover-search-field { display:flex;align-items:center;gap:.5rem;min-width:0;max-width:19rem;min-height:2.75rem;background:var(--glass-fill-soft);border:1px solid var(--glass-edge);box-shadow:var(--glass-highlight),var(--shadow-sm);border-radius:var(--radius-pill);padding:0 .875rem; }
+.discover-search-field input { width:100%;min-width:0;background:transparent;border:0;outline-offset:4px;font:inherit;font-size:.875rem;color:var(--c-text); }
+.discover-search-field > button { background:none;border:0;color:var(--c-text);min-width:2.75rem;min-height:2.75rem;cursor:pointer;font:inherit; }
+.discover-quick,.discover-chips { display:flex;flex-wrap:wrap;gap:.5rem;align-items:center; }
+/* A filter group: the label is an uppercase eyebrow on its own line, and each group keeps air under it. */
+.discover-route .discover-chips { margin:0 0 var(--space-5); }
+.discover-route .discover-chips-label { width:100%;margin:0 0 var(--space-1);color:var(--c-text-muted);font-size:.6875rem;font-weight:var(--fw-medium);letter-spacing:var(--ls-eyebrow);text-transform:uppercase; }
+.discover-chip { min-height:2.75rem;border:1px solid var(--c-border-strong);background:var(--c-surface);box-shadow:none;color:var(--c-text);border-radius:var(--radius-sm);padding:.5rem .875rem;font:inherit;font-size:.875rem;font-weight:var(--fw-medium);cursor:pointer;max-width:100%;overflow-wrap:anywhere;
+  transition:background-color var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out); }
+.discover-chip:hover { border-color:var(--c-text); }
+.discover-chip.is-on { background:var(--c-primary);border-color:var(--c-primary);color:var(--c-on-primary); }
+.discover-more { border:0;background:none;color:var(--c-primary);font:inherit;min-height:2.75rem;cursor:pointer; }
+.discover-summary { display:none; }
+.discover-active { display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1rem; }
+.discover-active:empty { display:none; }
+.discover-filter-note { margin:.25rem 0 0;color:var(--c-text-muted);font-size:.8125rem; }
+.discover-results-head { display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:0 0 1rem; }
+.discover-results-head h2 { font-family:var(--font-display);font-size:1.75rem;margin:0;font-weight:400; }
+.discover-results-head p { color:var(--c-text-muted);font-size:.8125rem;margin:0; }
+.discover-view-switch { display:none;gap:.25rem;padding:.25rem;border:1px solid var(--glass-edge);border-radius:var(--radius-pill);background:var(--glass-fill-soft);box-shadow:var(--glass-highlight); }
+.discover-view-switch .btn { border-radius:var(--radius-pill); }
+.discover-view-switch .btn { min-height:2.5rem;padding:.5rem .75rem;font-size:.8125rem; }
+.discover-results { display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1.5rem;align-items:start; }
+.discover-list { min-width:0; }
+.discover-cards { display:flex;flex-direction:column;gap:1rem; }
+.discover-load-more { margin-block-start:1.25rem; }
+/* A result is a print mounted on a pane of glass: the photo sits inset with its own
+   corners. A light frost (12px, not the panels' 18px) keeps the hero's dot grid from
+   showing crisp behind the text; it is the cheapest blur that does that. */
+.discover-card {
+  display:grid;grid-template-columns:10rem minmax(0,1fr);gap:.25rem;padding:.5rem;min-width:0;
+  background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius-lg);
+  box-shadow:none;
+  transition:border-color var(--dur-base) var(--ease-out);
+}
+@media (hover:hover) { .discover-card:hover { border-color:var(--c-border-strong); } }
+.discover-card-photo { position:relative;display:block;overflow:hidden;min-height:8.25rem;border-radius:var(--radius-sm);background:var(--c-surface-sunk); }
+.discover-card-photo img,.discover-card-nophoto { position:absolute;inset:0;width:100%;height:100%; }
+.discover-card-photo img { display:block;object-fit:cover; }
+.discover-card-nophoto { display:flex;align-items:center;justify-content:center;height:100%;color:var(--c-text-muted);font-size:.8125rem; }
+.discover-card-body { padding:.5rem .75rem .5rem 1rem;min-width:0;align-self:center;overflow-wrap:anywhere; }
+.discover-card h3 { display:flex;gap:.625rem;align-items:flex-start;font-family:var(--font-display);font-weight:400;font-size:1.75rem;line-height:1.05;letter-spacing:-.01em;margin:0 0 .375rem; }
+.discover-card h3 a { color:var(--c-text);text-decoration:none; }
+.discover-card h3 a:hover { text-decoration:underline; }
+.discover-card-number { display:grid;place-items:center;flex:0 0 1.5rem;font:600 .75rem/1 var(--font-body);height:1.5rem;margin-top:.2em;font-variant-numeric:tabular-nums;border-radius:50%;background:var(--c-surface-sunk);color:var(--c-text); }
+.discover-card-line { margin:0 0 .25rem;color:var(--c-text-muted);font-size:.8125rem; }
+.discover-ambience { font-size:.875rem;font-weight:600;margin:0 0 .5rem;color:var(--c-text); }
+.discover-times { display:flex;gap:.5rem;flex-wrap:wrap; }
+.discover-time { display:inline-flex;align-items:center;justify-content:center;min-height:2.25rem;padding:.25rem .5rem;background:var(--c-surface);color:var(--c-primary);border:1px solid var(--c-border);border-radius:var(--radius-sm);text-decoration:none;font-size:.875rem;font-weight:600;font-variant-numeric:tabular-nums; }
+.discover-time.is-requested { background:var(--c-primary-soft);border-color:var(--c-primary); }
+.discover-times-label,.discover-card-more { font-size:.8125rem;color:var(--c-text-muted); }
+.discover-card.is-highlighted { border-color:var(--c-primary); }
+.discover-card.is-selected { border-color:var(--c-primary);box-shadow:0 0 0 1px var(--c-primary); }
+@media (prefers-reduced-motion:reduce) { .discover-card { transition:none; } }
+.discover-map-column { position:sticky;top:5.5rem;height:30rem;min-width:0;isolation:isolate; }
+/* The map stays solid (labels and pins need it); a glass frame holds it. */
+.discover-map-column .discover-map-panel { border:.375rem solid var(--glass-fill-soft);border-radius:1.5rem;box-shadow:var(--glass-highlight),var(--shadow-glass);background-clip:padding-box; }
+.discover-list .empty-state { min-height:22rem;align-content:center;padding:2.5rem; }
+.discover-list .empty-state h2 { font-family:var(--font-display);font-size:2rem;font-weight:400; }
+.discover-pin-summary { display:none; }
+.discover-features { list-style:none;margin:0;padding:0;display:flex;gap:.5rem;flex-wrap:wrap; }
+.discover-features li { color:var(--c-text);background:var(--c-primary-soft);border-radius:var(--radius-sm);padding:.25rem .5rem;font-size:.8125rem; }
+.discover-filters-modal .dialog-backdrop,.discover-filters-modal .dialog { animation:none; }
+.discover-filters-modal .dialog { position:relative;display:flex;flex-direction:column;overflow:hidden;width:min(100%,28rem);padding:1.5rem; }
+.discover-filters-modal .dialog-body { flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain; }
+.discover-filters-modal .dialog-title { font:400 2.25rem var(--font-display);margin:0 0 1rem; }
+.discover-filters-modal .dialog-actions { flex:none;display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;border-top:1px solid var(--c-border);padding-top:1rem;gap:.5rem; }
+.discover-filters-modal .dialog-actions .btn { font-size:.8125rem; }
+.discover-filters-modal .dialog-actions .btn-primary { flex:1; }
+.discover-filter-close { position:absolute;right:1.5rem;top:1.5rem;width:2.75rem;height:2.75rem;border:1px solid var(--c-border);background:var(--c-surface);border-radius:var(--radius-md);color:var(--c-text);font:inherit;font-size:1.25rem;cursor:pointer; }
+.discover-drawer { display:flex;flex-direction:column;gap:1rem;border:1px solid var(--c-border);border-radius:var(--radius-lg);padding:1rem; }
+.discover-drawer section,.discover-drawer > .discover-chips { border-bottom:1px solid var(--c-border);padding-bottom:1rem; }
+.discover-drawer h3 { font:700 1rem var(--font-body);margin:0 0 1rem; }
+.discover-chips-label { width:100%;font-weight:700; }
+.discover-stacked { display:grid;grid-template-columns:1fr 1fr;gap:1rem; }
+.discover-stacked > :first-child,.discover-stacked > :nth-child(4),.discover-stacked > button { grid-column:1/-1; }
+.discover-stacked .field-input { width:100%;min-width:0; }
+.discover-filter-selects { display:grid;grid-template-columns:1fr 1fr;gap:1rem; }
+.discover-filter-selects details { min-width:0; }
+.discover-filter-selects summary { min-height:2.75rem;cursor:pointer; }
+.discover-filter-selects summary span { display:block;font-size:.8125rem;margin-bottom:.5rem; }
+.discover-filter-selects summary strong { display:block;border:1px solid var(--c-border);border-radius:var(--radius-md);padding:.75rem;font-size:.875rem;background:var(--c-surface); }
+.discover-route button:focus-visible,.discover-route a:focus-visible,.discover-route input:focus-visible,.discover-route select:focus-visible { outline:3px solid var(--c-focus);outline-offset:3px; }
+@media(max-width:63.99rem){
+ .discover-route .shell-header { height:auto;min-height:3.125rem;position:static; }
+ .discover-route .shell-main { padding-top:.75rem; }
+ .discover-top { margin-bottom:1rem; }
+ .discover-top h1 { font-size:2.5rem; }
+ .discover-desktop-title { display:none; }.discover-mobile-title { display:inline; }
+ .discover-top p { font-size:.875rem; }
+ .discover-summary { display:flex;align-items:center;justify-content:space-between;width:100%;min-height:3rem;background:var(--glass-fill);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--glass-highlight),var(--shadow-glass);border-radius:1rem;padding:.75rem;font:600 .875rem var(--font-body);color:var(--c-text);margin-bottom:.5rem;text-align:left; }
+ .discover-secondary { display:grid;grid-template-columns:minmax(0,1fr) auto;margin-top:0;gap:.5rem; }
+ .discover-search-field { max-width:none; }
+ .discover-results-head { margin-bottom:.5rem; }
+ .discover-view-switch { display:flex; }
+ .discover-results { grid-template-columns:minmax(0,1fr); }
+ .discover-view-map .discover-list { display:none; }
+ .discover-card { grid-template-columns:minmax(0,1fr); }
+ .discover-card-photo { height:9rem;min-height:0; }
+ .discover-card-body { padding:.75rem .5rem .375rem; }
+ .discover-card h3 { font-size:1.5rem; }
+ .discover-time { min-width:2.75rem;min-height:2.75rem; }
+ .discover-map-column { position:relative;top:auto;height:calc(100dvh - 7rem); }
+ .discover-pin-summary { display:block;position:absolute;inset-inline:-1rem;bottom:0;z-index:2;background:var(--c-surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;box-shadow:var(--shadow-lg);padding:.875rem; }
+ .discover-pin-summary .discover-card { display:grid;grid-template-columns:5.25rem minmax(0,1fr);padding:0;background:transparent;border:0;box-shadow:none;position:relative;overflow:visible; }
+ .discover-pin-summary .discover-card-photo { height:4.125rem;align-self:start;border-radius:var(--radius-sm);overflow:hidden; }
+ .discover-pin-summary .discover-card-body { padding:0 2rem 0 .75rem; }
+ .discover-pin-summary .discover-card h3 { font:700 .9375rem var(--font-body); }
+ .discover-pin-summary .discover-card-line { display:none; }
+ .discover-pin-summary .discover-times { margin-left:-6rem;margin-top:1.5rem; }
+ .discover-map-close { position:absolute;right:.5rem;top:.5rem;min-width:2.75rem;min-height:2.75rem;background:var(--c-surface);border:0;color:var(--c-text);font:inherit;font-size:1.25rem; }
+ .is-map-view .discover-top,.is-map-view .discover-bar,.is-map-view .discover-summary,.is-map-view .discover-active { display:none; }
+ .site-nav .site-nav-toggle { display:inline-flex; }
+ .site-nav .btn { padding-inline:.625rem; }
+ .site-nav { gap:.25rem; }
+ .site-nav-links { display:none;position:absolute;right:0;top:100%;flex-direction:column;align-items:stretch;min-width:14rem;padding:.75rem;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius-md);z-index:20; }
+ .site-nav-links.is-open { display:flex; }
+ .discover-filters-modal .dialog-side { width:100%;padding:1rem; }
+ .discover-filters-modal .dialog-title { margin-bottom:1rem; }
+ .discover-filter-close { top:1rem;right:1rem; }
+ .discover-drawer { padding:.875rem; }
+ .discover-drawer .discover-chip { font-size:.75rem;padding:.5rem .625rem; }
+}
+@media(prefers-reduced-motion:reduce){.discover-route *{scroll-behavior:auto!important;animation:none!important;}}
+.discover-list .state-empty { min-height:22rem;display:flex;flex-direction:row;flex-wrap:wrap;align-content:center;align-items:center;justify-content:flex-start;padding:2.5rem;background:var(--glass-fill);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--glass-highlight),var(--shadow-glass);border-radius:1.5rem;text-align:left;gap:.75rem; }
+.discover-list .state-empty > .state-icon { flex-basis:100%;height:3rem;width:3rem;max-width:3rem;background:var(--c-primary-soft);border-radius:50%;padding:.5rem; }
+.discover-list .state-empty > .state-title,.discover-list .state-empty > .state-body { flex-basis:100%; }
+.discover-list .state-empty .state-title { font-family:var(--font-display);font-size:2rem;font-weight:400;margin:0; }
+.discover-list .state-empty .state-body { color:var(--c-text-muted);margin-bottom:.5rem; }
+.discover-results.is-empty .discover-map-column { height:22rem; }
+.discover-sort-note { font-size:.8125rem;color:var(--c-text-muted); }
+.discover-card-line { line-height:1.3; }.discover-ambience { line-height:1.25; }
+.discover-stacked .field { margin-bottom:0;gap:.25rem; }
+.discover-stacked .field-label { font-size:.8125rem; }
+.discover-stacked .field-input { font-size:.875rem; }
+.discover-drawer h3 { line-height:1.2;margin-bottom:.75rem; }
+@media(min-width:64rem){.discover-secondary > .btn,.discover-secondary .discover-chip,.discover-search-field { min-height:2rem; }.discover-search-field > button { min-height:2rem;min-width:2rem; }}
+@media(max-width:63.99rem){
+ .discover-route .shell-header .shell-inner { min-height:3.125rem;padding-block:0; }
+ .discover-top h1 { font-size:2.375rem;margin-bottom:.375rem; }
+ .discover-bar { margin-bottom:.5rem; }
+ .discover-filters-modal .dialog::before { content:"SeatPlan";font:1.5rem var(--font-display);flex:none;height:2.375rem;margin-bottom:.75rem; }
+ .discover-filter-close { top:4rem; }
+ .discover-stacked { gap:.5rem 1rem; }
+ .is-map-view .discover-top { display:block;position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%); }
+}
+@media(max-width:720px){.discover-route.is-map-view .discover-map-column{height:calc(100dvh - 9.25rem)}}
+/* Keep the collapsed cuisine and price controls above the fixed mobile footer. */
+@media(max-width:40rem){
+ .discover-drawer {gap:.5rem}
+ .discover-drawer section,.discover-drawer>.discover-chips {padding-bottom:.5rem}
+ .discover-drawer h3 {margin-bottom:.5rem}
+ .discover-drawer .discover-filter-note {font-size:.75rem;line-height:1.4;margin:0}
+ .discover-filter-selects summary {list-style:none}
+ .discover-filter-selects summary::-webkit-details-marker {display:none}
+ .discover-filter-selects summary strong {position:relative;padding:.5rem .75rem;min-height:2.75rem;box-sizing:border-box}
+ .discover-filter-selects summary strong::after {content:'⌄';position:absolute;right:.75rem}
+ .discover-card h3 a {position:relative}
+ .discover-card h3 a::after {content:'';position:absolute;inset:-.75rem 0;min-height:2.75rem}
+}

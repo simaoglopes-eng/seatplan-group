@@ -31,5 +31,7 @@ frontend/dist/
 .DS_Store
 playwright-report/
 test-results/
+.playwright-cli/
+output/playwright/
 .vercel
 .env*

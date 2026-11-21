@@ -1,7 +1,9 @@
 """Deleting a guest account (GDPR): seats freed, rows erased or unlinked, emails wiped."""
 
+from datetime import date
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from guest_helpers import (
     GUEST_PASSWORD,
@@ -14,6 +16,7 @@ from guest_helpers import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from test_events_setup import give_account_details
 
 from app.models import Base, EmailCode, Guest, GuestAccount, Organiser, SeatAssignment
 
@@ -38,6 +41,7 @@ def _setup(client: TestClient, organiser: Organiser, monkeypatch: Any) -> dict[s
     for setup, seat in ((joined, joined.seats[0][0]), (invited, invited.seats[0][0])):
         base = f"/api/guest/events/{setup.eid}"
         client.post(f"{base}/hold", headers=headers, json={"seat_id": seat})
+        give_account_details(client, base, headers)  # a chosen seat carries a name and an age
         assert (
             client.post(f"{base}/confirm", headers=headers, json={"seat_id": seat}).status_code
             == 200
@@ -56,6 +60,7 @@ def _everything(session: Session) -> list[tuple[str, str]]:
     return rows
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_a_wrong_password_changes_nothing(
     client: TestClient, organiser: Organiser, session: Session, monkeypatch: Any
 ) -> None:
@@ -72,11 +77,18 @@ def test_a_wrong_password_changes_nothing(
     assert [row for row in _everything(session) if row[0] != "rate_limits"] == before
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_deleting_the_account(
     client: TestClient, organiser: Organiser, session: Session, monkeypatch: Any
 ) -> None:
     world = _setup(client, organiser, monkeypatch)
     invited_id = world["invited"].guests["Ana Silva"]
+    invited = session.get(Guest, invited_id)
+    invited.first_name = "Private"
+    invited.last_name = "Profile"
+    invited.birth_date = date(1995, 5, 1)
+    invited.share_age = True
+    session.commit()
     cancellations_before = len(outbox(session, "seat_cancelled"))
     deleted = client.post(
         "/api/guest/me/delete", headers=world["headers"], json={"password": GUEST_PASSWORD}
@@ -92,6 +104,12 @@ def test_deleting_the_account(
         EMAIL,
         None,
     )
+    assert (kept.first_name, kept.last_name, kept.birth_date, kept.share_age) == (
+        None,
+        None,
+        None,
+        False,
+    )
     assert kept.token_revoked_at is None  # the organiser's record stays
     assert len(outbox(session, "seat_cancelled")) == cancellations_before  # no email
     assert session.scalars(select(EmailCode)).all() == []
@@ -104,6 +122,7 @@ def test_deleting_the_account(
     assert all(row.status != "queued" or not row.to_email for row in outbox(session))
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_the_address_can_sign_up_again(
     client: TestClient, organiser: Organiser, session: Session, monkeypatch: Any
 ) -> None:

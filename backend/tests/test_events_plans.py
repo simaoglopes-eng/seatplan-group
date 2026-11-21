@@ -313,13 +313,10 @@ def test_exact_check_gives_no_gap_when_the_heuristic_seats_fewer_guests(
     assert "1 guest" in check["note"]
 
 
-def test_held_seat_shows_for_the_organiser(client: TestClient, organiser: Organiser) -> None:
+def test_confirmed_seat_shows_for_the_organiser(client: TestClient, organiser: Organiser) -> None:
     setup = _setup(client, organiser)
     seat = setup.seats[2][1]
-    assert (
-        client.post(f"/api/a/{setup.tokens['Tom Reis']}/hold", json={"seat_id": seat}).status_code
-        == 200
-    )
+    choose(client, setup, "Tom Reis", seat)
     detail = client.get(f"/api/events/{setup.eid}", headers=setup.headers).json()
-    assert next(s["state"] for s in detail["map"]["seats"] if s["id"] == seat) == "held"
-    assert seat_state(setup.page(client, "Uma Reis"), seat) == "held"
+    assert next(s["state"] for s in detail["map"]["seats"] if s["id"] == seat) == "taken"
+    assert seat_state(setup.page(client, "Uma Reis"), seat) == "taken"

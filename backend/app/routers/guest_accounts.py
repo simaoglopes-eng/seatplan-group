@@ -17,10 +17,12 @@ from app.events_service.schemas import (
     EmptyIn,
     ForgotIn,
     GuestLoginIn,
+    RegisterIn,
     ResetIn,
     VerifyIn,
 )
 from app.models import GuestAccount
+from app.routers.account import work_session
 from app.security import (
     CurrentGuestAccount,
     client_ip,
@@ -38,13 +40,37 @@ def _session_out(account: GuestAccount) -> dict[str, Any]:
     return {"token": create_guest_session(account), "account": accounts.account_out(account)}
 
 
+@router.post("/register", status_code=202)
+def register_account(body: RegisterIn, request: Request, session: db.SessionDep) -> dict[str, Any]:
+    """Create a pending account without requiring an event invitation."""
+    email = accounts.normalise_email(body.email)
+    if not body.name.strip():
+        raise ApiError(422, "validation", "name: Enter your name.")
+    accounts.check_new_password(body.password, email)
+    accounts.require_signup_mail(email)
+    accounts.count_code_send(session, request, email, "register")
+    accounts.count_app_send(session)
+    form = accounts.SignUp(body.name.strip(), email, body.password, body.needs_accessible)
+    key, signup_id = accounts.start_standalone_sign_up(session, form)
+    accounts.send_at_once(session, key)
+    return accounts.code_sent(email, None, signup_id)
+
+
 @router.post("/verify", status_code=201)
 def verify(body: VerifyIn, request: Request, session: db.SessionDep) -> dict[str, Any]:
-    """The emailed code: the account is made, signed in, and joins the event if it can."""
+    """The emailed code: the account is made, signed in, and joins the event if it can.
+
+    A sign-up from the account page (no event) also gets `work`, the work
+    session, when this verify made the work account. When the address had a
+    work account already, `work` is absent: sign in with /account/login.
+    """
     accounts.count_code_check(session, request)
     email = accounts.normalise_email(body.email)
-    account, join = accounts.finish_sign_up(session, email, body.code, body.signup_id)
-    return {**_session_out(account), "join": join}
+    account, join, work = accounts.finish_sign_up(session, email, body.code, body.signup_id)
+    answer = {**_session_out(account), "join": join}
+    if work is not None:
+        answer["work"] = work_session(work)
+    return answer
 
 
 @router.post("/login")

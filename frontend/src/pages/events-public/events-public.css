@@ -1,0 +1,180 @@
+/* Public event pages (/events, /venues, /venues/:slug) and Event staff. Tokens only;
+   the card frame, chips and headings come from discover.css so events and restaurants match. */
+/* Card eyebrows ("Quinta or estate", "Demo venue · Quinta · Sintra"): uppercase, tracked, quiet, like the landing. */
+.ep-type { margin: 0 0 var(--space-2); color: var(--c-text-muted); font-size: 0.6875rem; font-weight: var(--fw-medium); line-height: 1.4; letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }
+
+/* ---------- The photo band (PageBand.tsx), direction E ---------- */
+/* The band sits first in .shell-main (the frame column) and breaks out to the window edges
+   with negative margins; .pg-route clips the sideways overflow (clip, not hidden, so the
+   sticky header keeps working), so the page never scrolls sideways. Layers: photo, then the
+   legibility gradient, then the glass panel with the words. Text on glass is white. */
+.pg-route { overflow-x: clip; }
+.pg-route .shell-main { padding-top: 0; }
+/* The header is the one of /login and /credits: discover.css sizes the restaurant header
+   (4rem tall on a desktop, which cut the 4.25rem bar; 3.125rem and not sticky on a phone),
+   so the bar jumped 6px between pages. Back to the site frame here. */
+.discover-route.pg-route .shell-header { height: auto; position: sticky; min-height: 0; }
+.discover-route.pg-route .shell-header .shell-inner { min-height: 4.25rem; }
+@media (max-width: 680px) {
+  .discover-route.pg-route .shell-header .shell-inner { min-height: 3.9rem; }
+}
+/* The shared .photo-band, .glass-panel and the veil (--photo-veil) come from components.css;
+   this file adds the size, the full bleed and the layout of the words. */
+.pg-band {
+  display: flex;
+  align-items: flex-end;
+  min-height: clamp(21rem, 30vw + 8rem, 30rem);
+  margin: 0 calc(50% - 50vw) var(--space-6);
+  padding-block: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 3vw, 2.5rem);
+  background: #18241f; /* the veil's dark, behind the photo while it loads */
+}
+/* The words line up with the header: the frame column, its gutter inside. */
+.pg-band-inner { width: 100%; max-width: var(--frame-max); margin-inline: auto; padding-inline: var(--gutter); }
+.pg-band-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-4) var(--space-7);
+  max-width: 54rem;
+  padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1.25rem, 3vw, 2.25rem);
+}
+.pg-eyebrow { margin: 0 0 var(--space-2); font-size: 0.75rem; font-weight: var(--fw-medium); line-height: 1.3; letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }
+.pg-band h1 { margin: 0 0 var(--space-3); max-width: 22ch; font-family: var(--font-display); font-size: clamp(2.125rem, 1.4rem + 2.6vw, 3.5rem); font-weight: var(--fw-display); line-height: 1.04; letter-spacing: var(--ls-display); text-wrap: balance; }
+.pg-band-lede { margin: 0; max-width: 40rem; font-size: 1.0625rem; line-height: 1.55; }
+.pg-band-count { margin: 0; color: var(--glass-text-muted); font-size: var(--fs-sm); text-align: right; white-space: nowrap; }
+.pg-band-count strong { display: block; font-family: var(--font-display); font-size: clamp(2rem, 1.5rem + 1.6vw, 3rem); font-weight: var(--fw-display); line-height: 1; letter-spacing: var(--ls-display); font-variant-numeric: tabular-nums; }
+.pg-band-count span { letter-spacing: 0.02em; }
+@media (prefers-reduced-motion: no-preference) {
+  .pg-band-photo img { animation: pg-settle 9s linear both; }
+  .pg-band-panel { animation: pg-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+}
+@keyframes pg-settle { from { transform: scale(1.06); } to { transform: none; } }
+@keyframes pg-rise { from { transform: translateY(14px); opacity: 0.2; } to { transform: none; opacity: 1; } }
+@media (max-width: 40rem) {
+  .pg-band { min-height: 0; padding-block: 7rem var(--space-4); }
+  .pg-band::after { background: linear-gradient(180deg, rgb(var(--photo-veil-ink) / 0.2) 0%, rgb(var(--photo-veil-ink) / 0.45) 45%, rgb(var(--photo-veil-ink) / 0.72) 100%); }
+  .pg-band-panel { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4); }
+  .pg-band h1 { font-size: 2rem; }
+  .pg-band-lede { font-size: 0.9375rem; }
+  .pg-band-count { text-align: left; white-space: normal; }
+  .pg-band-count strong { display: inline; font-size: 1.625rem; margin-right: var(--space-1); }
+}
+
+/* Section headings on these pages: Gloock at 400, as in direction E. */
+.pg-route .discover-results-head h2,
+.ep-section-head h2 { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.005em; }
+.pg-route .discover-results-head h2 { font-size: 1.75rem; }
+
+/* Filters (direction E): pills on linen; the chosen one is bottle green. Scoped to these
+   pages, so the restaurant discovery keeps its own chips. */
+.pg-route .discover-chip { border-radius: 999px; border-color: var(--c-border-strong); background: var(--c-surface); padding-inline: 1.125rem; }
+.pg-route .discover-chip:hover { border-color: var(--c-primary); }
+.pg-route .discover-chip.is-on { background: var(--c-primary); border-color: var(--c-primary); color: var(--c-on-primary); }
+.pg-route .btn { border-radius: 999px; }
+.pg-route .ep-back { border-radius: 999px; }
+/* Field labels next to the chips ("Guests", "Search by name or town") are eyebrows too. */
+.pg-route .ep-guests label,
+.pg-route .dir-search label { color: var(--c-text-muted); font-size: 0.6875rem; font-weight: var(--fw-medium); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; }
+.pg-route .ep-back { display: inline-flex; align-items: center; min-height: var(--touch-target); margin-bottom: var(--space-3); }
+/* "Show more" sits centred under the list. */
+.pg-route .discover-load-more { display: flex; margin: var(--space-6) auto 0; }
+.ep-muted { color: var(--c-text-muted); margin: 0 0 var(--space-4); }
+.ep-note { margin: var(--space-4) 0 0; color: var(--c-text-muted); font-size: var(--fs-sm); }
+.ep-back { margin-bottom: var(--space-2); }
+.ep-results-head { margin-top: var(--space-5); }
+.ep-list { min-width: 0; }
+
+/* /venues: the guest count next to the kind chips. */
+.ep-guests { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); margin-top: 0; }
+.ep-guests label { font-weight: var(--fw-bold); }
+.ep-guests input { width: 7rem; min-height: 2.75rem; padding: 0 var(--space-3); font: inherit; color: var(--c-text); background: var(--c-surface); border: var(--border-width) solid var(--c-border-strong); border-radius: 10px; }
+.ep-guests input:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+
+/* One event (direction E): a linen card, 14px corners, a hairline; the venue photo runs flush to its left edge. */
+.ep-event-card { padding: 0; gap: 0; grid-template-columns: 13rem minmax(0, 1fr); overflow: hidden; border-color: var(--c-line, var(--c-border)); border-radius: var(--radius, 14px); }
+.ep-event-card .discover-card-photo { border-radius: 0; min-height: 10rem; }
+.ep-event-card .discover-card-body { padding: var(--space-4) var(--space-5); }
+.ep-event-card h3 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 400; line-height: 1.15; letter-spacing: -0.005em; }
+.ep-event-card .discover-card-line { font-size: var(--fs-sm); }
+/* On a phone a venue's name is a finger's target: 44px tall, the text itself unchanged
+   (the venue line of an event card, and the title of a hall or quinta card). */
+@media (max-width: 40rem) {
+  .ep-event-card .discover-card-line a,
+  .ep-venue-card h3 a { display: inline-flex; align-items: center; min-height: var(--touch-target); }
+}
+.ep-event-card .discover-card-photo img,
+.ep-venue-photo img { transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ep-event-card:hover .discover-card-photo img,
+  .ep-venue-card:hover .ep-venue-photo img { transform: scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ep-event-card .discover-card-photo img, .ep-venue-photo img { transition: none; }
+}
+.ep-event-card .discover-card-main { flex: 1 1 auto; min-width: 0; }
+.ep-card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-3); margin-top: var(--space-2); }
+.ep-places { margin: 0; font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--c-text); }
+.ep-places.is-full { color: var(--c-text-muted); }
+
+/* Halls and quintas. */
+.ep-teaser { margin-top: var(--space-7); padding-top: var(--space-5); border-top: var(--border-width) solid var(--c-border); }
+.ep-section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-4); }
+.ep-section-head h2 { font-size: 2rem; margin: 0 0 var(--space-2); }
+.ep-section-head a { display: inline-flex; align-items: center; min-height: var(--touch-target); }
+.ep-venue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: var(--space-4); }
+.ep-venue-card { display: flex; flex-direction: column; min-width: 0; background: var(--c-surface); border: var(--border-width) solid var(--c-line, var(--c-border)); border-radius: var(--radius, 14px); overflow: hidden; }
+.ep-venue-photo { position: relative; display: block; aspect-ratio: 16 / 10; background: var(--c-surface-sunk); }
+.ep-venue-photo img, .ep-venue-photo .discover-card-nophoto { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ep-venue-photo img { display: block; object-fit: cover; }
+.ep-venue-body { padding: var(--space-3) var(--space-4) var(--space-4); min-width: 0; overflow-wrap: anywhere; }
+.ep-venue-body h3 { font-family: var(--font-display); font-weight: 400; font-size: 1.5rem; line-height: 1.15; letter-spacing: -0.005em; margin: 0 0 var(--space-1); }
+.ep-venue-body h3 a { color: var(--c-text); text-decoration: none; }
+.ep-venue-body h3 a:hover { text-decoration: underline; }
+.ep-tags { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ep-tags li { background: var(--c-surface-sunk); color: var(--c-text); border-radius: 999px; padding: 0.25rem 0.75rem; font-size: 0.8125rem; }
+.ep-tags a { color: inherit; display: inline-flex; align-items: center; min-height: 2rem; }
+
+/* A venue's page: the upcoming events sit where a restaurant has its booking. */
+.ep-venue-page .rp-hero-layout { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+/* About / Find us use the same two columns and gap as photos / upcoming events, so "Find us" starts on the card's left edge. */
+.ep-venue-page .rp-columns { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1.5rem; }
+/* Direction E on a venue's page: serif names, round buttons, 14px panels. */
+.ep-venue-page h1, .ep-venue-page h2 { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.005em; }
+.ep-venue-page .btn, .ep-venue-page .discover-map-zoom button { border-radius: 999px; }
+.ep-venue-page .rp-map, .ep-venue-page .rp-book { border-radius: var(--radius, 14px); }
+/* The venue page uses the shared frame width, so its edges line up with the header. */
+.rp.ep-venue-page { max-width: none; }
+.rp.ep-venue-page .rp-back { min-height: var(--touch-target); }
+.rp.ep-venue-page .ep-tags a { min-height: var(--touch-target); padding-inline: var(--space-2); }
+.rp.ep-venue-page .ep-tags li:has(a) { padding: 0; }
+.ep-upcoming .discover-card { grid-template-columns: minmax(0, 1fr); }
+.ep-upcoming .discover-card-photo { display: none; }
+.ep-small-title { font-size: var(--fs-md); margin: var(--space-4) 0 0; }
+@media (max-width: 60rem) {
+  .ep-venue-page .rp-hero-layout,
+  .ep-venue-page .rp-columns { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Phones: the card photo sits on top, like a restaurant result on a phone. */
+@media (max-width: 40rem) {
+  .ep-event-card { grid-template-columns: minmax(0, 1fr); }
+  .ep-event-card .discover-card-photo { min-height: 7rem; aspect-ratio: 16 / 7; }
+  .ep-card-foot .btn { flex: 1 1 auto; justify-content: center; }
+  .ep-section-head h2 { font-size: 1.625rem; }
+}
+
+/* Event staff (/events/staff). */
+.ep-staff-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.ep-staff-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); padding: var(--space-3) var(--space-4); background: var(--c-surface); border: var(--border-width) solid var(--c-line, var(--c-border)); border-radius: var(--radius, 14px); min-width: 0; }
+.ep-staff-row > div { min-width: 0; flex: 1 1 16rem; overflow-wrap: anywhere; }
+.ep-staff-row h3 { margin: 0 0 var(--space-1); font-size: 1.125rem; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.ep-staff-row p { margin: 0; color: var(--c-text-muted); font-size: var(--fs-sm); }
+.ep-staff-section { margin-top: var(--space-6); }
+.ep-staff-section > h2 { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.005em; font-size: 1.75rem; margin: 0 0 var(--space-3); }
+.ep-signin { max-width: 28rem; }
+.ep-staff-row .ep-type { color: var(--c-primary); margin-bottom: var(--space-1); }
+.ep-signin { display: flex; flex-direction: column; gap: var(--space-3); }
+.ep-signin-title { margin: 0; font-size: var(--fs-xl); }
+.ep-signin .ep-muted { margin: 0; }
+.ep-staff-account { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); margin: 0 0 var(--space-4); }
+.ep-staff-account a { display: inline-flex; align-items: center; min-height: var(--touch-target); }

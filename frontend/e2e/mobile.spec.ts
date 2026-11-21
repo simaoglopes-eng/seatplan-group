@@ -2,7 +2,7 @@
 // "mobile" project in playwright.config.ts. The seat is chosen by tapping the
 // map itself, as a guest on a phone would.
 
-import { expectConfirmed, firstRecommendation, goToSeatStep, seatOnMap } from "./attendee-steps";
+import { expectConfirmed, fillWhoSitsWhere, firstRecommendation, goToSeatStep, seatOnMap } from "./attendee-steps";
 import { demoLinks, expect, test } from "./fixtures";
 
 test("on a phone, an attendee taps a seat on the map and confirms it", async ({ page, request }) => {
@@ -14,9 +14,11 @@ test("on a phone, an attendee taps a seat on the map and confirms it", async ({ 
   await card.tap();
   await seatOnMap(page, seatName).tap();
 
-  const holdBar = page.getByRole("region", { name: "Seat on hold" });
+  const holdBar = page.getByRole("region", { name: "Selected seat" });
   await expect(holdBar).toContainText(seatName);
-  await holdBar.getByRole("button", { name: "Confirm this seat" }).tap();
+  await holdBar.getByRole("button", { name: "Continue" }).tap();
+  // Every seat carries a first name, a last name and an age, the booker's too (design D3).
+  await fillWhoSitsWhere(page, [{ age: "34" }]);
   await expectConfirmed(page, seatName);
 
   // Nothing is wider than the phone: no sideways scrolling.
@@ -33,7 +35,8 @@ test("on a phone, a visitor with the shared link creates an account", async ({ p
   await noSideways();
 
   await page.getByRole("link", { name: "Create an account to choose a seat" }).first().tap();
-  await page.getByLabel("Your name").fill("Pia Phone");
+  await page.getByLabel("First name").fill("Pia");
+  await page.getByLabel("Last name").fill("Phone");
   await page.getByRole("textbox", { name: "Email" }).fill("zq.phone@example.com");
   await page.getByLabel("Password", { exact: true }).fill("a long phone password");
   await page.getByRole("checkbox", { name: /I agree that SeatPlan stores my details/ }).tap();

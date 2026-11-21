@@ -2,16 +2,23 @@
 
 Any module can raise ApiError (or a subclass) without importing FastAPI's
 response classes; main.py turns it into
-{"error": {"code": ..., "message": ...}} with the right HTTP status.
+{"error": {"code": ..., "message": ...}} with the right HTTP status, plus
+"details" when the error carries facts the page needs (for example how many
+guests a change would move). Without details the body has no "details" key.
 """
+
+from typing import Any
 
 
 class ApiError(Exception):
-    def __init__(self, status: int, code: str, message: str) -> None:
+    def __init__(
+        self, status: int, code: str, message: str, details: dict[str, Any] | None = None
+    ) -> None:
         super().__init__(message)
         self.status = status
         self.code = code
         self.message = message
+        self.details = details
 
 
 class SeatTaken(ApiError):

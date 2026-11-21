@@ -5,6 +5,7 @@ workflow .github/workflows/email-cron.yml. It is not for browsers: the caller
 proves itself with the X-Cron-Secret header.
 """
 
+import logging
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -19,6 +20,7 @@ from app.core.privacy import mask_email
 from app.mail.outbox import process_due, redact_links, scrub_expired
 from app.mail.providers import provider_from_settings
 from app.models import EmailCode, EmailOutbox, utc_now
+from app.restaurant_service import booking_payments
 from app.security import CurrentOrganiser, client_ip, rate_limit, tokens_match
 
 router = APIRouter(tags=["emails"])
@@ -55,6 +57,20 @@ def _check_cron_secret(given: str | None) -> None:
         raise ApiError(401, "unauthorised", "Wrong or missing cron secret.")
 
 
+def _sweep_deposits(session: db.SessionDep, now: datetime) -> None:
+    """Give tables back where a deposit was never paid, and retry refunds that failed.
+
+    It rides on this same 15-minute cron call, so deposits need no second
+    schedule. It runs after the emails are sent and can never make the call fail:
+    event emails must keep flowing whatever happens here.
+    """
+    try:
+        booking_payments.sweep(session, now)
+    except Exception:
+        session.rollback()
+        logging.getLogger("seatplan.payments").exception("deposit sweep failed")
+
+
 @router.post("/internal/email/process")
 def process_outbox(
     request: Request,
@@ -73,6 +89,7 @@ def process_outbox(
     # Codes nobody typed in time (guest accounts) are of no more use.
     session.execute(delete(EmailCode).where(EmailCode.expires_at <= now))
     session.commit()
+    _sweep_deposits(session, now)
     return ProcessResult(
         sent=report.sent, skipped=report.skipped, retrying=report.retrying, failed=report.failed
     )
@@ -93,6 +110,10 @@ def email_log(
     error pass through redact_links(): a queued row still holds the raw link
     in its body, and a provider error may quote it (S9).
     """
+    # Rows lack an owner identifier, so this legacy global log must not expose
+    # other organisers' activity in a multi-tenant deployment.
+    if not get_settings().demo_mode:
+        raise ApiError(404, "not_found", "Email log is unavailable.")
     query = select(EmailOutbox)
     if status is not None:
         query = query.where(EmailOutbox.status == status)

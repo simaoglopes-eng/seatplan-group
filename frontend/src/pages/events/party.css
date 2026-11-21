@@ -1,0 +1,167 @@
+/* Party booking: the seats chosen on the map, "Who is sitting where?", "Your party"
+   (guest pages, .ev-attendee) and the party rows of the organiser's guest list.
+
+   Direction E: linen panels with one hairline, 14px corners, Gloock titles, round
+   buttons, brass for the seats a guest has chosen, bottle green for the main action.
+   No glass: nothing here sits on a photograph. Every colour is a token, and every
+   text and background pair below is one that scripts/contrast.mjs already checks. */
+
+/* ---------- Seats chosen on the map ---------- */
+.party-chosen { display: grid; gap: var(--space-2); }
+.party-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.party-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  max-width: 100%;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--c-text);
+  background: var(--c-accent-soft);
+  border: var(--border-width) solid var(--c-accent);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.party-chip:hover { background: var(--c-surface); }
+.party-chip-x {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.ev-holdbar-seats {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ev-holdbar-text { min-width: 0; }
+
+/* ---------- Who is sitting where? ---------- */
+.party-step { display: flex; flex-direction: column; gap: var(--space-5); }
+.party-note {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--c-text);
+  background: var(--c-primary-soft);
+  border-radius: var(--radius-input);
+  line-height: var(--lh-body);
+}
+.party-cards { display: grid; gap: var(--space-4); }
+.party-card {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-line);
+  border-left: calc(var(--border-width) * 4) solid var(--c-accent);
+  border-radius: var(--radius);
+}
+.party-card-title {
+  margin: 0;
+  padding: 0;
+  color: var(--c-text);
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-display);
+  overflow-wrap: anywhere;
+}
+/* The legend sits on the top edge of a fieldset by default: put it inside the panel. */
+fieldset.party-card > legend.party-card-title { float: left; width: 100%; margin-bottom: var(--space-2); }
+fieldset.party-card > legend.party-card-title + * { clear: both; }
+.party-card-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--space-3) var(--space-4);
+  min-width: 0;
+}
+.party-card-fields .field { min-width: 0; }
+.party-card-fields .field-input { width: 100%; }
+.party-card-fixed { align-self: end; margin: 0; color: var(--c-text-muted); font-size: var(--fs-sm); }
+.party-card-remove { justify-self: start; }
+/* A field brought into view by focus stops above the sticky Confirm bar, never under it (WCAG 2.4.11). */
+.party-card :is(input, select, button) { scroll-margin-bottom: 12rem; }
+
+/* The bar with the summary, Back to the map and Confirm: under the thumb on a phone. */
+.party-footer {
+  position: sticky;
+  bottom: var(--space-3);
+  z-index: var(--z-header);
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-5);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-line);
+  border-left: calc(var(--border-width) * 4) solid var(--c-primary);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+.party-summary { margin: 0; color: var(--c-text); font-weight: var(--fw-medium); }
+.party-footer-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: flex-end; }
+/* Not ready yet: still focusable and announced (aria-disabled), drawn as a quiet outline.
+   Stronger than the theme's ":root[data-surface] .btn-primary" (and its :hover), whatever the CSS order. */
+.party-footer .party-confirm.party-confirm[aria-disabled="true"]:not([aria-busy="true"]),
+.party-footer .party-confirm.party-confirm[aria-disabled="true"]:not([aria-busy="true"]):hover {
+  color: var(--c-text-muted);
+  background: var(--c-surface-sunk);
+  border-color: var(--c-border-strong);
+  cursor: not-allowed;
+}
+
+/* ---------- Your party (Done step) ---------- */
+.party-panel {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--c-line);
+}
+.party-panel > .btn { justify-self: start; }
+.party-members { display: grid; gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.party-member {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--c-surface);
+  border: var(--border-width) solid var(--c-line);
+  border-radius: var(--radius-input);
+}
+.party-member-main { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); min-width: 0; }
+.party-member-name { overflow-wrap: anywhere; }
+.party-member-seat { color: var(--c-text-muted); }
+.party-member-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.party-mine { border-left-color: var(--c-primary); }
+.party-mine > .btn { justify-self: start; }
+.party-dialog-fields { display: grid; gap: var(--space-3); }
+
+@media (max-width: 600px) {
+  .party-footer { bottom: var(--space-2); }
+  .party-footer-actions > .btn { flex: 1 1 100%; }
+  .party-panel > .btn, .party-mine > .btn { justify-self: stretch; }
+  .party-member-actions > .btn { flex: 1 1 auto; }
+}
+
+/* ---------- Organiser: party rows in the guest list ---------- */
+.ev-guest.ev-guest--member {
+  margin-left: var(--space-5);
+  border-left: calc(var(--border-width) * 4) solid var(--c-accent);
+}
+.ev-guest-age { color: var(--c-text-muted); font-size: var(--fs-sm); }

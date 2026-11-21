@@ -4,7 +4,10 @@ import type { StaffBooking, StaffFloor, StaffTable } from "../../api/restaurant"
 import { Badge, Button } from "../../design/components";
 import { BookingActions } from "./BookingActions";
 import { people, tablesText } from "./format";
-import { FLOOR_LOOK } from "./staffStatus";
+import { depositStatus } from "./money";
+import { BOOKING_LOOK, FLOOR_LOOK } from "./staffStatus";
+import { prefWords } from "./prefs";
+import { CustomerHistory } from "./CustomerHistory";
 
 interface SelectionPanelProps {
   venueId: string;
@@ -28,10 +31,11 @@ export function SelectionPanel(props: SelectionPanelProps) {
   const shown = bookingHere ?? booking;
   return (
     <div className="st-selection">
-      {table && <TableHeader table={table} />}
-      {table && table.status === "free" && <FreeTableActions {...props} table={table} />}
+      {table && !shown && <TableHeader table={table} />}
       {shown && <BookingDetails booking={shown} />}
-      {shown && <BookingActions venueId={props.venueId} booking={shown} onChanged={props.onChanged} onProblem={props.onProblem} onMove={props.onMove} />}
+      {shown && <CustomerHistory key={shown.id} venueId={props.venueId} bookingId={shown.id} />}
+      {shown && <BookingActions key={shown.id} venueId={props.venueId} booking={shown} onChanged={props.onChanged} onProblem={props.onProblem} onMove={props.onMove} />}
+      {table && table.status === "free" && <FreeTableActions {...props} table={table} />}
     </div>
   );
 }
@@ -48,14 +52,12 @@ function TableHeader({ table }: { table: StaffTable }) {
 function FreeTableActions({ table, booking, onMoveHere, onWalkin }: SelectionPanelProps & { table: StaffTable }) {
   return (
     <div className="st-actions">
-      {booking && booking.status === "confirmed" && (
-        <Button onClick={() => onMoveHere(booking, table)}>
-          Move {booking.name} here
+      {booking?.status === "confirmed" && !booking.table_ids.includes(table.id) && (
+        <Button variant="secondary" onClick={() => onMoveHere(booking, table)}>
+          Move to table {table.label}
         </Button>
       )}
-      <Button variant="secondary" onClick={onWalkin}>
-        Seat a walk-in
-      </Button>
+      {!booking && <Button variant="secondary" onClick={onWalkin}>Find a table for a walk-in</Button>}
     </div>
   );
 }
@@ -64,17 +66,30 @@ function BookingDetails({ booking }: { booking: StaffBooking }) {
   return (
     <div className="st-booking">
       <p className="st-booking-name">
-        <strong>{booking.name}</strong>, {people(booking.party_size)}
+        <strong>{booking.name}</strong>
       </p>
       <p className="rb-muted tabular">
-        {booking.time} to {booking.end_time}, {tablesText(booking.table_labels)}
+        {booking.time} to {booking.end_time} · {people(booking.party_size)} · {tablesText(booking.table_labels)}
         {booking.source === "walk_in" && ", walk-in"}
       </p>
-      <div className="rb-badges">
+      <div className="rb-badges"><Badge tone={BOOKING_LOOK[booking.status].tone}>{BOOKING_LOOK[booking.status].label}</Badge>
         {booking.needs_accessible && <Badge tone="info">Accessible table</Badge>}
         {booking.high_chairs > 0 && <Badge>High chairs: {booking.high_chairs}</Badge>}
       </div>
+      {booking.payment && (
+        <p className="st-note" data-testid="staff-deposit">
+          <strong>{depositStatus(booking.payment)}</strong>
+          {booking.payment.status === "pending" && ". The table is held until it is paid."}
+          {booking.payment.status === "paid" && ", taken off the bill."}
+        </p>
+      )}
+      {booking.seat && <p className="st-note">Chair requested: {booking.seat.label}</p>}
+      {prefWords(booking.prefs) && <p className="st-note">Guest wished for: {prefWords(booking.prefs)}</p>}
       {booking.notes && <p className="st-note">Note: {booking.notes}</p>}
+      {booking.occasion && <p className="st-note">Occasion: {booking.occasion}</p>}
+      {booking.dietary_requirements && <p className="st-note">Dietary preferences: {booking.dietary_requirements}</p>}
+      {booking.allergies && <p className="rb-notice rb-notice-error"><strong>Food allergies:</strong> {booking.allergies}</p>}
+      {booking.arrival_time && <p className="st-note"><strong>Expected arrival: {booking.arrival_time}</strong></p>}
     </div>
   );
 }

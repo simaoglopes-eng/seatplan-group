@@ -10,12 +10,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import db
-from app.core import audit
+from app.core import audit, limits, live, members, work_limits
 from app.core.errors import ApiError
 from app.core.layout import LayoutItem, save_layout
 from app.core.text import PlainText
-from app.models import Organiser, Seat, Venue, VenueTable, Zone
-from app.security import CurrentOrganiser, CurrentUser
+from app.models import Event, Organiser, Seat, Venue, VenueTable, Zone
+from app.security import CurrentOrganiser, CurrentUser, rate_limit
 
 router = APIRouter(prefix="/venues", tags=["venues"])
 
@@ -116,6 +116,10 @@ def _row_dict(row: Zone | VenueTable | Seat) -> dict[str, Any]:
     """Every column of a row, plus key = str(id) so the editor can send it back."""
     data = {column.name: getattr(row, column.name) for column in row.__table__.columns}
     data.pop("venue_id")
+    # The legacy editor must receive exactly the fields it can save back.
+    # Restaurant rooms have their own nested API and validation models.
+    data.pop("room_id", None)
+    data.pop("is_active", None)
     data["key"] = str(row.id)
     return data
 
@@ -128,20 +132,57 @@ def _venue_detail(session: Session, venue: Venue) -> dict[str, Any]:
     return detail
 
 
-def load_venue(session: Session, public_id: str, user: Organiser) -> Venue:
+def may_run_setup(session: Session, venue: Venue, user: Organiser) -> bool:
+    """Who may open and fine-tune an event's setup copy: the venue's owner, a
+    member of the parent venue's team, or the organiser of the event on it.
+
+    The demo staff account is not one of them: setups belong to events, and
+    only organiser accounts run events.
+    """
+    if user.role == "staff":
+        return False
+    if venue.organiser_id == user.id or members.is_member(session, venue.id, user.email):
+        return True
+    found = session.scalar(
+        select(Event.id).where(Event.venue_id == venue.id, Event.organiser_id == user.id)
+    )
+    return found is not None
+
+
+def load_venue(
+    session: Session, public_id: str, user: Organiser, *, owner_only: bool = False
+) -> Venue:
     """The venue if this user may see it. Staff may see every venue; an
-    organiser only their own. Missing and forbidden look the same (404)."""
+    organiser their own, and a member (core/members.py) the venues whose owner
+    added their address, unless `owner_only` (the floor plan editor).
+    An event's own setup copy (venues.parent_venue_id) follows may_run_setup
+    instead, for reading and for the editor alike.
+    Missing and forbidden look the same (404)."""
     venue = session.scalars(select(Venue).where(Venue.public_id == public_id)).first()
-    if venue is None or (user.role != "staff" and venue.organiser_id != user.id):
+    if venue is not None and venue.parent_venue_id is not None:
+        # An event's own setup copy: the people who run that event fine-tune it.
+        if not may_run_setup(session, venue, user):
+            raise ApiError(404, "not_found", "Venue not found.")
+        return venue
+    if venue is not None and not owner_only and members.is_member(session, venue.id, user.email):
+        return venue
+    if (
+        venue is None
+        or (user.role != "staff" and venue.organiser_id != user.id)
+        or (user.role == "staff" and venue.kind == "restaurant" and not venue.is_demo)
+    ):
         raise ApiError(404, "not_found", "Venue not found.")
     return venue
 
 
 @router.get("")
 def list_venues(user: CurrentUser, session: db.SessionDep) -> list[dict[str, Any]]:
-    query = select(Venue).order_by(Venue.id)
+    # An event's setup copy is reached through its event, never listed.
+    query = select(Venue).where(Venue.parent_venue_id.is_(None)).order_by(Venue.id)
     if user.role != "staff":
         query = query.where(Venue.organiser_id == user.id)
+    else:
+        query = query.where((Venue.kind != "restaurant") | Venue.is_demo)
     return [_venue_summary(venue) for venue in session.scalars(query)]
 
 
@@ -151,6 +192,9 @@ def create_venue(
     user: CurrentOrganiser,
     session: db.SessionDep,
 ) -> dict[str, Any]:
+    # First: rate_limit commits its count. Then the account's limit, under its lock.
+    rate_limit(session, f"venue-create:{user.id}", limits.VENUE_CREATES_PER_HOUR, 3600)
+    work_limits.require_room_for_venue(session, user, body.kind)
     venue = Venue(organiser_id=user.id, **body.model_dump())
     session.add(venue)
     session.flush()
@@ -189,7 +233,7 @@ def put_layout(
     user: CurrentOrganiser,
     session: db.SessionDep,
 ) -> dict[str, Any]:
-    venue = load_venue(session, venue_public_id, user)
+    venue = load_venue(session, venue_public_id, user, owner_only=True)
     try:
         counts = save_layout(
             session,
@@ -206,6 +250,12 @@ def put_layout(
             entity_id=venue.public_id,
             detail=counts,
         )
+        if venue.parent_venue_id is not None:
+            # The event's map changed under its organiser and guests.
+            for public_id in session.scalars(
+                select(Event.public_id).where(Event.venue_id == venue.id)
+            ):
+                live.bump(session, f"event-{public_id}")
         session.commit()
     except IntegrityError:
         # A deleted seat or table is still used by an assignment or booking.

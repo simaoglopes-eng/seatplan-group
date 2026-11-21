@@ -449,6 +449,7 @@ interface ShareSettings {
   link: string | null;       // "/j/<token>", a path; the page adds its own origin.
                              // null when never switched on, or when SECRET_KEY changed
                              // since the link was made (needs_new_link is then true)
+  code: string | null;       // short code to enter on the home page; null when the link is unavailable
   needs_new_link: boolean;
   cap: number | null;        // most people who may join with the link; null = no cap
   joined: number;            // active guests with source "self_registered"
@@ -459,6 +460,10 @@ interface ShareSettings {
 ```
 
 - **`GET /events/{eid}/share`** -> `200 ShareSettings`.
+- **`GET /join-code/{code}`** -> `{ path: "/j/<token>" }`. Resolves the organiser's
+  short, case-insensitive code to the same event invitation page. Unknown,
+  disabled or replaced codes answer 404. The code changes when the organiser
+  regenerates the invitation; requests are rate limited by network address.
 - **`PATCH /events/{eid}/share`** body `{ enabled?: boolean; cap?: number | null }`
   (cap 1..5000) -> `200 ShareSettings`. Switching on an event whose
   `share_token_hash` is NULL computes it (version 0). Audit `share.update` with
@@ -1051,11 +1056,13 @@ guest token send the person to `/my/sign-in?next=<this path>`.
 
 Step 1, form (one column, each field a `Field` with a visible label):
 
-- "Your name" (autocomplete `name`); hint "The organiser sees it. Other guests see it as the organiser's privacy setting allows."
-- "Email" (type email, autocomplete `email`); hint "We email you a code to check it is yours, then your seat."
-- "Password" (type password, autocomplete `new-password`); hint "At least 10 characters." A "Show password" toggle button with `aria-pressed`.
+This form is the shared `SignUpForm` (`frontend/src/pages/signup/`), the same pieces as every other sign-up page; the page adds only the accessible-seat checkbox and the name hint.
+
+- "First name" and "Last name" (autocomplete `given-name`, `family-name`), side by side when they fit; joined as `${first} ${last}` into the one `name` the endpoint takes. Hint under them: "The organiser sees your name. Other guests see it as the organiser's privacy setting allows."
+- "Email" (type email, autocomplete `email`); hint "We email you a code to check it is yours."
+- "Password" (type password, autocomplete `new-password`); hint "At least 10 characters." An eye button inside the field, aria-label "Show password" / "Hide password", with `aria-pressed`.
 - Checkbox "I need an accessible seat".
-- Checkbox (required) "I agree that SeatPlan stores my details to manage my seat and emails me about it." followed by a `<details>` "What we store" with the privacy text of section 11.2.
+- Checkbox (required) "I agree that SeatPlan stores my details to manage bookings and seats and emails me about them." followed by a `<details>` "What we store" with the privacy text of section 11.2.
 - Button "Send my code".
 
 The register answer's `signup_id` is kept in the page's memory and sent with
@@ -1203,6 +1210,15 @@ account.
 > My account page: we free your seats and wipe the emails we keep for you. If
 > an organiser invited you, they keep their own record of that invitation.
 > Copies already in your inbox stay there.
+>
+> **Your age when you book seats.** When you choose a seat, you give your age
+> in years, and the age of each person you book a seat for. These ages are
+> seen only by the event's organiser: never by other guests, by the venue's
+> team or on the event map.
+
+(Added with party booking: every chosen seat carries an age, stored in
+`guests.age_years` for the organiser only; the app's text is
+`frontend/src/pages/account/PrivacyText.tsx`.)
 
 (Corrected after review R12: the first version said every email had a
 picture, and did not say how long the account is kept.)

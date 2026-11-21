@@ -1,0 +1,200 @@
+.room-editor { margin-block: var(--space-4); }
+.room-header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); margin-bottom: var(--space-4); }
+.room-header h1 { flex: 1 1 20rem; font-size: var(--fs-2xl); margin: 0; }
+.room-actions, .room-tabs { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.room-tabs { margin-bottom: var(--space-4); align-items: flex-end; }
+.room-tabs .field { min-width: 12rem; margin-bottom: 0; } /* so the button lines up with the select, not with the space under it */
+.room-workspace { display: grid; grid-template-columns: 7rem minmax(0, 1fr) 18rem; border: 1px solid var(--c-border); border-radius: var(--radius-lg); overflow: hidden; min-height: 32rem; }
+.room-tools { display: flex; flex-direction: column; background: var(--c-surface); border-right: 1px solid var(--c-border); }
+.room-tools button { min-height: 48px; padding: var(--space-3); background: transparent; color: var(--c-text); border: 0; text-align: left; font: inherit; }
+.room-tools button[aria-pressed="true"] { background: var(--c-primary-soft); color: var(--c-primary); font-weight: var(--fw-bold); }
+.room-tools button:disabled { color: var(--c-text-muted); }
+.room-canvas-wrap { min-width: 0; position: relative; align-self: start; background: var(--c-surface-sunk); }
+.room-canvas { height: 34rem; overflow: hidden; touch-action: none; }
+.room-zoom { position: absolute; bottom: var(--space-3); left: calc(40px + var(--space-3)); /* clear of the metre strip, inside the grey area */ display: flex; gap: var(--space-2); align-items: center; }
+/* Outline buttons with no white fill, so the plan shows through. */
+.room-zoom .btn { background: transparent; color: var(--c-primary); border-color: var(--c-primary); }
+.room-zoom .btn:hover:not(:disabled) { background: var(--c-primary-soft); }
+.room-zoom .btn { min-width: 44px; min-height: 44px; padding: var(--space-2) var(--space-3); white-space: nowrap; }
+.room-canvas { --room-view-water: #e7f0f6; --room-view-green: #e6f0e4; }
+.room-view polygon:first-of-type { stroke: var(--c-border-strong); stroke-width: 2; stroke-dasharray: 10 6; vector-effect: non-scaling-stroke; }
+.room-view-water polygon:first-of-type { fill: var(--room-view-water); }
+.room-view-green polygon:first-of-type { fill: var(--room-view-green); }
+.room-view-other polygon:first-of-type { fill: var(--c-surface-sunk); }
+.room-view text { fill: var(--c-text-muted); font-weight: 600; }
+.room-view-wave { fill: none; stroke: var(--c-info); stroke-width: 2; opacity: .45; }
+.room-view-tree { fill: var(--c-border-strong); opacity: .55; }
+.room-entrance, .room-around { display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--c-border-strong); border-radius: var(--radius-md); background: var(--c-surface-sunk); }
+.room-around h3, .room-around p { margin: 0; }
+.room-around-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.room-around-list li { display: grid; gap: var(--space-2); }
+.room-grid-line { stroke: var(--c-border); stroke-width: 1; fill: none; }
+.room-outline { fill: var(--c-surface); fill-opacity: .7; stroke: var(--c-text); stroke-width: 7; }
+.room-drawing { fill: none; stroke: var(--c-primary); stroke-width: 5; stroke-dasharray: 10 6; }
+.room-corner { fill: var(--c-primary); }
+.room-ruler, .room-table-label { fill: var(--c-text); }
+.room-ruler-bg { fill: var(--c-surface); fill-opacity: .94; }
+.room-ruler-tick { stroke: var(--c-border-strong); stroke-width: 1; }
+.room-table { fill: var(--c-surface-strong); stroke: var(--c-border-strong); stroke-width: 2; }
+.room-seat { fill: var(--c-surface); stroke: var(--c-border-strong); stroke-width: 2; }
+.room-table-label { font-size: 16px; pointer-events: none; }
+.room-properties { padding: var(--space-4); background: var(--c-surface); overscroll-behavior: contain; } /* scrolling past its end must not scroll the page */
+.room-properties h2 { font-size: var(--fs-lg); margin-top: 0; }
+.room-properties .room-form { gap: var(--space-2); }
+.room-properties .room-form p { margin: 0; }
+.room-form { display: grid; gap: var(--space-4); }
+/* The main entrance is chosen first, so its block leads the Walls tab and is set apart. */
+.room-entrance { display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--c-primary); border-radius: var(--radius-md); background: var(--c-surface-sunk); }
+.room-entrance h3, .room-entrance p { margin: 0; }
+/* Title of the selected wall or corner: a quiet section heading above its fields. It takes focus when the
+   selection changes so screen readers announce it, but it is not a control, so it shows no focus ring. */
+:root .room-properties .room-form > h3 {
+  margin: var(--space-2) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--c-border);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+:root .room-properties .room-form > h3:focus { outline: none; }
+.room-fields { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.room-fields .field { min-width: 0; }
+.room-status { padding: var(--space-3); font-size: var(--fs-sm); }
+.room-wall-hit { fill: none; stroke: transparent; pointer-events: stroke; cursor: pointer; }
+.room-fixture-icon path { fill: none; stroke: var(--c-primary); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.room-object-palette button { display: flex; align-items: center; justify-content: center; gap: var(--space-2); }
+.room-object-palette svg { width: 22px; height: 22px; flex: none; }
+.room-object-palette svg path { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.room-rotate-stem { stroke: var(--c-primary); stroke-width: 1.5; vector-effect: non-scaling-stroke; pointer-events: none; }
+.room-handle-hit { fill: transparent; cursor: grab; }
+.room-handle { fill: var(--c-surface); stroke: var(--c-primary); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
+.room-handle.selected { fill: var(--c-primary); stroke: var(--c-text); }
+.room-error { color: var(--c-danger); }
+.room-view-tags { display: grid; gap: var(--space-2); border: 1px solid var(--c-border); min-width: 0; }
+.room-opening-gap { fill: none; stroke: var(--c-surface); stroke-width: 14; }
+.room-window { fill: none; stroke: var(--c-info); stroke-width: 10; }
+.room-window-middle { fill: none; stroke: var(--c-surface); stroke-width: 3; }
+.room-door-arc { fill: none; stroke: var(--c-info); stroke-width: 3; }
+.room-main-entrance rect { fill: var(--c-primary); }
+.room-main-entrance text { fill: var(--c-on-primary); font-weight: 600; }
+.room-opening-hit { fill: none; stroke: transparent; pointer-events: stroke; cursor: grab; }
+.room-opening.selected .room-window, .room-opening.selected .room-door-arc { stroke: var(--c-primary); }
+.room-compass { position: absolute; top: calc(20px + var(--space-2)); right: var(--space-3); width: 46px; height: 46px; pointer-events: none; }
+.room-compass svg { display: block; width: 100%; height: 100%; }
+.room-compass circle { fill: none; stroke: var(--c-primary); stroke-width: 1.5; }
+.room-compass path { fill: none; stroke: var(--c-primary); stroke-width: 1.5; stroke-linejoin: round; }
+.room-compass text { fill: var(--c-primary); font-size: 8px; font-weight: var(--fw-bold); }
+.room-more summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 600; color: var(--c-primary); }
+.room-more[open] > summary { margin-bottom: var(--space-3); }
+.room-object-palette { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.room-object-palette button { font: inherit; min-height: 44px; background: var(--c-surface); color: var(--c-text); border: 1px solid var(--c-border-strong); border-radius: var(--radius-md); padding: var(--space-2); cursor: grab; }
+.room-object-palette button[aria-pressed="true"] { background: var(--c-primary-soft); border-color: var(--c-primary); }
+.room-fixture > rect, .room-fixture > circle { fill: var(--c-surface-strong); stroke: var(--c-border-strong); stroke-width: 2; }
+.room-zone > rect { fill: var(--c-info-soft); fill-opacity: .4; stroke: var(--c-info); stroke-width: 2; stroke-dasharray: 10 6; }
+.room-zone-terrace > rect { fill: var(--c-accent-soft); fill-opacity: .8; stroke: var(--c-accent-bright); }
+.room-fixture.selected > rect, .room-fixture.selected > circle, .room-zone.selected > rect { stroke: var(--c-primary); stroke-width: 4; }
+.room-fixture text, .room-zone text { fill: var(--c-text); pointer-events: none; }
+.room-selected-table .room-table { stroke: var(--c-primary); stroke-width: 4; }
+.room-inactive-table .room-table { stroke-dasharray: 8 5; fill: var(--c-surface); }
+.room-selected-seat { fill: var(--c-primary-soft); stroke: var(--c-primary); stroke-width: 4; }
+.room-chair-accessible { fill: none; stroke: var(--c-primary); stroke-width: 2; pointer-events: none; }
+.room-chair-blocked { fill: none; stroke: var(--c-text); stroke-width: 2; pointer-events: none; }
+.room-transform-line { stroke: var(--c-primary); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
+.room-selection-box { fill: var(--c-primary-soft); fill-opacity: .3; stroke: var(--c-primary); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-dasharray: 6 4; pointer-events: none; }
+.room-selection-tools { min-width: 0; border: 1px solid var(--c-border); margin-top: var(--space-5); }
+.room-selection-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.room-canvas:focus-visible { outline: 3px solid var(--c-focus); outline-offset: -3px; }
+.room-canvas svg { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.room-invalid-table .room-table, .room-outline-invalid { stroke: var(--c-danger); stroke-width: 4; }
+.room-problems { margin-top: var(--space-3); }
+.room-problems summary { cursor: pointer; min-height: 44px; padding-block: var(--space-3); }
+.room-problems ul { list-style: none; padding: 0; }
+.room-problems .btn { white-space: normal; text-align: left; }
+.room-problems .room-problem-error { color: var(--c-danger); }
+@media (min-width: 1024px) {
+  .room-properties { max-height: 34rem; overflow-y: auto; }
+}
+@media (max-width: 1023px) {
+  .room-workspace { grid-template-columns: minmax(0, 1fr); }
+  .room-editor { padding-bottom: 4rem; }
+  .room-tools { position: fixed; z-index: var(--z-header); bottom: 0; left: 0; right: 0; flex-direction: row; overflow-x: auto; border-right: 0; border-top: 1px solid var(--c-border); }
+  .room-tools button { flex-shrink: 0; }
+  .room-canvas { height: 50vh; min-height: 20rem; }
+  .room-properties { border-left: 0; border-top: 1px solid var(--c-border); }
+  .room-header h1 { font-size: var(--fs-xl); }
+}
+
+.room-notice { border: 1px solid var(--c-accent-bright); background: var(--c-accent-soft); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); margin-block: var(--space-3); }
+
+.room-light-tools { display: flex; flex-direction: column; gap: var(--space-3); }
+.room-light-slider input[type="range"] { width: 100%; min-height: var(--touch-target); accent-color: var(--c-primary); }
+.room-sun-direction circle { fill: var(--c-accent-bright); stroke: var(--c-accent); stroke-width: 2; }
+.room-sun-direction line { stroke: var(--c-accent-bright); stroke-width: 3; stroke-linecap: round; }
+
+/* ---------- Editor v3: more room for the plan, the counters always in view, all seven tools on a phone.
+   Only layout and looks: the tools, their rules and their keyboard use are untouched. ---------- */
+.room-grid-line { opacity: .55; }
+/* A chessboard of 50 cm squares inside the room, so the owner can see where an element will sit. */
+.room-checker-cell { fill: var(--c-primary); opacity: .08; }
+.room-tools button { border-left: 4px solid transparent; }
+.room-tools button[aria-pressed="true"] { border-left-color: var(--c-primary); }
+.room-status { position: sticky; bottom: 0; z-index: var(--z-map-controls); display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-1) var(--space-4); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-md); margin-top: var(--space-3); }
+.room-problems { margin-top: 0; flex: 1 1 18rem; }
+.room-problems[open] ul { max-height: 40vh; overflow-y: auto; margin: 0; }
+@media (min-width: 1024px) {
+  .room-workspace { --room-canvas-h: clamp(22rem, calc(100dvh - 26rem), 40rem); }
+  .room-canvas { height: var(--room-canvas-h); } /* the whole plan fits on screen without scrolling up and down */
+  .room-properties { max-height: calc(var(--room-canvas-h) + 4.75rem); } /* as tall as the tabs and the plan together; it scrolls only when its content is taller */
+}
+@media (max-width: 1023px) {
+  .room-tools button { flex: 1 0 auto; min-width: 3.25rem; padding: var(--space-2); font-size: var(--fs-sm); text-align: center; border-left: 0; border-top: 4px solid transparent; }
+  .room-tools button[aria-pressed="true"] { border-top-color: var(--c-primary); }
+  .room-status { bottom: 3.4rem; }
+}
+
+/* ---------- Editor v5: tools above the plan, the inspector beside it, the first problem in view.
+   Only the arrangement and the looks: the seven tools, their rules and their keys are untouched. ---------- */
+.room-header { align-items: flex-start; justify-content: space-between; }
+.room-title h1 { flex: none; margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(2.1rem, 5vw, 3rem); line-height: 1.05; letter-spacing: -0.01em; }
+.room-title p { margin: 0; }
+.room-save-state { padding: .2rem .7rem; border-radius: 999px; background: var(--c-primary-soft); color: var(--c-primary); font-size: var(--fs-sm); font-weight: var(--fw-semibold, 600); }
+.room-save-state.is-dirty { background: var(--c-danger-soft); color: var(--c-danger); }
+.room-workspace { grid-template-columns: minmax(0, 1fr) 18rem; grid-template-areas: "tools props" "canvas props"; background: var(--c-surface); align-items: start; }
+.room-tools { grid-area: tools; flex-direction: row; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-4) 0; background: transparent; border: 0; }
+.room-tools button { min-height: 44px; padding: 0 var(--space-4); border: 1px solid var(--c-border-strong); border-radius: var(--radius-md); background: var(--c-surface); text-align: center; flex: 0 0 auto; min-width: 0; font-size: var(--fs-md); }
+.room-tools button[aria-pressed="true"] { background: var(--c-primary-soft); color: var(--c-primary); border-color: var(--c-primary); }
+.room-canvas-wrap { grid-area: canvas; margin: var(--space-3) var(--space-4) var(--space-4); border-radius: var(--radius-lg); overflow: hidden; }
+.room-properties { grid-area: props; grid-row: 1 / span 2; }
+/* The line before the properties runs the full height of the editor, whatever the height of the panel. */
+.room-workspace { position: relative; }
+.room-workspace::after { content: ""; position: absolute; top: 0; bottom: 0; right: 18rem; width: 1px; background: var(--c-border); pointer-events: none; }
+.room-problem-wrap { display: flex; flex-direction: column; gap: var(--space-2); flex: 1 1 18rem; }
+.room-problem-strip { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--c-border); border-radius: var(--radius-md); background: var(--c-surface); }
+.room-problem-strip .btn { margin-left: auto; font-weight: var(--fw-semibold, 600); }
+@media (max-width: 1023px) {
+  .room-workspace::after { display: none; }
+  .room-workspace { grid-template-columns: minmax(0, 1fr); grid-template-areas: "tools" "canvas" "props"; }
+  .room-properties { grid-area: props; }
+  /* The bar stays one row at the bottom of the screen with all seven tools, as before. */
+  .room-tools { flex-wrap: nowrap; gap: 0; padding: 0; background: var(--c-surface); }
+  .room-tools button { flex: 1 0 auto; min-width: 3.25rem; padding: 0 var(--space-2); font-size: var(--fs-sm); border: 0; border-top: 4px solid transparent; border-radius: 0; background: transparent; }
+  .room-tools button[aria-pressed="true"] { border-top-color: var(--c-primary); }
+  .room-canvas-wrap { margin: var(--space-3); }
+}
+/* The first problem now sits under the plan, so the status line no longer floats over it. */
+.room-status { position: static; border: 0; background: transparent; padding-inline: 0; }
+.room-table-tools, .room-other-tools { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.room-table-tools .btn-primary { color: var(--c-on-primary); background: var(--c-primary); border-color: var(--c-primary); }
+.room-other-tools .btn-ghost { border-color: transparent; }
+.room-other-tools .btn-ghost[aria-pressed="true"] { border-color: var(--c-primary); }
+.room-title h1 { font-family: var(--font-body); font-weight: var(--fw-semibold); font-size: clamp(1.75rem, 5vw, 2.5rem); }
+@media (max-width: 1023px) {
+  .room-status { bottom: auto; }
+  /* Keep the "props" area (under the plan): "grid-row: auto" here put Room properties above the plan on phones. */
+  .room-properties { min-width: 0; }
+  .room-tools { border-top: 1px solid var(--c-border); scroll-padding-inline: var(--space-2); }
+  .room-table-tools, .room-other-tools { flex: 0 0 auto; flex-wrap: nowrap; gap: 0; }
+  .room-table-tools .btn-primary { margin-inline: var(--space-1); }
+}
+
+.room-continue { margin-left: auto; align-self: center; }

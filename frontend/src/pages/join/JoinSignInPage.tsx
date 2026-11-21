@@ -3,7 +3,9 @@
 // open their seat page, or My events with a message when joining is not possible.
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { joinEvent } from "../../api/guest";
-import { PageShell, useToast } from "../../design/components";
+import { AuthLayout, PageShell, useToast } from "../../design/components";
+import { PublicHeaderActions } from "../discover/PublicHeaderActions";
+import { AuthPhoto } from "../Login";
 import { SignInForm } from "../account/SignInForm";
 import { MY_HOME } from "../account/safeNext";
 import { joinOutcome, statusFromError } from "./joinOutcome";
@@ -33,7 +35,9 @@ export default function JoinSignInPage() {
   };
 
   return (
-    <PageShell title="Sign in to join">
+    <AuthPhoto>
+    <PageShell title="Sign in to join" variant="overlay" headerActions={<PublicHeaderActions />}>
+      <AuthLayout eyebrow="FOR PARTICIPANTS" headline="Your place is waiting." description="Sign in to join this event and choose the seat that feels right.">
       <div className="acc-page">
         <h1 className="acc-title">Sign in to join</h1>
         <p className="acc-lede">Sign in with your SeatPlan guest account. We then add you to this event, so you can choose your seat.</p>
@@ -47,6 +51,8 @@ export default function JoinSignInPage() {
           }
         />
       </div>
+      </AuthLayout>
     </PageShell>
+    </AuthPhoto>
   );
 }

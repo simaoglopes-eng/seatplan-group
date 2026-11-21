@@ -9,6 +9,7 @@ What leaves this file about OTHER people is limited to privacy-filtered names
 and seat states.
 """
 
+from datetime import date
 from typing import Any
 
 from sqlalchemy import delete, select
@@ -16,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from app.core import audit
 from app.core.errors import ApiError
+from app.core.parent_venue import shown_venue
 from app.core.privacy import display_name
 from app.events_service.access import (
     deadline_passed,
@@ -24,10 +26,11 @@ from app.events_service.access import (
     load_venue,
     require_before_deadline,
 )
+from app.events_service.age import age_at
 from app.events_service.problem import current_rows, event_guests
-from app.events_service.seating import drop_assignment, lock_event
-from app.events_service.seatmap import attendee_map, holder_key, known_ids
-from app.models import Acquaintance, Event, Guest, Hold, utc_now
+from app.events_service.seating import drop_assignment, lock_event, recheck_after_lock
+from app.events_service.seatmap import attendee_map, known_ids
+from app.models import Acquaintance, Event, Guest
 
 
 def event_of(session: Session, guest: Guest) -> Event:
@@ -62,6 +65,8 @@ def people(session: Session, event: Event, me: Guest, search: str = "") -> list[
     for other in event_guests(session, event):
         if other.id == me.id or not is_active(other):
             continue
+        if other.booked_by_guest_id == me.id:
+            continue  # my own party members are listed in "Your party" (party.party_view)
         name = display_name(other.name, event.privacy_mode, other.wants_anonymous)
         if search and search.lower() not in name.lower():
             continue
@@ -71,16 +76,14 @@ def people(session: Session, event: Event, me: Guest, search: str = "") -> list[
 
 
 def me_dict(session: Session, event: Event, me: Guest) -> dict[str, Any]:
-    """The attendee's own details. Only their own; never anyone else's."""
+    """The attendee's own details. Only their own; never anyone else's.
+
+    Never the age number either (party.py): only whether one is saved.
+    """
+    # Imported here: party.py imports share.py, which imports this module.
+    from app.events_service.party import age_saved, details_complete
+
     row = current_rows(session, event).get(me.id)
-    # This guest's live hold, if any (one at a time, see seating.hold_seat).
-    hold = session.scalars(
-        select(Hold).where(
-            (Hold.scope == event_scope(event))
-            & (Hold.holder_key == holder_key(me))
-            & (Hold.expires_at > utc_now())
-        )
-    ).first()
     return {
         "id": me.id,
         "name": me.name,
@@ -88,24 +91,34 @@ def me_dict(session: Session, event: Event, me: Guest) -> dict[str, Any]:
         "rsvp": me.rsvp,
         "wants_anonymous": me.wants_anonymous,
         "needs_accessible": me.needs_accessible,
+        "first_name": me.first_name,
+        "last_name": me.last_name,
+        "birth_date": me.birth_date.isoformat() if me.birth_date else None,
+        "share_age": me.share_age,
         "seat_id": row.seat_id if row else None,
-        "held_seat_id": hold.resource_id if hold else None,
+        "held_seat_id": None,
         # The end of the hold, so the page can show the countdown again after a reload.
-        "held_until": hold.expires_at if hold else None,
+        "held_until": None,
         "knows": sorted(known_ids(session, me)),
+        "age_saved": age_saved(me),
+        "details_complete": details_complete(me),
     }
 
 
 def page(session: Session, me: Guest) -> dict[str, Any]:
     """The whole attendee page (AttendeeView in the frontend)."""
+    from app.events_service.party import party_view
+
     event = event_of(session, me)
     venue = load_venue(session, event)
+    shown = shown_venue(session, venue) or venue
     return {
-        "venue": {"name": venue.name},
+        "venue": {"name": shown.name},
         "event": event_summary(event),
         "me": me_dict(session, event, me),
         "map": attendee_map(session, event, venue, me),
         "people": people(session, event, me),
+        "party": party_view(session, event, me),
     }
 
 
@@ -131,11 +144,15 @@ def set_rsvp(session: Session, me: Guest, answer: str, token: str | None) -> dic
     "seat released" email can link back; None for a guest account.
     """
     # Imported here: share.py imports this module for event_summary.
+    from app.events_service.party import refuse_while_party_coming
     from app.events_service.share import room_to_come_back
 
     event = event_of(session, me)
     require_before_deadline(event)
     lock_event(session, event)  # before any other write, see seating.py
+    if answer == "no":
+        # After the lock: members added at the same moment from another tab count.
+        refuse_while_party_coming(session, me)
     # Counted after the lock: someone may have taken the place meanwhile.
     if answer == "yes" and me.rsvp == "no" and not room_to_come_back(session, event, me):
         raise ApiError(409, "event_full", "This event is full. Every place has a guest.")
@@ -165,13 +182,68 @@ def set_knows(session: Session, me: Guest, guest_ids: list[int]) -> dict[str, An
 
 
 def set_privacy(session: Session, me: Guest, wants_anonymous: bool) -> dict[str, Any]:
-    """Show me as "Guest" to the others, or not. Commits."""
+    """Show me as "Guest" to the others, or not. Commits.
+
+    The people I booked seats for (party.py) follow my choice: their names
+    would otherwise show who I am next to my "Guest" seat.
+    """
+    # Imported here: party.py imports share.py, which imports this module.
+    from app.events_service.party import members_of
+
     event = event_of(session, me)
     lock_event(session, event)
+    recheck_after_lock(session, me)  # an erased row keeps its "Guest" and its kept members
     me.wants_anonymous = wants_anonymous
+    for member in members_of(session, me):
+        member.wants_anonymous = wants_anonymous
     _record(session, me, "guest.privacy", {"wants_anonymous": wants_anonymous})
     session.commit()
     return {
         "wants_anonymous": me.wants_anonymous,
+        "shown_to_others_as": display_name(me.name, event.privacy_mode, me.wants_anonymous),
+    }
+
+
+def set_age_profile(
+    session: Session, me: Guest, born: date | None, share_age: bool
+) -> dict[str, Any]:
+    event = event_of(session, me)
+    today = date.today()
+    if born is not None and (born > today or age_at(born, today) > 120):
+        raise ApiError(422, "validation", "Enter a valid date of birth.")
+    if born is None and share_age:
+        raise ApiError(422, "validation", "Enter a date of birth before sharing your age.")
+    # Taking the age back (sharing off, the date of birth kept or cleared) is
+    # allowed at any time, as easily as it was given (GDPR art. 7(3)); only a
+    # write that shares more waits on the change deadline.
+    takes_back = not share_age and (born is None or born == me.birth_date)
+    unchanged = born == me.birth_date and share_age == me.share_age
+    if not (takes_back or unchanged):
+        require_before_deadline(event)
+    lock_event(session, event)
+    recheck_after_lock(session, me)  # erased while we waited: write nothing on the old row
+    me.birth_date, me.share_age = born, share_age
+    _record(session, me, "guest.age_privacy", {"share_age": share_age})
+    session.commit()
+    return {"birth_date": born.isoformat() if born else None, "share_age": share_age}
+
+
+def set_name_profile(
+    session: Session, me: Guest, first_name: str, last_name: str
+) -> dict[str, Any]:
+    first_name, last_name = first_name.strip(), last_name.strip()
+    if not first_name or not last_name or len(first_name) + len(last_name) + 1 > 120:
+        raise ApiError(422, "validation", "Enter your first and last name.")
+    event = event_of(session, me)
+    require_before_deadline(event)
+    lock_event(session, event)
+    recheck_after_lock(session, me)  # erased while we waited: write nothing on the old row
+    me.first_name, me.last_name = first_name, last_name
+    me.name = f"{first_name} {last_name}"
+    _record(session, me, "guest.name", {})
+    session.commit()
+    return {
+        "first_name": first_name,
+        "last_name": last_name,
         "shown_to_others_as": display_name(me.name, event.privacy_mode, me.wants_anonymous),
     }

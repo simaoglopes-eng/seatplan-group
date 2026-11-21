@@ -5,70 +5,137 @@
   layers and motion. Every other stylesheet reads these variables, so changing
   the look of the whole product is a one-line edit here.
 
-  Identity: "linen and bottle green". A seating plan is printed on paper and
-  hung at the door of a dining room; we borrow that calm: warm linen paper,
-  dark ink, bottle-green for "yours", brass for "recommended" and "on hold".
+  Identity: direction E "relaxed + glass" (chosen by the owner, Nov 2026).
+  Linen page, bottle-green primary, brass accent, Gloock headings, soft 14px
+  corners and fully round buttons. Glass (frosted white over a blur) is used ONLY
+  where a panel sits on a photograph: .glass-panel, .btn-glass* and .photo-band in
+  components.css. Never on a flat colour; the legacy --glass-fill* names below
+  stay solid surfaces for the stylesheets that still read them.
 
   Every text colour is checked against every background it sits on by
   scripts/contrast.mjs (WCAG 2.2 AA, 4.5:1). Results are in docs/design-system.md.
+  The script reads "--name: #rrggbb;" literals only, so paired tokens stay hex.
 */
 
 :root {
   color-scheme: light dark;
 
   /* ---------- Colour: light theme ---------- */
-  --c-bg: #f4efe6;            /* linen page */
-  --c-surface: #fbf8f2;       /* cards, panels */
-  --c-surface-sunk: #ebe4d6;  /* the floor under a seat map */
-  --c-surface-strong: #dcd2c0;/* tables drawn on the floor */
-  --c-text: #1e2724;          /* ink */
-  --c-text-muted: #545d58;
-  --c-border: #c9bfae;        /* hairlines, decorative only */
-  --c-border-strong: #7d7466; /* input borders: 3:1 against surfaces */
+  --c-bg: #f6f2ea;            /* linen page */
+  --c-surface: #fbf8f2;       /* cards and panels */
+  --c-surface-sunk: #ebe4d6;  /* the floor under a seat map, sunk bands */
+  --c-surface-strong: #ddd3c1;/* tables drawn on the floor */
+  --c-text: #1f2b26;          /* green-black ink */
+  --c-text-muted: #5e655f;
+  --c-line: #dcd2c0;          /* hairlines, decorative only */
+  --c-border: #dcd2c0;        /* the same hairline, under its older name */
+  --c-border-strong: #857c6c; /* input borders: 3:1 against surfaces */
 
   --c-primary: #1f5a48;       /* bottle green */
   --c-primary-hover: #17463a;
-  --c-on-primary: #fbf8f2;
-  --c-primary-soft: #dbe8e1;  /* tinted background behind green text */
+  --c-on-primary: #ffffff;
+  --c-primary-soft: #e2ede6;  /* tinted background behind green text */
 
-  --c-accent: #7f5310;        /* brass, dark enough for text */
-  --c-accent-bright: #a06a12; /* brass for large shapes and halos */
-  --c-accent-soft: #f3e4c4;
+  --c-accent: #7f5310;        /* brass, dark enough for text: "recommended", "on hold" */
+  --c-accent-bright: #d9a441; /* brass for large shapes and halos (the logo's seat) */
+  --c-accent-soft: #f5ead3;
 
-  --c-danger: #9c3226;        /* brick */
-  --c-danger-soft: #f6dcd6;
+  --c-danger: #b42318;
+  --c-danger-soft: #fde8e6;
   --c-friend: #6b3a68;        /* plum */
-  --c-friend-soft: #eedcec;
-  --c-info: #2f4f6b;          /* slate, used sparingly */
-  --c-info-soft: #dde6ee;
+  --c-friend-soft: #f1e4f0;
+  --c-info: #1d4e89;
+  --c-info-soft: #e3ecf7;
 
-  --c-focus: #b0450c;         /* rust focus ring, never used for state */
-  --c-overlay: rgb(30 39 36 / 0.45);
+  --c-focus: #1d4ed8;         /* blue focus ring, never used for state */
+  --c-overlay: rgb(31 43 38 / 0.5);
+  --c-heading: #1f2b26;
+
+  /* A deep bottle green that stays green in both themes: the footer of the home
+     page, the sign-in story panel and other solid bands (never glass). */
+  --c-band: #1f5a48;
+  --c-on-band: #ffffff;
+  --c-on-band-muted: #c9dcd2;
+
+  /* ---------- Legacy flat surfaces (the old glass layer, switched off) ---------- */
+  /* Many stylesheets still read these names. Each fill is the solid surface it
+     imitated, the lamps, the dot grid and the grain are gone. The lamp and floor
+     colours equal the page so scripts/contrast.mjs still checks the pairs on them. */
+  --c-lamp-warm: #f6f2ea;
+  --c-lamp-cool: #f6f2ea;
+  --c-bg-deep: #f6f2ea;
+  --c-glass-floor: #fbf8f2;
+  --c-glass-soft-floor: #fbf8f2;
+  --glass-fill: var(--c-surface);
+  --glass-fill-strong: var(--c-surface);
+  --glass-fill-soft: var(--c-surface);
+  --glass-fill-hover: var(--c-surface-sunk);
+  --glass-edge: var(--c-border);
+  --glass-highlight: 0 0 #0000;
+  --glass-blur-strong: none;
+  --glass-blur-soft: none;
+  --grid-dot: transparent;
+  --grid-step: 28px;
+  --grid-height: 0;
+  --grid-fade: none;
+  --grain: none;
+  --page-lamps: none;
+
+  /* ---------- Glass over photographs (direction E) ---------- */
+  /* Only for panels and buttons that sit on a photo. Text on glass is white. */
+  --glass-bg: rgba(255, 255, 255, 0.14);
+  --glass-bg-hover: rgba(255, 255, 255, 0.22);
+  --glass-border: rgba(255, 255, 255, 0.34);
+  --glass-border-hover: rgba(255, 255, 255, 0.6);
+  --glass-blur: blur(18px) saturate(150%);
+  --glass-blur-button: blur(12px);
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 18px 40px rgba(10, 16, 13, 0.28);
+  --glass-shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  --glass-green: rgba(31, 90, 72, 0.55);
+  --glass-green-hover: rgba(31, 90, 72, 0.72);
+  --glass-brass: rgba(127, 83, 16, 0.55);
+  --glass-brass-hover: rgba(127, 83, 16, 0.72);
+  /* Solid versions for prefers-reduced-transparency (white text: 8.0:1 and 6.9:1). */
+  --glass-green-solid: rgb(31 90 72);
+  --glass-brass-solid: rgb(127 83 16);
+  /* Where backdrop-filter is unsupported or the visitor asks for less transparency. */
+  --glass-fallback: rgba(24, 36, 31, 0.78);
+  --glass-text: #ffffff;
+  --glass-text-muted: rgba(255, 255, 255, 0.88);
+  --glass-eyebrow: #f3e4c4;
+  --glass-field: rgba(255, 255, 255, 0.12);
+  --glass-field-border: rgba(255, 255, 255, 0.35);
+  /* The legibility veil laid over a photo before glass or white text goes on it. */
+  --photo-veil-ink: 24 36 31;
+  --photo-veil:
+    linear-gradient(90deg, rgb(var(--photo-veil-ink) / 0.72) 0%, rgb(var(--photo-veil-ink) / 0.45) 50%, rgb(var(--photo-veil-ink) / 0.15) 100%),
+    linear-gradient(180deg, rgb(var(--photo-veil-ink) / 0.25) 0%, rgb(var(--photo-veil-ink) / 0) 30%, rgb(var(--photo-veil-ink) / 0.55) 100%);
 
   /* Seat states. Colour is a helper only: every state also has a shape,
-     icon or pattern (see src/seatmap/glyphs.tsx). */
+     icon or pattern (see src/seatmap/glyphs.tsx). Yours and taken are both solid
+     discs, so they also differ in lightness (1.8:1 light, 2.5:1 dark), not only in
+     hue and mark; blocked keeps a strong hatched outline and bar beside them. */
   --seat-free-fill: #fbf8f2;
-  --seat-free-stroke: #3b4541;
+  --seat-free-stroke: #3f4a44;
   --seat-held: #7f5310;
-  --seat-held-soft: #f3e4c4;
-  --seat-taken: #59625e;
-  --seat-taken-mark: #fbf8f2;
-  --seat-mine: #1f5a48;
-  --seat-mine-mark: #fbf8f2;
+  --seat-held-soft: #f5ead3;
+  --seat-taken: #4b5550;
+  --seat-taken-mark: #ffffff;
+  --seat-mine: #2f8a68;
+  --seat-mine-mark: #ffffff;
   --seat-friend: #6b3a68;
-  --seat-friend-soft: #eedcec;
-  --seat-blocked: #7c7466;
-  --seat-blocked-soft: #e3dccf;
-  --seat-accessible: #2f4f6b;
-  --seat-accessible-mark: #fbf8f2;
-  --seat-highlight: #a06a12;
+  --seat-friend-soft: #f1e4f0;
+  --seat-blocked: #6a6d66;
+  --seat-blocked-soft: #ddd3c1;
+  --seat-accessible: #0f5f73;
+  --seat-accessible-mark: #ffffff;
+  --seat-highlight: #8c6418;
 
   /* ---------- Type ---------- */
-  /* Display: an old-style book serif that ships with macOS and iOS (Iowan),
-     with Charter, Cambria and Georgia as close fallbacks elsewhere.
-     Body: a humanist sans that ships with the platform. No web-font download. */
-  --font-display: "Iowan Old Style", "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
-  --font-body: "Avenir Next", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Headings and the wordmark: Gloock, one weight (self-hosted, base.css).
+     Body: the platform's own sans, nothing downloaded. */
+  --font-display: "Gloock", "Iowan Old Style", "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /* Scale with ratio 1.2 from a 16px base. */
@@ -79,11 +146,14 @@
   --fs-xl: 1.44rem;
   --fs-2xl: 1.875rem;
   --fs-3xl: clamp(2.1rem, 1.4rem + 2.6vw, 3.1rem);
-  --lh-tight: 1.15;
+  --lh-tight: 1.12;
   --lh-body: 1.55;
   --fw-regular: 400;
   --fw-medium: 500;
   --fw-bold: 650;
+  --fw-display: 400;          /* Gloock has one weight: never fake a bold */
+  --ls-display: -0.005em;     /* headings */
+  --ls-eyebrow: 0.12em;       /* small uppercase labels */
 
   /* ---------- Space (4px base) ---------- */
   --space-1: 0.25rem;
@@ -97,6 +167,9 @@
 
   /* ---------- Layout ---------- */
   --layout-max: 72rem;        /* page content width */
+  /* The site frame: header, page and footer share one column (80rem, gutter inside). */
+  --frame-max: 80rem;
+  --gutter: clamp(1rem, 4vw, 3.5rem);
   --layout-narrow: 30rem;     /* forms such as login */
   --layout-panel: 20rem;      /* editor side panel */
   --touch-target: 44px;       /* WCAG 2.5.8 and Apple HIG minimum */
@@ -107,18 +180,27 @@
   --map-label-min: 12px;
 
   /* ---------- Shape ---------- */
-  --radius-sm: 6px;
+  /* Soft corners: 14px for cards and panels, 10px for inputs, round buttons. */
+  --radius: 14px;             /* cards, panels, photo tiles */
+  --radius-input: 10px;       /* inputs, selects, the search bar fields */
+  --radius-button: 999px;     /* every button */
+  --radius-sm: 8px;           /* small chips, skeleton lines, menu rows */
   --radius-md: 10px;
-  --radius-lg: 18px;
+  --radius-lg: 14px;
   --radius-pill: 999px;
   --border-width: 1px;
   --focus-width: 3px;
   --focus-offset: 2px;
 
   /* ---------- Depth ---------- */
-  --shadow-sm: 0 1px 2px rgb(30 39 36 / 0.08);
-  --shadow-md: 0 4px 14px rgb(30 39 36 / 0.1), 0 1px 3px rgb(30 39 36 / 0.08);
-  --shadow-lg: 0 18px 48px rgb(30 39 36 / 0.18);
+  /* Quiet: a hairline does most of the work, a shadow only lifts what floats. */
+  --shadow-sm: 0 1px 2px rgb(31 43 38 / 0.06);
+  --shadow-md: 0 4px 12px rgb(31 43 38 / 0.08);
+  --shadow-lg: 0 20px 50px rgb(31 43 38 / 0.12);
+  --shadow-glass: 0 0 #0000;
+  --shadow-glass-hover: 0 1px 2px rgb(31 43 38 / 0.06);
+  --shadow-press: 0 0 #0000;
+  --btn-sheen: 0 0 #0000;
 
   /* ---------- Layers ---------- */
   --z-base: 0;
@@ -140,57 +222,73 @@
 }
 
 /* ---------- Colour: dark theme ---------- */
-/* Same roles, re-mixed for a dark room: the linen becomes a deep green-black,
-   ink becomes warm parchment, and state colours become lighter tints. */
+/* Same roles for a dark room: a warm deep green-black page, linen-white text, a
+   pale bottle green as the primary and a light brass accent. Glass stays the same:
+   it only ever sits on photographs. */
 @media (prefers-color-scheme: dark) {
   :root {
     --c-bg: #121715;
     --c-surface: #1a211e;
     --c-surface-sunk: #0d1110;
-    --c-surface-strong: #2c3632;
-    --c-text: #ece6da;
-    --c-text-muted: #a9b1ab;
-    --c-border: #34403b;
-    --c-border-strong: #7e8a84;
+    --c-surface-strong: #26302c;
+    --c-text: #ede8df;
+    --c-text-muted: #a9b0a8;
+    --c-line: #2c3632;
+    --c-border: #2c3632;
+    --c-border-strong: #6e7a74;
 
     --c-primary: #8fd1b5;
-    --c-primary-hover: #a9e0c8;
-    --c-on-primary: #0d1110;
+    --c-primary-hover: #a9dec7;
+    --c-on-primary: #121715;
     --c-primary-soft: #1e3a30;
 
     --c-accent: #e2b464;
     --c-accent-bright: #e2b464;
-    --c-accent-soft: #3a2f1a;
+    --c-accent-soft: #33290f;
 
     --c-danger: #f09484;
-    --c-danger-soft: #3d201b;
+    --c-danger-soft: #3a1c1a;
     --c-friend: #d9aad4;
-    --c-friend-soft: #352533;
+    --c-friend-soft: #33223a;
     --c-info: #9cc0df;
-    --c-info-soft: #1d2a35;
+    --c-info-soft: #16263a;
 
-    --c-focus: #f4a259;
+    --c-focus: #7fb0ff;
     --c-overlay: rgb(0 0 0 / 0.6);
+    --c-heading: #f4f0e8;
+
+    --c-band: #1f5a48;
+    --c-on-band: #ffffff;
+    --c-on-band-muted: #c9dcd2;
+
+    --c-lamp-warm: #121715;
+    --c-lamp-cool: #121715;
+    --c-bg-deep: #121715;
+    --c-glass-floor: #1a211e;
+    --c-glass-soft-floor: #1a211e;
 
     --seat-free-fill: #1a211e;
-    --seat-free-stroke: #c9c2b4;
+    --seat-free-stroke: #c4ccc6;
     --seat-held: #e2b464;
-    --seat-held-soft: #3a2f1a;
-    --seat-taken: #8d9690;
+    --seat-held-soft: #33290f;
+    --seat-taken: #6f7a74;
     --seat-taken-mark: #0d1110;
     --seat-mine: #8fd1b5;
     --seat-mine-mark: #0d1110;
     --seat-friend: #d9aad4;
-    --seat-friend-soft: #352533;
-    --seat-blocked: #6f7671;
-    --seat-blocked-soft: #252c29;
-    --seat-accessible: #9cc0df;
+    --seat-friend-soft: #33223a;
+    --seat-blocked: #9aa39e;
+    --seat-blocked-soft: #1c2420;
+    --seat-accessible: #7fd0d8;
     --seat-accessible-mark: #0d1110;
     --seat-highlight: #e2b464;
 
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-md: 0 4px 14px rgb(0 0 0 / 0.45);
     --shadow-lg: 0 18px 48px rgb(0 0 0 / 0.6);
+    --shadow-glass: 0 0 #0000;
+    --shadow-glass-hover: 0 1px 2px rgb(0 0 0 / 0.35);
+    --shadow-press: 0 0 #0000;
   }
 }
 
@@ -205,4 +303,28 @@
     --dur-slow: 0.01ms;
     --dur-pulse: 0.01ms;
   }
+}
+
+/* ---------- Restaurants (hidden product) ---------- */
+/* The restaurant pages keep their own look from restaurant-theme.css. These are
+   the values it inherited from the old shared layer and does not set itself. */
+:root[data-surface="restaurants"] {
+  --font-display: "Gloock", "Iowan Old Style", "Charter", "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  --font-body: "Avenir Next", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --radius-pill: 999px;
+  /* Direction E changed these for Events; the Restaurants look keeps what it had. */
+  --radius-button: var(--radius-sm);
+  --radius-input: var(--radius-sm);
+  --ls-display: -0.02em;
+  --ls-eyebrow: 0.14em;
+  --gutter: clamp(1.25rem, 4vw, 3.5rem);
+  --glass-blur: blur(18px) saturate(160%);
+  --glass-blur-strong: blur(24px) saturate(180%);
+  --glass-blur-soft: blur(12px) saturate(150%);
+  --grid-height: 40rem;
+  --grid-fade: linear-gradient(to bottom, #000 0, #000 10rem, transparent 34rem);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .025 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --page-lamps:
+    radial-gradient(ellipse 58rem 32rem at 94% -4%, var(--c-lamp-warm) 0, transparent 100%),
+    radial-gradient(ellipse 46rem 30rem at -8% 70%, var(--c-lamp-cool) 0, transparent 100%);
 }

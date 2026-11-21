@@ -23,6 +23,8 @@ export function AccountBar({ email, current }: AccountBarProps) {
       <div className="acc-bar-links">
         {current !== "events" && <Link to="/my">My events</Link>}
         {current !== "account" && <Link to="/my/account">My account</Link>}
+        {/* The one account panel: restaurant bookings, events and staff tools together. */}
+        <Link to="/account">Bookings and staff</Link>
         <Button
           variant="ghost"
           busy={busy}

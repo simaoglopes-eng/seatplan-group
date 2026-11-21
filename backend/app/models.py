@@ -12,12 +12,14 @@ from typing import Any
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Float,
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     Time,
@@ -77,6 +79,9 @@ class Organiser(Base):
     name: Mapped[str] = mapped_column(String(120))
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(20), default="organiser")
+    # Signed into every work session (security.py). A new password adds one,
+    # which ends every older session.
+    session_version: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
 
 
 class Venue(Base):
@@ -91,6 +96,60 @@ class Venue(Base):
     width: Mapped[float] = mapped_column(Float)
     height: Mapped[float] = mapped_column(Float)
 
+    __table_args__ = (Index("uq_venues_slug", "slug", unique=True),)
+    slug: Mapped[str | None] = mapped_column(String(60))
+    status: Mapped[str] = mapped_column(
+        String(12), default="published", server_default=text("'published'")
+    )
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("FALSE"))
+    description: Mapped[str] = mapped_column(String(300), default="", server_default=text("''"))
+    cuisines: Mapped[list[str]] = mapped_column(JSON, default=list, server_default=text("'[]'"))
+    price_level: Mapped[int | None] = mapped_column(Integer)
+    address: Mapped[str] = mapped_column(String(200), default="", server_default=text("''"))
+    lat: Mapped[float | None] = mapped_column(Float)
+    lng: Mapped[float | None] = mapped_column(Float)
+    phone: Mapped[str | None] = mapped_column(String(40))
+    website: Mapped[str | None] = mapped_column(String(200))
+    instagram: Mapped[str | None] = mapped_column(String(30))
+    google_maps_url: Mapped[str | None] = mapped_column(String(200))
+    search_text: Mapped[str] = mapped_column(String(400), default="", server_default=text("''"))
+    features: Mapped[dict[str, bool]] = mapped_column(
+        JSON, default=dict, server_default=text("'{}'")
+    )
+    layout_version: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    published_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+    # Event venues only: "hall" or "quinta" (events_service/event_types.py).
+    venue_type: Mapped[str | None] = mapped_column(String(20))
+    # Set only on an event's own copy of a hall or quinta (its "setup",
+    # events_service/layouts.py): the venue it copies. That copy is private
+    # (draft, no slug); public pages, names and the venue team are the parent's.
+    parent_venue_id: Mapped[int | None] = mapped_column(ForeignKey("venues.id"))
+    # True on the place POST /events/create-with-venue makes together with its
+    # event: a per-event place, not counted in the account's event venue limit
+    # (core/work_limits.py). NULL on every other venue, older ones included.
+    made_with_event: Mapped[bool | None] = mapped_column(Boolean)
+
+
+class VenueMember(Base):
+    """An address the venue's owner lets work there as staff (core/members.py).
+
+    Matched against the email of a signed-in work account. Outside the demo
+    that address was proven by an emailed code at sign-up; in the demo a code
+    shown on screen proves nothing (docs/api.md, "Known demo risks"). One row
+    per venue and address.
+    """
+
+    __tablename__ = "venue_members"
+    __table_args__ = (UniqueConstraint("venue_id", "email", name="uq_venue_members_venue_email"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    venue_id: Mapped[int] = mapped_column(ForeignKey("venues.id", ondelete="CASCADE"))
+    # Lower case and trimmed.
+    email: Mapped[str] = mapped_column(String(254), index=True)
+    role: Mapped[str] = mapped_column(String(20), default="staff")
+    added_by: Mapped[int | None] = mapped_column(ForeignKey("organisers.id"))
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
+
 
 class Zone(Base):
     __tablename__ = "zones"
@@ -103,6 +162,8 @@ class Zone(Base):
     y: Mapped[float] = mapped_column(Float)
     w: Mapped[float] = mapped_column(Float)
     h: Mapped[float] = mapped_column(Float)
+
+    room_id: Mapped[int | None] = mapped_column(ForeignKey("rooms.id"))
 
 
 class VenueTable(Base):
@@ -129,6 +190,9 @@ class VenueTable(Base):
     high_chair_ok: Mapped[bool] = mapped_column(Boolean, default=False)
     combine_group: Mapped[str | None] = mapped_column(String(40))
 
+    room_id: Mapped[int | None] = mapped_column(ForeignKey("rooms.id"))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("TRUE"))
+
 
 class Seat(Base):
     __tablename__ = "seats"
@@ -142,6 +206,8 @@ class Seat(Base):
     is_accessible: Mapped[bool] = mapped_column(Boolean, default=False)
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
     reserved_tag: Mapped[str | None] = mapped_column(String(20))
+
+    room_id: Mapped[int | None] = mapped_column(ForeignKey("rooms.id"))
 
 
 class SeatNeighbour(Base):
@@ -266,6 +332,13 @@ class Event(Base):
     share_version: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
     share_token_hash: Mapped[str | None] = mapped_column(String(64))
     share_cap: Mapped[int | None] = mapped_column(Integer)
+    # One key of events_service/event_types.EVENT_TYPES, or NULL.
+    event_type: Mapped[str | None] = mapped_column(String(20))
+    # Only listed events (with the shared link on) appear on the public pages.
+    listed: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("FALSE"))
+    # Seats one guest may book, their own included (events_service/party.py).
+    # NULL: core/limits.DEFAULT_MAX_PARTY_SIZE; 0: no limit; else 1 to 500.
+    max_party_size: Mapped[int | None] = mapped_column(Integer)
 
 
 class GuestGroup(Base):
@@ -284,6 +357,7 @@ class Guest(Base):
     __table_args__ = (
         Index("uq_guests_event_account", "event_id", "account_id", unique=True),
         Index("ix_guests_account_id", "account_id"),
+        Index("ix_guests_booked_by_guest_id", "booked_by_guest_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -301,9 +375,18 @@ class Guest(Base):
     rsvp: Mapped[str] = mapped_column(String(10), default="pending")
     # Set when a guest account owns this row (docs/guest-accounts.md).
     account_id: Mapped[int | None] = mapped_column(ForeignKey("guest_accounts.id"))
-    # "invited" (typed by the organiser) or "self_registered" (joined with
-    # the shared link).
+    # "invited" (typed by the organiser), "self_registered" (joined with
+    # the shared link) or "companion" (a party member: another guest booked
+    # this seat for them, events_service/party.py).
     source: Mapped[str] = mapped_column(String(20), default="invited", server_default="invited")
+    first_name: Mapped[str | None] = mapped_column(String(60))
+    last_name: Mapped[str | None] = mapped_column(String(60))
+    birth_date: Mapped[date | None] = mapped_column(Date)
+    share_age: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("FALSE"))
+    # A party member ("companion"): the guest whose booking added this person.
+    booked_by_guest_id: Mapped[int | None] = mapped_column(ForeignKey("guests.id"))
+    # Whole years, typed when booking. Organiser-only: never read by age.visible_age.
+    age_years: Mapped[int | None] = mapped_column(Integer)
 
 
 class Acquaintance(Base):
@@ -466,6 +549,64 @@ class Booking(Base):
     manage_token_hash: Mapped[str] = mapped_column(String(64), index=True)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
 
+    chosen_seat_id: Mapped[int | None] = mapped_column(ForeignKey("seats.id"))
+    prefs: Mapped[list[str]] = mapped_column(JSON, default=list, server_default=text("'[]'"))
+    account_id: Mapped[int | None] = mapped_column(
+        ForeignKey("guest_accounts.id", ondelete="SET NULL"), index=True
+    )
+    occasion: Mapped[str | None] = mapped_column(String(30))
+    dietary_requirements: Mapped[str] = mapped_column(
+        String(500), default="", server_default=text("''")
+    )
+    allergies: Mapped[str] = mapped_column(String(500), default="", server_default=text("''"))
+    arrival_at: Mapped[datetime | None] = mapped_column(UtcDateTime)
+
+
+class DinerFavorite(Base):
+    __tablename__ = "diner_favorites"
+
+    account_id: Mapped[int] = mapped_column(
+        ForeignKey("guest_accounts.id", ondelete="CASCADE"), primary_key=True
+    )
+    venue_id: Mapped[int] = mapped_column(
+        ForeignKey("venues.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
+
+
+class RestaurantMenu(Base):
+    __tablename__ = "restaurant_menus"
+
+    venue_id: Mapped[int] = mapped_column(
+        ForeignKey("venues.id", ondelete="CASCADE"), primary_key=True
+    )
+    version: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    items: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON, default=list, server_default=text("'[]'")
+    )
+
+
+class RestaurantReview(Base):
+    """One public review per customer and restaurant."""
+
+    __tablename__ = "restaurant_reviews"
+    __table_args__ = (
+        CheckConstraint("score BETWEEN 0 AND 10", name="ck_restaurant_review_score_10"),
+    )
+
+    venue_id: Mapped[int] = mapped_column(
+        ForeignKey("venues.id", ondelete="CASCADE"), primary_key=True
+    )
+    account_id: Mapped[int] = mapped_column(
+        ForeignKey("guest_accounts.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+    public_id: Mapped[str] = mapped_column(String(32), unique=True, default=new_public_id)
+    score: Mapped[int] = mapped_column(Integer)
+    comment: Mapped[str] = mapped_column(Text)
+    table_type: Mapped[str | None] = mapped_column(String(16))
+    verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
+
 
 class TableSlot(Base):
     """One row per table per 15-minute slot a booking occupies. The composite
@@ -491,3 +632,181 @@ class WaitlistEntry(Base):
     email: Mapped[str] = mapped_column(String(254))
     status: Mapped[str] = mapped_column(String(12), default="waiting")
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
+
+
+class Room(Base):
+    """A restaurant room, materialised only when the new editor first saves."""
+
+    __tablename__ = "rooms"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    venue_id: Mapped[int] = mapped_column(ForeignKey("venues.id"), index=True)
+    name: Mapped[str] = mapped_column(String(60))
+    is_outdoor: Mapped[bool] = mapped_column(Boolean, default=False)
+    north_deg: Mapped[float | None] = mapped_column(Float)
+    outline: Mapped[dict[str, Any]] = mapped_column(JSON)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class RoomOpening(Base):
+    """An opening positioned by arc length along an outline side."""
+
+    __tablename__ = "room_openings"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), index=True)
+    side: Mapped[int] = mapped_column(Integer)
+    offset: Mapped[float] = mapped_column(Float)
+    width: Mapped[float] = mapped_column(Float)
+    kind: Mapped[str] = mapped_column(String(20))
+    top_height: Mapped[float] = mapped_column(Float, default=220)
+    is_main_entrance: Mapped[bool] = mapped_column(Boolean, default=False)
+    view_text: Mapped[str] = mapped_column(String(80), default="")
+    view_tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    night_view_text: Mapped[str] = mapped_column(String(80), default="")
+    sun_rule: Mapped[str] = mapped_column(String(10), default="auto")
+    sun_from: Mapped[time | None] = mapped_column(Time)
+    sun_until: Mapped[time | None] = mapped_column(Time)
+
+
+class RoomFixture(Base):
+    """Non-bookable furniture used for the drawing and ambience."""
+
+    __tablename__ = "room_fixtures"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(20))
+    shape: Mapped[str] = mapped_column(String(10))
+    x: Mapped[float] = mapped_column(Float)
+    y: Mapped[float] = mapped_column(Float)
+    w: Mapped[float] = mapped_column(Float)
+    h: Mapped[float] = mapped_column(Float)
+    rotation: Mapped[float] = mapped_column(Float, default=0)
+    label: Mapped[str] = mapped_column(String(40), default="")
+
+
+class VenuePhoto(Base):
+    """Bounded restaurant image bytes with a stable public URL."""
+
+    __tablename__ = "venue_photos"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    public_id: Mapped[str] = mapped_column(
+        String(32), default=new_public_id, unique=True, index=True
+    )
+    venue_id: Mapped[int] = mapped_column(ForeignKey("venues.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(10))
+    opening_id: Mapped[int | None] = mapped_column(ForeignKey("room_openings.id"))
+    content_type: Mapped[str] = mapped_column(String(30))
+    data: Mapped[bytes] = mapped_column(LargeBinary)
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+    alt_text: Mapped[str] = mapped_column(String(150), default="")
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    is_cover: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
+
+
+# ------------------------------------------------------------------ deposits
+
+
+class BookingPolicy(Base):
+    """What a restaurant asks up front, per service name ("Dinner").
+
+    service_name "" is the default for every service without a row of its own.
+    The name, not the ServicePeriod id, is the key because the schedule editor
+    deletes and re-inserts the periods on every save, so their ids are not stable.
+    """
+
+    __tablename__ = "booking_policies"
+    __table_args__ = (UniqueConstraint("venue_id", "service_name", name="uq_booking_policy"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    venue_id: Mapped[int] = mapped_column(ForeignKey("venues.id"), index=True)
+    service_name: Mapped[str] = mapped_column(String(40), default="")
+    mode: Mapped[str] = mapped_column(String(10), default="deposit")
+    per_person_cents: Mapped[int] = mapped_column(Integer)
+    cancel_hours: Mapped[int] = mapped_column(Integer, default=24)
+    min_party: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
+
+
+class BookingPayment(Base):
+    """The deposit of one booking, with a snapshot of the terms the diner accepted.
+
+    Later edits to the restaurant's policy never change a booking that already
+    exists, because everything needed is copied here at booking time.
+    """
+
+    __tablename__ = "booking_payments"
+    __table_args__ = (Index("ix_booking_payments_status_expires", "status", "expires_at"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    public_id: Mapped[str] = mapped_column(
+        String(32), default=new_public_id, unique=True, index=True
+    )
+    booking_id: Mapped[int] = mapped_column(ForeignKey("bookings.id"), unique=True)
+    venue_id: Mapped[int] = mapped_column(ForeignKey("venues.id"), index=True)
+    provider: Mapped[str] = mapped_column(String(10))
+    kind: Mapped[str] = mapped_column(String(10), default="deposit")
+    # pending -> paid | expired; paid -> refunded | kept; refund_due while a refund is retried.
+    status: Mapped[str] = mapped_column(String(12), default="pending")
+    per_person_cents: Mapped[int] = mapped_column(Integer)
+    party_at_booking: Mapped[int] = mapped_column(Integer)
+    amount_cents: Mapped[int] = mapped_column(Integer)
+    cancel_hours: Mapped[int] = mapped_column(Integer)
+    policy_text: Mapped[str] = mapped_column(String(400))
+    accepted_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
+    expires_at: Mapped[datetime] = mapped_column(UtcDateTime)
+    checkout_id: Mapped[str | None] = mapped_column(String(255))
+    # Stripe's payment_intent id: the only thing needed to refund. Never a card detail.
+    payment_ref: Mapped[str | None] = mapped_column(String(80))
+    refunded_cents: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
+
+
+class PaymentEvent(Base):
+    """A webhook we already handled. The unique key makes a repeat do nothing.
+
+    No body is stored: only which event, so nothing personal or financial
+    lingers here.
+    """
+
+    __tablename__ = "payment_events"
+    __table_args__ = (UniqueConstraint("provider", "event_id", name="uq_payment_event"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    provider: Mapped[str] = mapped_column(String(10))
+    event_id: Mapped[str] = mapped_column(String(255))
+    type: Mapped[str] = mapped_column(String(60))
+    received_at: Mapped[datetime] = mapped_column(UtcDateTime, default=utc_now)
+
+
+class VenueListing(Base):
+    """A real venue in the public directory (events_service/directory.py).
+
+    Read-only reference data from OpenStreetMap (ODbL), loaded from a dated
+    snapshot by seed/venue_directory.py. Not a SeatPlan venue: no owner, no
+    floor plan, no events. Upserted by source_ref; never edited by users.
+    """
+
+    __tablename__ = "venue_listings"
+    __table_args__ = (
+        UniqueConstraint("source", "source_ref", name="uq_venue_listings_source_ref"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    source: Mapped[str] = mapped_column(String(20))
+    # "node/123" or "way/456" for OpenStreetMap.
+    source_ref: Mapped[str] = mapped_column(String(40))
+    name: Mapped[str] = mapped_column(String(120))
+    # "estate" (inferred from the name), "hall" or "conference".
+    kind: Mapped[str] = mapped_column(String(20), index=True)
+    country: Mapped[str] = mapped_column(String(2), index=True)
+    city: Mapped[str | None] = mapped_column(String(120))
+    # True when the city is the nearest named place, not an address tag.
+    city_inferred: Mapped[bool] = mapped_column(Boolean, default=False)
+    street: Mapped[str | None] = mapped_column(String(200))
+    postcode: Mapped[str | None] = mapped_column(String(20))
+    lat: Mapped[float] = mapped_column(Float)
+    lng: Mapped[float] = mapped_column(Float)
+    website: Mapped[str | None] = mapped_column(String(200))
+    snapshot: Mapped[str] = mapped_column(String(20))

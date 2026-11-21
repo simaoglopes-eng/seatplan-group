@@ -9,7 +9,7 @@ from collections.abc import Iterator
 from typing import Annotated, Any
 
 from fastapi import Depends
-from sqlalchemy import Engine, create_engine, event, text
+from sqlalchemy import Engine, create_engine, event, inspect, text
 from sqlalchemy.dialects.postgresql import insert as postgres_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session, sessionmaker
@@ -68,11 +68,17 @@ def get_engine() -> Engine:
 _SCHEMA_LOCK_ID = 73102026
 
 
-def create_all() -> list[str]:
+class NonEmptyDatabaseError(RuntimeError):
+    """Raised when a one-time initial migration is restricted to an empty DB."""
+
+
+def create_all(
+    engine: Engine | None = None, *, only_when_empty: bool = False
+) -> list[str]:
     """Create missing tables, then add the listed new columns and indexes.
 
-    Existing rows are left alone. Returns one line per column or index step
-    (seed/migrate.py prints them).
+    Only explicit data migrations can change existing rows. Returns one line
+    per migration step (seed/migrate.py prints them).
 
     Two runs at once would both try CREATE TABLE and one would crash, so each
     run first takes a lock that lasts until the end of its transaction; the
@@ -83,11 +89,14 @@ def create_all() -> list[str]:
     # Imported here, not at the top: seed/migrate.py imports this module.
     from app.seed.migrate import upgrade_schema
 
-    with get_engine().begin() as connection:
+    target_engine = engine or get_engine()
+    with target_engine.begin() as connection:
         if connection.dialect.name == "postgresql":
             connection.execute(text("SELECT pg_advisory_xact_lock(:id)"), {"id": _SCHEMA_LOCK_ID})
         else:
             connection.exec_driver_sql("BEGIN IMMEDIATE")
+        if only_when_empty and inspect(connection).get_table_names():
+            raise NonEmptyDatabaseError("The initial migration only runs on an empty database.")
         Base.metadata.create_all(connection)
         return upgrade_schema(connection)
 

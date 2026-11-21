@@ -207,3 +207,16 @@ def test_crashed_claim_is_taken_again_after_the_lease(session: Session, allowlis
     assert inbox.sent == []
     process_due(session, inbox, NOW + timedelta(minutes=10))
     assert len(inbox.sent) == 1
+
+
+def test_explicit_allow_all_sends_to_non_allowlisted_address(
+    session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("EMAIL_ALLOW_ALL", "1")
+    monkeypatch.delenv("EMAIL_ALLOWLIST", raising=False)
+    get_settings.cache_clear()
+    inbox = FakeInbox()
+    _queue(session, "public-signup", to_email="new@example.com")
+    report = process_due(session, inbox, NOW)
+    assert report.sent == 1
+    assert [message.to_email for message in inbox.sent] == ["new@example.com"]

@@ -7,12 +7,13 @@ step can be read and explained without a crypto package.
 import hashlib
 import hmac
 import ipaddress
+import math
 import secrets
 import time
 from typing import Annotated
 
 from fastapi import Depends, Header, Request
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from app import db
@@ -81,30 +82,59 @@ def _sign(message: str) -> str:
     return hmac.new(key, message.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
-def create_session_token(user_id: int, now: float | None = None) -> str:
+def _session_message(user_id: int | str, expires: int | str, version: int) -> str:
+    # Version 0 signs the message tokens had before versions existed, so
+    # those sessions stay valid until the first new password.
+    message = f"{user_id}.{expires}"
+    return message if version == 0 else f"{message}.v{version}"
+
+
+def create_session_token(user_id: int, now: float | None = None, version: int = 0) -> str:
     """Token format: "<user id>.<expiry unix time>.<signature>".
 
     The signature proves the server wrote the first two parts; nobody can
-    change the user id or extend the expiry without knowing SECRET_KEY.
+    change the user id or extend the expiry without knowing SECRET_KEY. It
+    also covers the account's session version (Organiser.session_version),
+    so raising the version ends every older token.
     """
     issued = time.time() if now is None else now
     expires = int(issued + SESSION_HOURS * 3600)
-    message = f"{user_id}.{expires}"
-    return f"{message}.{_sign(message)}"
+    return f"{user_id}.{expires}.{_sign(_session_message(user_id, expires, version))}"
 
 
-def verify_session_token(token: str, now: float | None = None) -> int | None:
-    """Return the user id, or None if the token is malformed, forged or expired."""
+def verify_session_token(token: str, now: float | None = None, version: int = 0) -> int | None:
+    """Return the user id, or None if the token is malformed, forged, expired or
+    signed for another session version."""
     parts = token.split(".")
     if len(parts) != 3 or not parts[0].isdigit() or not parts[1].isdigit():
         return None
     user_id, expires, signature = parts
-    if not tokens_match(signature, _sign(f"{user_id}.{expires}")):
+    if not tokens_match(signature, _sign(_session_message(user_id, expires, version))):
         return None
     current = time.time() if now is None else now
     if int(expires) < current:
         return None
     return int(user_id)
+
+
+def work_session_token(user: Organiser) -> str:
+    """A new work session for this account, at its current session version."""
+    return create_session_token(user.id, version=user.session_version)
+
+
+def session_user(session: Session, token: str) -> Organiser | None:
+    """The work account a session token belongs to, or None.
+
+    The only way the app reads a work token: it checks the signature against
+    the account's current session version.
+    """
+    parts = token.split(".")
+    if len(parts) != 3 or not parts[0].isdigit():
+        return None
+    user = session.get(Organiser, int(parts[0]))
+    if user is None or verify_session_token(token, version=user.session_version) != user.id:
+        return None
+    return user
 
 
 def keyed_hash(message: str) -> str:
@@ -128,8 +158,7 @@ def require_user(
 ) -> Organiser:
     """FastAPI dependency: the logged-in organiser or staff member, or 401."""
     token = _bearer(authorization)
-    user_id = verify_session_token(token) if token else None
-    user = session.get(Organiser, user_id) if user_id is not None else None
+    user = session_user(session, token) if token else None
     if user is None:
         raise ApiError(401, "unauthorised", "Please log in again.")
     return user
@@ -208,6 +237,15 @@ def require_guest_account(
 CurrentGuestAccount = Annotated[GuestAccount, Depends(require_guest_account)]
 
 
+def optional_guest_account(session: Session, authorization: str | None) -> GuestAccount | None:
+    """The signed-in guest account, or None for no token, a bad or ended one, or a
+    work token. Never 401: for public routes that only do more for a signed-in guest."""
+    try:
+        return require_guest_account(session, authorization)
+    except ApiError:
+        return None
+
+
 # ---------------------------------------------------------------- rate limit
 
 
@@ -242,10 +280,19 @@ def network_of(address: str) -> str:
     return address
 
 
+# Domains whose inboxes ignore dots in the name: "a.na@gmail.com" is "ana@gmail.com".
+DOTLESS_DOMAINS = frozenset({"gmail.com", "googlemail.com"})
+
+
 def mailbox(email: str) -> str:
-    """One key per inbox: lower case, and "name+tag@domain" read as "name@domain"."""
+    """One key per inbox: lower case, "name+tag@domain" read as "name@domain",
+    and for Gmail the dots in the name dropped. The domain is kept as typed,
+    so a caller may still narrow stored rows by domain (booking_caps.py)."""
     local, _, domain = email.strip().lower().rpartition("@")
-    return f"{local.split('+', 1)[0]}@{domain}"
+    local = local.split("+", 1)[0]
+    if domain in DOTLESS_DOMAINS:
+        local = local.replace(".", "")
+    return f"{local}@{domain}"
 
 
 def _stored_key(key: str) -> str:
@@ -294,6 +341,29 @@ def rate_limit(session: Session, key: str, limit: int, window_s: int) -> None:
     session.commit()
     if count is not None and count > limit:
         raise ApiError(429, "rate_limited", "Too many attempts. Please wait a moment.")
+
+
+def seconds_since(session: Session, key: str) -> float:
+    """Seconds since mark_now(key) last ran; infinity when it never did. Reads only."""
+    last = session.scalar(
+        select(func.max(RateLimit.window_start)).where(RateLimit.key == _stored_key(key))
+    )
+    return math.inf if last is None else time.time() - last
+
+
+def mark_now(session: Session, key: str) -> None:
+    """Remember this moment for `key` (seconds_since). Commits.
+
+    Stored in rate_limits as one row whose window_start is the moment itself.
+    Two requests in the same instant may both pass seconds_since: this is a
+    courtesy wait, and the hourly counts stay the real limit.
+    """
+    stored = _stored_key(key)
+    session.execute(delete(RateLimit).where(RateLimit.key == stored))
+    db.insert_ignoring_duplicates(
+        session, RateLimit.__table__, {"key": stored, "window_start": int(time.time()), "count": 1}
+    )
+    session.commit()
 
 
 def limit_reached(session: Session, key: str, limit: int, window_s: int) -> bool:

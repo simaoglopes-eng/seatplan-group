@@ -22,6 +22,7 @@ import { JoinPanel } from "./JoinPanel";
 import { joinOutcome, statusFromError } from "./joinOutcome";
 import { rememberWantedSeat } from "./wantedSeat";
 import "../events/events.css";
+import "../events/attendee.css";
 import "./join.css";
 
 type Load = { status: "loading" } | { status: "error"; error: ApiError } | { status: "ready"; view: VisitorView };
@@ -233,8 +234,8 @@ function VisitorScreen({ token, view, stale, onRefresh, onStale }: VisitorScreen
           heading={seatHeading}
           text={
             signedIn
-              ? "Join this event first. You can then hold this seat and confirm it, and we will email your seat and a picture of the room."
-              : "To choose it, create an account. It takes a minute; we will email your seat and a picture of the room."
+              ? "Join this event first. You can then choose and confirm a free seat."
+              : "Create an account to join and choose a seat."
           }
           actions={actions}
           onClose={closePanel}

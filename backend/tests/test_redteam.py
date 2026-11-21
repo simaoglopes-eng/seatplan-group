@@ -159,7 +159,11 @@ def test_s7_rate_limit_rows_hold_no_ip_address(client: TestClient, session: Sess
     assert keys, "the login should have counted one attempt"
     # TestClient's address is "testclient"; on Vercel it would be the visitor's IP.
     assert all("testclient" not in key for key in keys)
-    assert all(key.startswith("login:") for key in keys)
+    assert all(
+        key.split(":", 1)[0] in {"login", "organiser-login-fail", "organiser-login-fail-all"}
+        for key in keys
+    )
+    assert all(LOGIN["email"] not in key for key in keys)
 
 
 def test_a_guest_session_is_not_an_organiser_session(

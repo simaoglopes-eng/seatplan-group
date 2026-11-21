@@ -31,7 +31,8 @@ self-check are in `docs/ux-events.md`.
 | `SeatStep.tsx`, `HoldBar.tsx`, `RecommendationStrip.tsx`, `SeatNotice.tsx` | The seat step and its parts |
 | `useOrganiser.ts` | Organiser data, live updates, one `run()` helper for every write |
 | `OrganiserPage.tsx`, `OrganiserMap.tsx`, `Tabs.tsx` | Layout: map on the left, tabbed panel on the right. The map prints names (`showOccupants`) and marks preview changes with a square (`marked`) |
-| `GuestsTab.tsx`, `OptimiseTab.tsx`, `SettingsTab.tsx`, `PrintTab.tsx` | The four tabs. `GuestRow.tsx` adds the badges "Joined with link" and "Has an account" |
+| `LayoutTab.tsx`, `LayoutThumb.tsx`, `layoutModel.ts` | The Layout tab (second tab): one-click room setups (`GET /events/{eid}/layouts`, `POST /events/{eid}/layout`). Choose a card (its setup is drawn on the map, empty and look-only, via `org.layoutPreview`), then "Apply". A 409 `guests_seated` or 422 `not_enough_seats` opens a dialog with the counts from `error.details`; confirm sends `confirm: true`. "Fine-tune in the editor" links to `/editor/<venue_id>` only once `own_layout` is true. Leaving the tab drops the preview. `layoutModel.ts` holds the pure rules (tested) |
+| `GuestsTab.tsx`, `OptimiseTab.tsx`, `SettingsTab.tsx`, `PrintTab.tsx` | The other four tabs. `GuestRow.tsx` adds the badges "Joined with link" and "Has an account" |
 | `ShareLinkCard.tsx` | Settings tab: the shared link switch, Copy link, Make a new link (asks first), the optional limit and the counts (`GET`/`PATCH /events/{eid}/share`, `POST .../share/regenerate`) |
 | `seatPick.ts` | What clicking a seat means for the organiser (the keyboard alternative to drag and drop) |
 | `planPreview.ts`, `friendSeats.ts`, `format.ts` | Small pure helpers, each tested (`formatDeadline` writes a midnight deadline as 23:59 of the day before) |

@@ -94,6 +94,8 @@ export interface ChangeOptions {
   selectedId: number | null;
   /** The page's own hold, when it knows it. */
   ownId: number | null;
+  /** More of the page's own targets (seats chosen for a party), read like `ownId`. */
+  ownIds?: ReadonlySet<number>;
   /** What the person's last action changed; see SeatMapProps.actedOn. */
   actedOn: readonly number[] | null;
   noun: "seat" | "table";
@@ -118,7 +120,7 @@ export function useSeatChanges(targets: TrackedTarget[], options: ChangeOptions)
     const current = new Map(targets.map((t) => [t.id, t.state] as const));
     // The first render is the starting picture, not a change.
     if (previous.current !== null) {
-      const ownIds = new Set([options.ownId, picked.current].filter((id): id is number => id !== null));
+      const ownIds = new Set([options.ownId, picked.current, ...(options.ownIds ?? [])].filter((id): id is number => id !== null));
       const context = { selectedId: options.selectedId, ownIds, actedIds: acted.current, noun: options.noun };
       const changes = diffStates(previous.current, targets, context);
       if (changes.messages.length > 0) setAnnouncement(changes.messages.join(" "));

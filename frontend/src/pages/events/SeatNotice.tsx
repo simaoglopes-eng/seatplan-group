@@ -31,7 +31,7 @@ export function SeatNotice({ notice, seats, tables, busy, onHold, onDismiss }: S
               {next.reasons.length > 0 && <>: {next.reasons.join(", ")}</>}.
             </p>
             <Button busy={busy} onClick={() => onHold(next.seat_id)}>
-              Hold {name(next.seat_id)}
+              Select {name(next.seat_id)}
             </Button>
           </>
         ) : (
@@ -50,6 +50,16 @@ export function SeatNotice({ notice, seats, tables, busy, onHold, onDismiss }: S
       </NoticeBox>
     );
   }
+  if (notice.kind === "lost") {
+    return (
+      <NoticeBox title={notice.lines.length === 1 ? "A seat was just taken" : "Some seats were just taken"} onDismiss={onDismiss}>
+        {notice.lines.map((line) => (
+          <p key={line}>{line}</p>
+        ))}
+        <p>Every name you typed is kept. Tap a free seat on the map for each person without one.</p>
+      </NoticeBox>
+    );
+  }
   if (notice.kind === "deadline") {
     return (
       <NoticeBox title="Seat changes are closed" onDismiss={onDismiss}>
@@ -58,7 +68,7 @@ export function SeatNotice({ notice, seats, tables, busy, onHold, onDismiss }: S
     );
   }
   return (
-    <NoticeBox title="That did not work" onDismiss={onDismiss}>
+    <NoticeBox title={notice.title ?? "That did not work"} onDismiss={onDismiss}>
       <p>{notice.message}</p>
     </NoticeBox>
   );

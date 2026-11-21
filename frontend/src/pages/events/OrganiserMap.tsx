@@ -4,11 +4,15 @@
 // stray click cannot mix the preview with real moves. Seats the preview
 // changes get a square outline (`marked`), not the attendee's round
 // "recommended" halo, and real names are written under the seats.
+// A room setup chosen in the Layout tab replaces the plan with that setup,
+// empty and look-only, until it is applied or dropped (LayoutPreviewMap).
 import { useMemo, useState } from "react";
 import type { DragEvent } from "react";
 import type { OrganiserEvent } from "../../api/events";
 import { Legend } from "../../design/components";
 import { SeatMap } from "../../seatmap/SeatMap";
+import type { LayoutPreset } from "../../api/events";
+import { previewToMap } from "./layoutModel";
 import { changedSeats, previewSeats, seatIdFromElement } from "./planPreview";
 import { pickSeat } from "./seatPick";
 import type { OrganiserState } from "./useOrganiser";
@@ -17,6 +21,29 @@ const NO_MARKS: ReadonlySet<number> = new Set();
 const CHANGED_LABEL = "changed by preview";
 
 export function OrganiserMap({ org, data }: { org: OrganiserState; data: OrganiserEvent }) {
+  if (org.layoutPreview) return <LayoutPreviewMap org={org} preset={org.layoutPreview} eventName={data.event.name} />;
+  return <PlanMap org={org} data={data} />;
+}
+
+const NOTHING_SELECTABLE = (): boolean => false;
+
+/** The chosen setup, drawn empty: nobody sits there until it is applied. */
+function LayoutPreviewMap({ org, preset, eventName }: { org: OrganiserState; preset: LayoutPreset; eventName: string }) {
+  const map = useMemo(() => previewToMap(preset.preview, preset.key), [preset]);
+  return (
+    <div className="ev-org-map" ref={org.mapRef}>
+      <p className="ev-preview-banner">
+        <strong>Preview of the {preset.label} setup, not applied.</strong> {preset.capacity} seats. Apply it or choose
+        another in the Layout tab.
+      </p>
+      <div className="ev-map">
+        <SeatMap label={`Preview of the ${preset.label} setup, ${eventName}`} zones={map.zones} tables={map.tables} seats={map.seats} selectable={NOTHING_SELECTABLE} />
+      </div>
+    </div>
+  );
+}
+
+function PlanMap({ org, data }: { org: OrganiserState; data: OrganiserEvent }) {
   const { map } = data;
   const preview = org.preview;
   const seats = useMemo(() => (preview ? previewSeats(map.seats, data.guests, preview) : map.seats), [preview, map.seats, data.guests]);

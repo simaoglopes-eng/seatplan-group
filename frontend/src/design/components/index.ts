@@ -1,11 +1,13 @@
 // One import line for pages: import { Button, Field } from "../design/components";
 export { Badge } from "./Badge";
 export type { BadgeTone } from "./Badge";
+export { AuthLayout } from "./AuthLayout";
 export { Button } from "./Button";
 export type { ButtonVariant } from "./Button";
 export { Checkbox } from "./Checkbox";
 export { Dialog } from "./Dialog";
 export { Field } from "./Field";
+export { PasswordField } from "./PasswordField";
 export { Legend } from "./Legend";
 export { PageShell, Wordmark } from "./PageShell";
 export { Select } from "./Select";

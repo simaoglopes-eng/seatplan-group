@@ -61,7 +61,12 @@ def _use_database(url: str, monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
     monkeypatch.setenv("SECRET_KEY", "test-secret-key-not-used-anywhere-else")
     monkeypatch.setenv("DEMO_MODE", "1")
     monkeypatch.setenv("FRONTEND_ORIGIN", "http://localhost:5173")
-    for name in ("DEMO_KEY", "DEMO_ORGANISER_PASSWORD", "DEMO_STAFF_PASSWORD"):
+    for name in (
+        "DEMO_KEY",
+        "DEMO_ORGANISER_PASSWORD",
+        "DEMO_STAFF_PASSWORD",
+        "DEMO_MEMBER_PASSWORD",
+    ):
         monkeypatch.delenv(name, raising=False)
     if url.startswith("postgresql"):
         # On Postgres the seed never falls back to the public demo passwords,
@@ -114,6 +119,18 @@ def auth_header(user: Organiser) -> dict[str, str]:
 @pytest.fixture
 def organiser(session: Session) -> Organiser:
     return make_user(session, "rita.organiser@example.com")
+
+
+@pytest.fixture
+def no_resend_wait(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Lift the 30-second wait between code emails to one inbox (accounts.count_code_send).
+
+    For tests that send several code emails to one address in a row on
+    purpose; test_email_limits.py tests the wait itself.
+    """
+    from app.events_service import accounts
+
+    monkeypatch.setattr(accounts, "CODE_RESEND_SECONDS", 0)
 
 
 @pytest.fixture

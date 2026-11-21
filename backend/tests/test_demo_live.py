@@ -193,6 +193,9 @@ def test_demo_reset_wipes_guest_accounts_and_codes(
     reset = client.post("/api/demo/reset", headers={"X-Demo-Key": "a-long-demo-key-for-tests"})
     assert reset.status_code == 200, reset.text
     session.expire_all()
-    assert session.scalars(select(GuestAccount)).all() == []
+    # Every visitor's account is gone; the seed makes exactly one again, the
+    # "one account" demo member's (seed/demo_member.py).
+    remaining = [account.email for account in session.scalars(select(GuestAccount))]
+    assert remaining == ["rita@example.com"]
     assert session.scalars(select(EmailCode)).all() == []
     assert {"wedding_share", "conference_share"} <= set(reset.json()["links"])

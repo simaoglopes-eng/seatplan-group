@@ -6,7 +6,7 @@ import type { JoinStatus } from "../../../api/guest";
 import { ToastProvider } from "../../../design/components";
 import { callsTo, errorReply, startFakeServer } from "../../events/__tests__/mockServer";
 import type { FakeServer } from "../../events/__tests__/mockServer";
-import RegisterPage, { validateRegister } from "../RegisterPage";
+import RegisterPage from "../RegisterPage";
 import { WhereAmI } from "./fixtures";
 
 const SENT = { status: "code_sent", sent_to: "ni***@example.com", expires_in_seconds: 900, signup_id: "this-browser-only" };
@@ -30,7 +30,8 @@ function type(label: string | RegExp, value: string): void {
 }
 
 function fillForm(password = "a long password"): void {
-  type("Your name", "Nina Lopes");
+  type("First name", "Nina");
+  type("Last name", "Lopes");
   type("Email", "nina@example.com");
   type("Password", password);
   fireEvent.click(screen.getByLabelText(/I agree that SeatPlan stores my details/));
@@ -55,20 +56,6 @@ afterEach(() => {
   window.sessionStorage.clear();
 });
 
-describe("validateRegister", () => {
-  const good = { name: "Nina", email: "nina@example.com", password: "0123456789", needsAccessible: false, consent: true };
-
-  it("accepts a complete form with a 10-character password", () => {
-    expect(Object.values(validateRegister(good)).filter(Boolean)).toEqual([]);
-  });
-
-  it("refuses 9 characters, a password equal to the email, and no consent", () => {
-    expect(validateRegister({ ...good, password: "012345678" }).password).toBe("Use at least 10 characters.");
-    expect(validateRegister({ ...good, password: "Nina@Example.com" }).password).toBe("Choose a password that is not your email address.");
-    expect(validateRegister({ ...good, consent: false }).consent).toMatch(/Tick the box/);
-  });
-});
-
 describe("RegisterPage", () => {
   it("lists every missing field in a focused alert and sends nothing", async () => {
     const server = startFakeServer();
@@ -77,11 +64,12 @@ describe("RegisterPage", () => {
 
     const alert = screen.getByRole("alert");
     expect(document.activeElement).toBe(alert);
-    expect(within(alert).getByText("There are 4 problems")).toBeTruthy();
-    expect(within(alert).getByText("Enter your name.")).toBeTruthy();
+    expect(within(alert).getByText("There are 5 problems")).toBeTruthy();
+    expect(within(alert).getByText("Enter your first name.")).toBeTruthy();
+    expect(within(alert).getByText("Enter your last name.")).toBeTruthy();
     expect(within(alert).getByText(/Tick the box to agree/)).toBeTruthy();
     // Each error also sits next to its field and is tied to it.
-    const name = screen.getByLabelText("Your name");
+    const name = screen.getByLabelText("First name");
     expect(name.getAttribute("aria-invalid")).toBe("true");
     expect(name.getAttribute("aria-describedby")).toContain("-error");
     expect(screen.getByLabelText(/I agree that SeatPlan/).getAttribute("aria-describedby")).toBe("reg-consent-error");
@@ -105,7 +93,7 @@ describe("RegisterPage", () => {
     fireEvent.click(toggle);
     expect(screen.getByLabelText("Password").getAttribute("type")).toBe("text");
     expect(toggle.getAttribute("aria-pressed")).toBe("true");
-    expect(toggle.textContent).toBe("Hide password");
+    expect(toggle.getAttribute("aria-label")).toBe("Hide password");
     expect(document.activeElement).toBe(toggle);
   });
 
@@ -213,7 +201,7 @@ describe("RegisterPage", () => {
     expect(resend.disabled).toBe(false);
     expect(screen.getByText("You can ask for a new code now.")).toBeTruthy();
     fireEvent.click(resend);
-    expect(await screen.findByText("We sent a new code.")).toBeTruthy();
+    expect(await screen.findByText(/^We sent a new code\./)).toBeTruthy();
     expect(callsTo(server, "POST", "/j/tok/register")).toHaveLength(2);
   });
 });

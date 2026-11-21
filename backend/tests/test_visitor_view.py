@@ -63,17 +63,13 @@ def test_only_four_states_and_reserved_seats_are_blocked(
     extras = {(1, 0): {"reserved_tag": "vip"}, (1, 1): {"is_blocked": True}}
     setup, token = shared_event(client, organiser, GUESTS, extras=extras)
     choose(client, setup, "Ana Silva", setup.seats[0][0])
-    held = client.post(
-        f"/api/a/{setup.tokens['Bruno Costa']}/hold", json={"seat_id": setup.seats[0][1]}
-    )
-    assert held.status_code == 200
     states = {
         seat["id"]: seat["state"] for seat in client.get(f"/api/j/{token}").json()["map"]["seats"]
     }
-    assert set(states.values()) == {"free", "held", "taken", "blocked"}
+    assert set(states.values()) == {"free", "taken", "blocked"}
     assert states[setup.seats[1][0]] == "blocked"  # reserved for a tag
     assert states[setup.seats[1][1]] == "blocked"
-    assert states[setup.seats[0][0]] == "taken" and states[setup.seats[0][1]] == "held"
+    assert states[setup.seats[0][0]] == "taken" and states[setup.seats[0][1]] == "free"
 
 
 def test_visitors_cannot_hold_or_confirm(client: TestClient, organiser: Organiser) -> None:

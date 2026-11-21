@@ -19,13 +19,18 @@ cd backend
 
 ## Key files
 
+Restaurant platform models add rooms, openings, fixtures and image bytes,
+plus optional room references on existing layout objects. Existing venues
+default to published, while owner creation must explicitly use draft.
+Apply seed.migrate to existing databases before serving the new models.
+
 | File | Job |
 |---|---|
 | `main.py` | `create_app()`: database, error handlers, CORS, security headers, all routers under `/api`. Creates tables only on local SQLite |
 | `config.py` | Every environment variable is read here and only here |
 | `db.py` | Engine (SQLite locally, Postgres with NullPool in production), `SessionDep`, `insert_ignoring_duplicates` |
 | `models.py` | Every table. The UNIQUE constraints are what make double booking impossible |
-| `security.py` | scrypt passwords, token hashes, signed sessions (organiser and guest account, kept apart), `CurrentUser`, `CurrentOrganiser`, `CurrentGuestAccount`, `rate_limit`, `mailbox`, `network_of` |
+| `security.py` | scrypt passwords, token hashes, signed sessions (organiser and guest account, kept apart; both carry a session version, read through `session_user` / `require_guest_account`), `CurrentUser`, `CurrentOrganiser`, `CurrentGuestAccount`, `rate_limit`, `mailbox`, `network_of` |
 | `core/` | Shared building blocks: holds, live updates, audit, privacy, layout (see its own read-me) |
 | `routers/` | One file per area of the API |
 | `mail/outbox.py` | `enqueue()`: emails are written to a table first and sent later |

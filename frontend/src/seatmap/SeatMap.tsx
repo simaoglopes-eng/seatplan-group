@@ -8,7 +8,7 @@
 //   "tables" (restaurants)  every table is a target; its seats are decoration
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, RefObject } from "react";
-import type { MapSeat, MapTable, MapZone } from "../api/types";
+import type { MapRoom, MapSeat, MapTable, MapZone } from "../api/types";
 import { describeItem, tableName } from "./describe";
 import type { DescribeItem } from "./describe";
 import { COMFORT_TARGET_PX, MIN_TARGET_PX, MIN_ZOOM, contentBounds, roomAround, seatHitRadius, tableCentre, tableHitRadius, zoomForTarget } from "./geometry";
@@ -16,6 +16,8 @@ import { PatternDefs, safeId } from "./glyphs";
 import { handleMapKey } from "./mapKeyboard";
 import { MapControls } from "./MapControls";
 import { NamesLayer, TablesLayer, ZonesLayer } from "./MapLayers";
+import { RoomBackdrop, RoomDefs, RoomNight } from "./RoomLayers";
+import { mergeBounds, roomsBounds } from "./roomScene";
 import { TargetsLayer, itemFor, targetDomId } from "./Targets";
 import { usePanZoom } from "./usePanZoom";
 import type { PanZoom } from "./usePanZoom";
@@ -36,6 +38,8 @@ export interface SeatMapProps {
   /** Which targets may be picked. Default: free ones. */
   selectable?: (id: number) => boolean;
   selectedId?: number | null;
+  /** More selected targets, drawn and read out like `selectedId` (several seats chosen for a party). Pass a memoised Set. */
+  selectedIds?: ReadonlySet<number>;
   onSelect?: (id: number) => void;
   /** Recommended targets, drawn with a round, dashed brass halo. */
   highlight?: ReadonlySet<number>;
@@ -45,6 +49,8 @@ export interface SeatMapProps {
   markedLabel?: string;
   /** The viewer's own hold. Its turning "held" or "mine" is not read out as someone else's. */
   ownId?: number | null;
+  /** More of the viewer's own targets (the seats chosen for their party): same rule as `ownId`. */
+  ownIds?: ReadonlySet<number>;
   /** Targets the viewer's last action changed (the tables staff just seated or moved). Their next change only moves, silently: the page has already said what happened. */
   actedOn?: readonly number[] | null;
   /** Seat currently targeted by an organiser drag-and-drop. */
@@ -55,6 +61,14 @@ export interface SeatMapProps {
   showOccupants?: boolean;
   /** Replaces the default accessible name of an item; return null to keep the default. Flags are still added. */
   describe?: DescribeItem;
+  /** Restaurant rooms: curved walls, windows, fixed items, sun patches and the night veil. Without it the map is drawn exactly as before. */
+  rooms?: MapRoom[];
+  /** Draw only this room (null is the implicit room). Default: every room given. */
+  activeRoomId?: number | null;
+  /** Draw the sun patches (default true). */
+  showSun?: boolean;
+  /** Called with the id under the pointer or the keyboard cursor, and null when there is none. */
+  onActiveChange?: (id: number | null) => void;
 }
 
 /** Everything the map needs to know about one pickable thing. */
@@ -95,19 +109,20 @@ function buildTargets(mode: SeatMapMode, tables: MapTable[], seats: MapSeat[], t
 }
 
 /** Derived data, recomputed only when the tables or seats change. */
-function useMapModel(mode: SeatMapMode, tables: MapTable[], seats: MapSeat[], zones: MapZone[]) {
+function useMapModel(mode: SeatMapMode, tables: MapTable[], seats: MapSeat[], zones: MapZone[], rooms: MapRoom[]) {
   const tableById = useMemo(() => new Map(tables.map((t) => [t.id, t])), [tables]);
   const seatsByTable = useMemo(() => groupByTable(seats), [seats]);
-  const rooms = useMemo(() => roomAround(seats), [seats]);
-  const targets = useMemo(() => buildTargets(mode, tables, seats, tableById, rooms), [mode, tables, seats, tableById, rooms]);
+  const seatRoom = useMemo(() => roomAround(seats), [seats]);
+  const targets = useMemo(() => buildTargets(mode, tables, seats, tableById, seatRoom), [mode, tables, seats, tableById, seatRoom]);
   const targetById = useMemo(() => new Map(targets.map((t) => [t.id, t])), [targets]);
-  const bounds = useMemo(() => contentBounds(tables, seats, 40, zones), [tables, seats, zones]);
+  // Walls (and their curves) are part of the picture people orient by, so they count too.
+  const bounds = useMemo(() => mergeBounds(contentBounds(tables, seats, 40, zones), roomsBounds(rooms)), [tables, seats, zones, rooms]);
   // The first view never zooms out so far that the smallest target drops below 24 px.
   const readableK = useMemo(
     () => (targets.length === 0 ? MIN_ZOOM : zoomForTarget(Math.min(...targets.map((t) => t.size)), MIN_TARGET_PX)),
     [targets],
   );
-  return { tableById, seatsByTable, rooms, targets, targetById, bounds, readableK };
+  return { tableById, seatsByTable, rooms: seatRoom, targets, targetById, bounds, readableK };
 }
 
 /** Where to look first: the focused target, then the selected one, then the first recommendation. */
@@ -215,11 +230,15 @@ export function SeatMap(props: SeatMapProps) {
   const leaveRef = useRef<HTMLButtonElement>(null);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [hoverId, setHoverId] = useState<number | null>(null);
-  const model = useMapModel(mode, tables, seats, zones);
+  const shownRooms = useMemo(
+    () => (props.rooms ?? []).filter((r) => props.activeRoomId === undefined || r.id === props.activeRoomId),
+    [props.rooms, props.activeRoomId],
+  );
+  const model = useMapModel(mode, tables, seats, zones, shownRooms);
   const noun = mode === "tables" ? "table" : "seat";
   const getFocus = () => focusTarget(model.targets, [focusId, selectedId], highlight);
   const panZoom = usePanZoom(viewportRef, model.bounds, { minK: model.readableK, getFocus });
-  const changes = useSeatChanges(model.targets, { selectedId, ownId: props.ownId ?? null, actedOn: props.actedOn ?? null, noun });
+  const changes = useSeatChanges(model.targets, { selectedId, ownId: props.ownId ?? null, ownIds: props.ownIds, actedOn: props.actedOn ?? null, noun });
 
   const isSelectable = useCallback(
     (id: number): boolean => (props.selectable ? props.selectable(id) : model.targetById.get(id)?.state === "free"),
@@ -231,6 +250,11 @@ export function SeatMap(props: SeatMapProps) {
   const recommended = model.targets.find((t) => highlight.has(t.id));
   const focusControl = recommended ? { label: `Zoom to the recommended ${noun}`, onClick: () => zoomTo(panZoom, recommended) } : null;
   const captionId = hoverId ?? activeId;
+  const reportActive = props.onActiveChange;
+  useEffect(() => {
+    reportActive?.(captionId);
+    // Only a change of target is news; a new callback each render is not.
+  }, [captionId]);
   const caption = captionId === null ? null : captionFor(captionId, props, model, highlight, selectedId);
   const { view } = panZoom;
   // Map text reads this to stay legible when zoomed out (seatmap.css, .table-label).
@@ -257,7 +281,11 @@ export function SeatMap(props: SeatMapProps) {
       >
         <svg className="seatmap-svg" width="100%" height="100%" style={zoomStyle}>
           <PatternDefs prefix={mapId} />
+          {shownRooms.length > 0 && <RoomDefs prefix={mapId} />}
           <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
+            {shownRooms.map((room) => (
+              <RoomBackdrop key={room.id ?? "implicit"} room={room} mapId={mapId} showSun={props.showSun ?? true} />
+            ))}
             <ZonesLayer zones={zones} />
             {mode === "seats" && <TablesLayer tables={tables} />}
             <TargetsLayer
@@ -271,6 +299,7 @@ export function SeatMap(props: SeatMapProps) {
               zoom={view.k}
               isSelectable={isSelectable}
               selectedId={selectedId}
+              selectedIds={props.selectedIds ?? NOTHING}
               activeId={activeId}
               dropTargetId={props.dropTargetId ?? null}
               highlight={highlight}
@@ -282,6 +311,9 @@ export function SeatMap(props: SeatMapProps) {
               onHover={setHoverId}
             />
             {props.showOccupants && mode === "seats" && view.k >= NAMES_ZOOM && <NamesLayer seats={seats} />}
+            {shownRooms.map((room) => (
+              <RoomNight key={room.id ?? "implicit"} room={room} />
+            ))}
           </g>
         </svg>
       </div>
@@ -325,5 +357,6 @@ function captionFor(
   const item = itemFor(props.mode ?? "seats", id, { seats: props.seats, ...model });
   if (!item) return null;
   const marked = props.marked?.has(id) ? (props.markedLabel ?? "changed") : null;
-  return describeItem(item, { recommended: highlight.has(id), marked, selected: id === selectedId }, props.describe);
+  const selected = id === selectedId || (props.selectedIds?.has(id) ?? false);
+  return describeItem(item, { recommended: highlight.has(id), marked, selected }, props.describe);
 }

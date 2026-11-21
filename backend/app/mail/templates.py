@@ -414,6 +414,30 @@ def account_code(event_name: str, code: str, sign_in_link: str) -> EmailParts:
     )
 
 
+def account_code_general(code: str, sign_in_link: str) -> EmailParts:
+    """The code that finishes a sign-up made on the account page, with no event.
+
+    Same rules as account_code: no name in the greeting, never in the subject.
+    """
+    paragraphs = [
+        f"Your code to finish creating your SeatPlan account is: {code}",
+        (
+            "It works for 15 minutes. If you did not ask for it, ignore this email: "
+            "no account is made without the code."
+        ),
+        "Never give this code to anyone. SeatPlan never asks for it by phone or message.",
+    ]
+    return _compose(
+        "Your SeatPlan code",
+        "",
+        paragraphs,
+        "Open SeatPlan",
+        sign_in_link,
+        _CODE_REASON,
+        _CODE_STOP_TEXT,
+    )
+
+
 def password_code(name: str, code: str, sign_in_link: str) -> EmailParts:
     """The 6-digit code for choosing a new password."""
     paragraphs = [
@@ -459,6 +483,26 @@ def account_exists(name: str, event_name: str, sign_in_link: str) -> EmailParts:
 
 
 # ---------------------------------------------------------------- restaurants
+
+
+def account_exists_general(name: str, sign_in_link: str) -> EmailParts:
+    """Sent instead of a code when an account-page sign-up meets an existing account."""
+    paragraphs = [
+        (
+            "Someone, probably you, tried to create a SeatPlan account with this address. "
+            "You already have one, so nothing changed."
+        ),
+        "Sign in with your password, or choose a new one if you forgot it.",
+    ]
+    return _compose(
+        "You already have a SeatPlan account",
+        name,
+        paragraphs,
+        "Sign in",
+        sign_in_link,
+        _CODE_REASON,
+        _CODE_STOP_TEXT,
+    )
 
 
 def _party(party_size: int) -> str:

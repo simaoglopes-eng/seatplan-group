@@ -1,0 +1,515 @@
+[
+  {
+    "slug": "cervejaria-ramiro",
+    "name": "Cervejaria Ramiro",
+    "address": "Avenida Almirante Reis 1-H, Lisboa",
+    "location": [
+      38.7202,
+      -9.13571
+    ],
+    "source": "https://www.cervejariaramiro.com/",
+    "cuisines": [
+      "seafood",
+      "portuguese"
+    ],
+    "description": "An Arroios cervejaria specialising in seafood.",
+    "pin_source": "https://mapcarta.com/N2503432815",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Cervejaria_Ramiro_(28112895727).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2e/Cervejaria_Ramiro_%2828112895727%29.jpg/960px-Cervejaria_Ramiro_%2828112895727%29.jpg",
+      "author": "Kent Wang",
+      "license": "CC BY-SA 2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "alt": "Cervejaria Ramiro in Lisbon"
+    },
+    "price_level": 3,
+    "price_source": "https://www.thefork.pt/restaurante/cervejaria-ramiro-r730931/menu"
+  },
+  {
+    "slug": "can-the-can",
+    "name": "Can the Can",
+    "address": "Praça do Comércio 82–83, Lisboa",
+    "location": [
+      38.70765,
+      -9.13525
+    ],
+    "source": "https://www.canthecan.pt/",
+    "cuisines": [
+      "portuguese",
+      "seafood"
+    ],
+    "description": "A waterfront restaurant in Terreiro do Paço with a menu inspired by Portuguese fish preserves.",
+    "pin_source": "https://mapcarta.com/N2503417884",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Can_Can_restaurant,_Lisbon,_Portugal_(53974096902).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b9/Can_Can_restaurant%2C_Lisbon%2C_Portugal_%2853974096902%29.jpg/960px-Can_Can_restaurant%2C_Lisbon%2C_Portugal_%2853974096902%29.jpg",
+      "author": "flowcomm",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "alt": "Can the Can in Praça do Comércio"
+    },
+    "price_level": 3,
+    "price_source": "https://portugalconfidential.com/wp-content/uploads/2013/06/Haute-and-Cool-Cuisine-in-Portugal.pdf"
+  },
+  {
+    "slug": "nori-restaurante",
+    "name": "NORI Restaurante Japonês",
+    "address": "Rua da Cruz dos Poiais 89, Lisboa",
+    "location": [
+      38.712158,
+      -9.151404
+    ],
+    "source": "https://norirestaurantejapones.eatbu.com/?lang=pt",
+    "cuisines": [
+      "japanese"
+    ],
+    "description": "A Japanese restaurant in São Bento serving ramen, udon and Japanese curry.",
+    "pin_source": "https://commons.wikimedia.org/wiki/File:Nori_Restaurante_-_Rua_da_Cruz_dos_Poiais,_89_-_2024.jpg",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Nori_Restaurante_-_Rua_da_Cruz_dos_Poiais,_89_-_2024.jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c1/Nori_Restaurante_-_Rua_da_Cruz_dos_Poiais%2C_89_-_2024.jpg/960px-Nori_Restaurante_-_Rua_da_Cruz_dos_Poiais%2C_89_-_2024.jpg",
+      "author": "JnpoJuwan",
+      "license": "CC0 1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "alt": "The NORI restaurant entrance in São Bento"
+    },
+    "price_level": 2,
+    "price_source": "https://www.ubereats.com/pt/store/nori-restaurant-japones/fLFjMJFsSXmohXkNahc9Yg"
+  },
+  {
+    "slug": "epur",
+    "name": "EPUR",
+    "address": "Largo da Academia Nacional de Belas Artes 14, Lisboa",
+    "location": [
+      38.708755,
+      -9.139823
+    ],
+    "source": "https://www.casadomarques.pt/restaurante-epur/",
+    "cuisines": [
+      "french"
+    ],
+    "description": "Vincent Farges’s tasting-menu restaurant in Chiado.",
+    "pin_source": "https://commons.wikimedia.org/wiki/File:Artichoke,_patanegra_and_balsamic_-_Epur_-_Lisbon_(52751813915).jpg",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Artichoke,_patanegra_and_balsamic_-_Epur_-_Lisbon_(52751813915).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8e/Artichoke%2C_patanegra_and_balsamic_-_Epur_-_Lisbon_%2852751813915%29.jpg/960px-Artichoke%2C_patanegra_and_balsamic_-_Epur_-_Lisbon_%2852751813915%29.jpg",
+      "author": "Haydn Blackey",
+      "license": "CC BY-SA 2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "alt": "Artichoke, cured ham and balsamic at EPUR"
+    },
+    "price_level": 4,
+    "price_source": "https://www.thefork.pt/restaurante/epur-r384347/menu"
+  },
+  {
+    "slug": "eleven",
+    "name": "Eleven",
+    "address": "Rua Marquês de Fronteira, Jardim Amália Rodrigues, Lisboa",
+    "location": [
+      38.73151,
+      -9.152672
+    ],
+    "source": "https://www.restauranteleven.com/pt/contactos",
+    "cuisines": [
+      "mediterranean"
+    ],
+    "description": "Joachim Koerper’s restaurant above Parque Eduardo VII.",
+    "pin_source": "https://commons.wikimedia.org/wiki/File:Amuse_Boche_-_Restaurant_Eleven_-_Lisbon_(52751063365).jpg",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Amuse_Boche_-_Restaurant_Eleven_-_Lisbon_(52751063365).jpg",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Amuse_Boche_-_Restaurant_Eleven_-_Lisbon_%2852751063365%29.jpg/960px-Amuse_Boche_-_Restaurant_Eleven_-_Lisbon_%2852751063365%29.jpg",
+      "author": "Haydn Blackey",
+      "license": "CC BY-SA 2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "alt": "Three small dishes at Eleven"
+    },
+    "price_level": 4,
+    "price_source": "https://www.thefork.com/restaurant/eleven-r66693"
+  },
+  {
+    "slug": "o-faia",
+    "name": "O Faia",
+    "address": "Rua da Barroca 54–56, Lisboa",
+    "location": [
+      38.71167,
+      -9.14445
+    ],
+    "source": "https://ofaia.com/contactos.html",
+    "cuisines": [
+      "portuguese"
+    ],
+    "description": "A Bairro Alto fado house with a Portuguese dinner menu.",
+    "pin_source": "https://mapcarta.com/N4705401291",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Caldo_Verde_(kale_soup)_at_O_Faia_(46934771085).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b2/Caldo_Verde_%28kale_soup%29_at_O_Faia_%2846934771085%29.jpg/960px-Caldo_Verde_%28kale_soup%29_at_O_Faia_%2846934771085%29.jpg",
+      "author": "MollySVH",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "alt": "A bowl of caldo verde served at O Faia"
+    },
+    "price_level": 4,
+    "price_source": "https://ofaia.com/restaurante.html"
+  },
+  {
+    "slug": "cantinho-do-avillez",
+    "name": "Cantinho do Avillez",
+    "address": "Rua dos Duques de Bragança 7, Lisboa",
+    "location": [
+      38.7085297,
+      -9.1420161
+    ],
+    "source": "https://www.cantinhodoavillez.pt/pt/restaurantes/chiado.html",
+    "cuisines": [
+      "portuguese",
+      "fusion"
+    ],
+    "description": "José Avillez’s Chiado restaurant serving Portuguese-inspired cooking.",
+    "pin_source": "https://portugalconfidential.com/wp-content/uploads/2013/06/Haute-and-Cool-Cuisine-in-Portugal.pdf",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Cantinho_do_Avillez_(41171087410).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a9/Cantinho_do_Avillez_%2841171087410%29.jpg/960px-Cantinho_do_Avillez_%2841171087410%29.jpg",
+      "author": "Kent Wang",
+      "license": "CC BY-SA 2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "alt": "Cantinho do Avillez in Lisbon"
+    },
+    "price_level": 3,
+    "price_source": "https://www.thefork.pt/restaurante/cantinho-do-avillez-chiado-r843772"
+  },
+  {
+    "slug": "casa-da-india",
+    "name": "Casa da Índia",
+    "address": "Rua do Loreto 49–51, Lisboa",
+    "location": [
+      38.71061,
+      -9.14484
+    ],
+    "source": "https://restaurantecasadaindia.eatbu.com/?lang=pt",
+    "cuisines": [
+      "portuguese",
+      "petiscos"
+    ],
+    "description": "A Portuguese restaurant on Rua do Loreto with grilled dishes.",
+    "pin_source": "https://aroundus.com/p/171996804-casa-da-india",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Casa_da_India_Mix-Grills_(14398064654).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8c/Casa_da_India_Mix-Grills_%2814398064654%29.jpg/960px-Casa_da_India_Mix-Grills_%2814398064654%29.jpg",
+      "author": "Roger Hsu",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "alt": "A cook at the grill at Casa da Índia"
+    },
+    "price_level": 2,
+    "price_source": "https://www.allaboutportugal.pt/en/lisboa/restaurants/casa-da-india"
+  },
+  {
+    "slug": "casa-da-mariquinhas",
+    "name": "Casa da Mariquinhas",
+    "address": "Praça da Armada 17, Lisboa",
+    "location": [
+      38.705492,
+      -9.170757
+    ],
+    "source": "https://www.visitportugal.com/pt-pt/content/casa-da-mariquinhas-0",
+    "cuisines": [
+      "portuguese"
+    ],
+    "description": "A Portuguese restaurant and fado house in Alcântara.",
+    "pin_source": "https://commons.wikimedia.org/wiki/File:Casa_da_Mariquinhas_-_Lisboa_-_Portugal_(22698776434).jpg",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Casa_da_Mariquinhas_-_Lisboa_-_Portugal_(22698776434).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/72/Casa_da_Mariquinhas_-_Lisboa_-_Portugal_%2822698776434%29.jpg/500px-Casa_da_Mariquinhas_-_Lisboa_-_Portugal_%2822698776434%29.jpg",
+      "author": "Vitor Oliveira",
+      "license": "CC BY-SA 2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "alt": "Casa da Mariquinhas in Alcântara"
+    },
+    "price_level": 2,
+    "price_source": "https://lifecooler.com/artigo/comer/casa-da-mariquinhas/436750"
+  },
+  {
+    "slug": "come-prima",
+    "name": "Come Prima",
+    "address": "Rua do Olival 256–258, Lisboa",
+    "location": [
+      38.70483,
+      -9.16637
+    ],
+    "source": "https://www.visitportugal.com/pt-pt/content/come-prima",
+    "cuisines": [
+      "italian",
+      "pizza"
+    ],
+    "description": "An Italian restaurant on Rua do Olival near the Museu Nacional de Arte Antiga.",
+    "pin_source": "https://mapcarta.com/N7086187487",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Come_Prima_visto_de_fora.png",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/c/c2/Come_Prima_visto_de_fora.png",
+      "author": "Duartedas",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "alt": "The exterior of Come Prima"
+    },
+    "price_level": 3,
+    "price_source": "https://experiences.lisbonbyboat.com/pt/local.php?localid=512&tip=2"
+  },
+  {
+    "slug": "doca-peixe",
+    "name": "Doca Peixe",
+    "address": "Doca de Santo Amaro, Armazém 14, Lisboa",
+    "location": [
+      38.69965,
+      -9.1788
+    ],
+    "source": "https://www.visitportugal.com/pt-pt/content/doca-peixe",
+    "cuisines": [
+      "fish",
+      "seafood"
+    ],
+    "description": "A fish and seafood restaurant in the Santo Amaro docks.",
+    "pin_source": "https://mapcarta.com/pt/N2234481734",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Doca_Peixe_Lisbon_DSCN0585.jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Doca_Peixe_Lisbon_DSCN0585.jpg/960px-Doca_Peixe_Lisbon_DSCN0585.jpg",
+      "author": "Kognos",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "alt": "Doca Peixe at the Santo Amaro docks"
+    },
+    "price_level": 2,
+    "price_source": "https://www.bestguide.pt/restaurante-doca-peixe/"
+  },
+  {
+    "slug": "cafe-principe-real",
+    "name": "Café Príncipe Real",
+    "address": "Rua Dom Pedro V 56 J, Lisboa",
+    "location": [
+      38.71628,
+      -9.14628
+    ],
+    "source": "https://www.memmohotels.com/principereal/m/pt/eat-drink",
+    "cuisines": [
+      "portuguese",
+      "mediterranean"
+    ],
+    "description": "The restaurant at Memmo Príncipe Real serving contemporary Portuguese cooking.",
+    "pin_source": "https://aroundus.com/p/171748669-memmo-principe-real",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Caf%C3%A9_Pr%C3%ADncipe_Real_(41171265560).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Caf%C3%A9_Pr%C3%ADncipe_Real_%2841171265560%29.jpg/960px-Caf%C3%A9_Pr%C3%ADncipe_Real_%2841171265560%29.jpg",
+      "author": "Kent Wang",
+      "license": "CC BY-SA 2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "alt": "Café Príncipe Real at Memmo"
+    },
+    "price_level": 3,
+    "price_source": "https://www.thefork.pt/restaurante/cafe-principe-real-r358369"
+  },
+  {
+    "slug": "figus",
+    "name": "Figus",
+    "address": "Praça da Figueira 16, Lisboa",
+    "location": [
+      38.71328,
+      -9.13807
+    ],
+    "source": "https://www.tablegroup.pt/figus.html",
+    "cuisines": [
+      "portuguese"
+    ],
+    "description": "A Portuguese restaurant at The Beautique Hotels Figueira in Baixa.",
+    "pin_source": "https://mapcarta.com/30936838",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Bacalhau_%C3%A0_Br%C3%A1s_at_Restaurante_Figus,_Lisbon_(46935287645).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/93/Bacalhau_%C3%A0_Br%C3%A1s_at_Restaurante_Figus%2C_Lisbon_%2846935287645%29.jpg/960px-Bacalhau_%C3%A0_Br%C3%A1s_at_Restaurante_Figus%2C_Lisbon_%2846935287645%29.jpg",
+      "author": "MollySVH",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "alt": "Bacalhau à Brás served at Figus"
+    },
+    "price_level": 2,
+    "price_source": "https://www.thefork.pt/restaurante/figu-s-r473965"
+  },
+  {
+    "slug": "cervejaria-trindade",
+    "name": "Cervejaria Trindade",
+    "address": "Rua Nova da Trindade 20 C, Lisboa",
+    "location": [
+      38.71246,
+      -9.142386
+    ],
+    "source": "https://www.cervejariatrindade.pt/restaurante/",
+    "cuisines": [
+      "portuguese",
+      "seafood"
+    ],
+    "description": "A historic Chiado cervejaria serving seafood, steaks and petiscos.",
+    "pin_source": "https://commons.wikimedia.org/wiki/File:Cervejaria_Trindade_8105.jpg",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Cervejaria_Trindade_8105.jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4e/Cervejaria_Trindade_8105.jpg/960px-Cervejaria_Trindade_8105.jpg",
+      "author": "João Carvalho",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "alt": "Cervejaria Trindade on Rua Nova da Trindade"
+    },
+    "price_level": 3,
+    "price_source": "https://www.thefork.pt/restaurante/cervejaria-trindade-r432821"
+  },
+  {
+    "slug": "o-pinoquio",
+    "name": "O Pinóquio",
+    "address": "Praça dos Restauradores 79–80, Lisboa",
+    "location": [
+      38.715497,
+      -9.140946
+    ],
+    "source": "https://www.restaurantepinoquio.pt/",
+    "cuisines": [
+      "seafood",
+      "portuguese"
+    ],
+    "description": "A seafood restaurant on Praça dos Restauradores.",
+    "pin_source": "https://commons.wikimedia.org/wiki/File:2011-04-23_Portugal_522_-_Lisboa_(5695966042).jpg",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:2011-04-23_Portugal_522_-_Lisboa_(5695966042).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/47/2011-04-23_Portugal_522_-_Lisboa_%285695966042%29.jpg/960px-2011-04-23_Portugal_522_-_Lisboa_%285695966042%29.jpg",
+      "author": "Luiyo",
+      "license": "CC BY-SA 2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "alt": "Restaurante Cervejaria O Pinóquio"
+    },
+    "price_level": 3,
+    "price_source": "https://pt.restaurantguru.com/amp/Pinoquio-Lisbon"
+  },
+  {
+    "slug": "gambrinus",
+    "name": "Gambrinus",
+    "address": "Rua das Portas de Santo Antão 23, Lisboa",
+    "location": [
+      38.715223,
+      -9.139624
+    ],
+    "source": "https://www.visitlisboa.com/en/about-turismo-lisboa/associates/restaurant-gambrinus",
+    "cuisines": [
+      "seafood",
+      "portuguese"
+    ],
+    "description": "A classic Lisbon restaurant with fish and seafood on Rua das Portas de Santo Antão.",
+    "pin_source": "https://commons.wikimedia.org/wiki/File:Lisboa_2013-07-27_15.09.38_(9392741763).jpg",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Lisboa_2013-07-27_15.09.38_(9392741763).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Lisboa_2013-07-27_15.09.38_%289392741763%29.jpg/960px-Lisboa_2013-07-27_15.09.38_%289392741763%29.jpg",
+      "author": "mertxe iturrioz",
+      "license": "CC BY-SA 2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "alt": "Gambrinus in Lisbon"
+    },
+    "price_level": 4,
+    "price_source": "https://www.guiarepsol.com/pt/fichas/restaurante/gambrinus-pt404953/"
+  },
+  {
+    "slug": "solar-dos-presuntos",
+    "name": "Solar dos Presuntos",
+    "address": "Rua das Portas de Santo Antão 150, Lisboa",
+    "location": [
+      38.71774,
+      -9.14173
+    ],
+    "source": "https://www.solardospresuntos.com/",
+    "cuisines": [
+      "portuguese",
+      "seafood"
+    ],
+    "description": "A Lisbon restaurant serving northern Portuguese favourites and seafood.",
+    "pin_source": "https://mapcarta.com/N1918975684",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Lisbon,_Portugal_(53975092771).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Lisbon%2C_Portugal_%2853975092771%29.jpg/960px-Lisbon%2C_Portugal_%2853975092771%29.jpg",
+      "author": "flowcomm",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "alt": "Solar dos Presuntos in Lisbon"
+    },
+    "price_level": 3,
+    "price_source": "https://experiences.lisbonbyboat.com/pt/local.php?localid=61&tip=2"
+  },
+  {
+    "slug": "martinho-da-arcada",
+    "name": "Martinho da Arcada",
+    "address": "Praça do Comércio 3, Lisboa",
+    "location": [
+      38.70872,
+      -9.13583
+    ],
+    "source": "https://www.martinhodaarcada.pt/",
+    "cuisines": [
+      "portuguese"
+    ],
+    "description": "A historic café and restaurant under the arcades of Praça do Comércio.",
+    "pin_source": "https://imovel.patrimoniocultural.gov.pt/detalhes.php?code=74718",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Caf%C3%A9_Martinho_da_Arcada,_Lisboa,_2023_02.jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Caf%C3%A9_Martinho_da_Arcada%2C_Lisboa%2C_2023_02.jpg/960px-Caf%C3%A9_Martinho_da_Arcada%2C_Lisboa%2C_2023_02.jpg",
+      "author": "GualdimG",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "alt": "Café Martinho da Arcada in 2023"
+    },
+    "price_level": 2,
+    "price_source": "https://www.bestguide.pt/restaurante-martinho-da-arcada/"
+  },
+  {
+    "slug": "lisboa-a-noite",
+    "name": "Lisboa à Noite",
+    "address": "Rua das Gáveas 69, Lisboa",
+    "location": [
+      38.712016,
+      -9.143466
+    ],
+    "source": "https://www.visitlisboa.com/pt-pt/locais/lisboa-a-noite",
+    "cuisines": [
+      "portuguese",
+      "seafood"
+    ],
+    "description": "A Bairro Alto restaurant serving Portuguese food on Rua das Gáveas.",
+    "pin_source": "https://commons.wikimedia.org/wiki/File:Lisboa_Noite_(3901646242).jpg",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Lisboa_Noite_(3901646242).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/Lisboa_Noite_%283901646242%29.jpg/500px-Lisboa_Noite_%283901646242%29.jpg",
+      "author": "Bernt Rostad",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "alt": "The lobster aquarium at Lisboa à Noite"
+    },
+    "price_level": 3,
+    "price_source": "https://www.thefork.pt/restaurante/lisboa-a-noite-r64505"
+  },
+  {
+    "slug": "casa-do-alentejo",
+    "name": "Casa do Alentejo",
+    "address": "Rua das Portas de Santo Antão 58, Lisboa",
+    "location": [
+      38.71593,
+      -9.13986
+    ],
+    "source": "https://casadoalentejo.pt/restaurante/",
+    "cuisines": [
+      "portuguese",
+      "petiscos"
+    ],
+    "description": "The restaurant of Casa do Alentejo serves regional Alentejo dishes in the former Palácio Alverca.",
+    "pin_source": "https://mapcarta.com/W96299647",
+    "photo": {
+      "file": "https://commons.wikimedia.org/wiki/File:Restaurant_at_Casa_do_Alentejo_(4141482353).jpg",
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/Restaurant_at_Casa_do_Alentejo_%284141482353%29.jpg/960px-Restaurant_at_Casa_do_Alentejo_%284141482353%29.jpg",
+      "author": "Heather Cowper",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "alt": "Dining room at Casa do Alentejo"
+    },
+    "price_level": 2,
+    "price_source": "https://www.visitportugal.com/pt-pt/NR/exeres/2E7C2499-E382-4DCF-AD97-59FCB2E62363"
+  }
+]

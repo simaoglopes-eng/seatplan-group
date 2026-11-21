@@ -125,7 +125,7 @@ them all with safe values.
 | `PUBLIC_BASE_URL` | Deployment | `http://localhost:5173` | Start of the links inside emails |
 | `DEMO_MODE` | Demo | off | `1`, `true` or `yes` turns on `/api/demo/*` |
 | `DEMO_KEY` | To reset the demo | empty | Header `X-Demo-Key`; empty means nobody can reset |
-| `DEMO_ORGANISER_PASSWORD`, `DEMO_STAFF_PASSWORD` | Seeding on Postgres, or with demo mode off | public defaults (SQLite only) | Keep private on any deployment |
+| `DEMO_ORGANISER_PASSWORD`, `DEMO_STAFF_PASSWORD`, `DEMO_MEMBER_PASSWORD` | Seeding on Postgres, or with demo mode off | public defaults (SQLite only) | Keep private on any deployment |
 | `CRON_SECRET` | Email processing | empty | Header `X-Cron-Secret`; empty rejects every call |
 | `EMAIL_PROVIDER` | Email | `console` | `console` or `resend` |
 | `RESEND_API_KEY` | `EMAIL_PROVIDER=resend` | empty | Never logged |

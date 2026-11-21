@@ -14,8 +14,10 @@ from app.optimiser.restaurant_model import TableSpec
 from app.restaurant_service.clock import booking_window
 
 # Bookings in these states own their table_slots rows. Every other state
-# (completed, cancelled, no_show) has already handed its table back.
-ACTIVE_STATUSES = ("confirmed", "seated", "finishing")
+# (completed, cancelled, no_show) has already handed its table back. "pending" is
+# a booking waiting for its deposit: it keeps the table for a short time (see
+# booking_payments.PENDING_MINUTES) so nobody else can take it meanwhile.
+ACTIVE_STATUSES = ("pending", "confirmed", "seated", "finishing")
 
 Busy = dict[int, set[int]]
 
@@ -29,8 +31,16 @@ def scope_for(venue: Venue, day: date) -> str:
     return f"venue-{venue.public_id}-{day.isoformat()}"
 
 
-def venue_tables(session: Session, venue: Venue) -> list[VenueTable]:
+def venue_tables(
+    session: Session, venue: Venue, include_inactive: bool = False
+) -> list[VenueTable]:
+    """The restaurant's tables. Tables the owner switched off ("Available for
+    booking" off, spec 6.10) are left out unless the caller asks: they are not
+    shown to diners and never enter the optimiser, but the staff floor still
+    needs them for old bookings."""
     query = select(VenueTable).where(VenueTable.venue_id == venue.id).order_by(VenueTable.id)
+    if not include_inactive:
+        query = query.where(VenueTable.is_active)
     return list(session.scalars(query))
 
 
@@ -49,7 +59,9 @@ def table_specs(tables: list[VenueTable], kinds: dict[int, str]) -> list[TableSp
             zone=kinds.get(table.zone_id, "general") if table.zone_id else "general",
             accessible=table.is_accessible,
             high_chair_ok=table.high_chair_ok,
-            combine_group=table.combine_group,
+            # Group names are local to a room; implicit legacy tables share
+            # the None room. Never join tables across independent floor plans.
+            combine_group=f"{table.room_id}:{table.combine_group}" if table.combine_group else None,
             label=table.label,
         )
         for table in tables

@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
-from test_events_setup import choose, make_event, recorded_writes, seat_state
+from test_events_setup import choose, give_details, make_event, recorded_writes, seat_state
 
 from app.core import live
 from app.models import AuditLog, EmailOutbox, Organiser, SeatAssignment
@@ -49,9 +49,7 @@ def test_full_attendee_flow(client: TestClient, organiser: Organiser, session: S
     knows = client.post(f"/api/a/{ana}/knows", json={"guest_ids": [setup.guests["Bruno Costa"]]})
     assert knows.json() == {"knows": [setup.guests["Bruno Costa"]]}
 
-    held = client.post(f"/api/a/{ana}/hold", json={"seat_id": first})
-    assert held.status_code == 200 and held.json()["expires_at"]
-    assert seat_state(setup.page(client, "Bruno Costa"), first) == "held"
+    give_details(setup.guests["Ana Silva"])  # a chosen seat carries a name and an age
     assert client.post(f"/api/a/{ana}/confirm", json={"seat_id": first}).status_code == 200
     assert seat_state(setup.page(client, "Ana Silva"), first) == "mine"
     assert seat_state(setup.page(client, "Bruno Costa"), first) == "taken"
@@ -87,7 +85,7 @@ def test_full_attendee_flow(client: TestClient, organiser: Organiser, session: S
     assert "METHOD:CANCEL" in (_emails(session)[3].ics or "")
     assert _live_version(client, page) > version_before
     actions = set(session.scalars(select(AuditLog.action)))
-    assert {"seat.hold", "seat.confirm", "seat.release", "guest.knows", "guest.rsvp"} <= actions
+    assert {"seat.confirm", "seat.release", "guest.knows", "guest.rsvp"} <= actions
 
 
 def test_recommendations_name_only_people_i_know(client: TestClient, organiser: Organiser) -> None:
@@ -103,20 +101,20 @@ def test_recommendations_name_only_people_i_know(client: TestClient, organiser: 
     assert named == {"Bruno C."}  # Carla is in Ana's group but not on her own list
 
 
-def test_confirm_without_hold_is_refused(client: TestClient, organiser: Organiser) -> None:
+def test_confirm_without_hold_succeeds(client: TestClient, organiser: Organiser) -> None:
     setup = make_event(client, organiser, GUESTS)
+    give_details(setup.guests["Ana Silva"])
     response = client.post(
         f"/api/a/{setup.tokens['Ana Silva']}/confirm", json={"seat_id": setup.seats[0][0]}
     )
-    assert response.status_code == 409
-    assert response.json()["error"]["code"] == "hold_expired"
+    assert response.status_code == 200
 
 
 def test_held_or_taken_seat_gives_helpful_409(client: TestClient, organiser: Organiser) -> None:
     setup = make_event(client, organiser, GUESTS)
     seat = setup.seats[0][0]
     choose(client, setup, "Ana Silva", seat)
-    response = client.post(f"/api/a/{setup.tokens['Bruno Costa']}/hold", json={"seat_id": seat})
+    response = client.post(f"/api/a/{setup.tokens['Bruno Costa']}/confirm", json={"seat_id": seat})
     assert response.status_code == 409
     error = response.json()["error"]
     assert error["code"] == "seat_taken" and "choose another seat" in error["message"]
@@ -128,7 +126,9 @@ def test_reserved_and_blocked_seats_are_refused(client: TestClient, organiser: O
     page = setup.page(client, "Ana Silva")
     assert seat_state(page, setup.seats[0][0]) == "blocked"
     for seat in setup.seats[0][:2]:
-        response = client.post(f"/api/a/{setup.tokens['Ana Silva']}/hold", json={"seat_id": seat})
+        response = client.post(
+            f"/api/a/{setup.tokens['Ana Silva']}/confirm", json={"seat_id": seat}
+        )
         assert response.status_code == 409
 
 
@@ -138,7 +138,6 @@ def test_deadline_passed_blocks_seat_changes(client: TestClient, organiser: Orga
     page = setup.page(client, "Ana Silva")
     assert page["event"]["deadline_passed"] is True
     for response in (
-        client.post(f"/api/a/{token}/hold", json={"seat_id": setup.seats[0][0]}),
         client.post(f"/api/a/{token}/confirm", json={"seat_id": setup.seats[0][0]}),
         client.delete(f"/api/a/{token}/seat"),
         client.post(f"/api/a/{token}/rsvp", json={"rsvp": "no"}),
@@ -153,6 +152,8 @@ def test_two_attendees_race_for_one_seat(
     client: TestClient, organiser: Organiser, session: Session
 ) -> None:
     setup = make_event(client, organiser, GUESTS)
+    for name in ("Ana Silva", "Bruno Costa"):
+        give_details(setup.guests[name])
     seat = setup.seats[0][0]
     start = threading.Barrier(2)
     results: dict[str, int] = {}
@@ -160,10 +161,6 @@ def test_two_attendees_race_for_one_seat(
     def grab(name: str) -> None:
         token = setup.tokens[name]
         start.wait()
-        held = client.post(f"/api/a/{token}/hold", json={"seat_id": seat})
-        if held.status_code != 200:
-            results[name] = held.status_code
-            return
         results[name] = client.post(f"/api/a/{token}/confirm", json={"seat_id": seat}).status_code
 
     threads = [threading.Thread(target=grab, args=(n,)) for n in ("Ana Silva", "Bruno Costa")]
@@ -183,7 +180,7 @@ def test_rsvp_no_releases_the_seat(client: TestClient, organiser: Organiser) -> 
     token = setup.tokens["Ana Silva"]
     assert client.post(f"/api/a/{token}/rsvp", json={"rsvp": "no"}).status_code == 200
     assert seat_state(setup.page(client, "Bruno Costa"), setup.seats[0][0]) == "free"
-    refused = client.post(f"/api/a/{token}/hold", json={"seat_id": setup.seats[0][0]})
+    refused = client.post(f"/api/a/{token}/confirm", json={"seat_id": setup.seats[0][0]})
     assert refused.status_code == 409
 
 
@@ -213,7 +210,7 @@ def test_attendee_page_names_the_venue(client: TestClient, organiser: Organiser)
     assert setup.page(client, "Ana Silva")["venue"] == {"name": "Hall"}
 
 
-@pytest.mark.parametrize("action", ["hold", "confirm"])
+@pytest.mark.parametrize("action", ["confirm"])
 def test_seat_writes_lock_the_event_first(
     client: TestClient, organiser: Organiser, action: str
 ) -> None:
@@ -224,8 +221,7 @@ def test_seat_writes_lock_the_event_first(
     """
     setup = make_event(client, organiser, GUESTS)
     token, seat = setup.tokens["Ana Silva"], setup.seats[0][0]
-    if action == "confirm":
-        assert client.post(f"/api/a/{token}/hold", json={"seat_id": seat}).status_code == 200
+    give_details(setup.guests["Ana Silva"])
     with recorded_writes() as writes:
         response = client.post(f"/api/a/{token}/{action}", json={"seat_id": seat})
     assert response.status_code == 200, response.text
@@ -246,7 +242,7 @@ def test_database_deadlock_becomes_a_clean_409(
 
     monkeypatch.setattr(live, "bump", deadlocked)
     token = setup.tokens["Ana Silva"]
-    response = client.post(f"/api/a/{token}/hold", json={"seat_id": setup.seats[0][0]})
+    response = client.post(f"/api/a/{token}/confirm", json={"seat_id": setup.seats[0][0]})
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "conflict"
     assert "try again" in response.json()["error"]["message"]

@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app import db
 from app.core.errors import ApiError
 from app.core.text import PlainText
-from app.restaurant_service import service_plan, staff_floor
+from app.restaurant_service import customer_history, service_plan, staff_floor
 from app.restaurant_service.availability import PartyNeeds
 from app.restaurant_service.booking_rows import describe
 from app.restaurant_service.changes import record_change
@@ -37,6 +37,16 @@ from app.restaurant_service.whatif import walkin_whatif
 from app.security import CurrentUser
 
 router = APIRouter(tags=["staff"])
+
+
+@router.get("/staff/{venue_public_id}/bookings/{booking_id}/customer")
+def customer_profile(
+    venue_public_id: str, booking_id: str, user: CurrentUser, session: db.SessionDep
+) -> dict[str, Any]:
+    venue = load_for_staff(session, venue_public_id, user)
+    booking = staff_floor.load_booking(session, venue, booking_id)
+    return customer_history.describe(session, venue, booking)
+
 
 Status = Literal["confirmed", "seated", "finishing", "completed", "no_show", "cancelled"]
 

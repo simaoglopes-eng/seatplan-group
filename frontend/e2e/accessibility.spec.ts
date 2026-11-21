@@ -18,10 +18,17 @@ async function expectNoViolations(page: Page, what: string): Promise<void> {
   expect(summary, `axe found problems on ${what}`).toEqual([]);
 }
 
-test("home page", async ({ page }) => {
+test("discovery page", async ({ page }) => {
   await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1, name: "Find a table you’ll love." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Near me" })).toBeVisible();
+  await expectNoViolations(page, "the discovery page");
+});
+
+test("demo page (the old home page)", async ({ page }) => {
+  await page.goto("/demo");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await expectNoViolations(page, "the home page");
+  await expectNoViolations(page, "the demo page");
 });
 
 test("sign-in page", async ({ page }) => {
@@ -41,7 +48,7 @@ test("attendee invitation page", async ({ page, request }) => {
 test("diner booking page", async ({ page, request }) => {
   const links = await demoLinks(request);
   await page.goto(links.restaurant_booking);
-  await expect(page.getByRole("heading", { name: "When, and how many?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Book a table" })).toBeVisible();
   await expectNoViolations(page, "the booking page");
 });
 
@@ -77,4 +84,26 @@ test("guest sign-in page", async ({ page }) => {
   await page.goto("/my/sign-in");
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   await expectNoViolations(page, "the guest sign-in page");
+});
+
+// Events parity (plan 2026-11-18): the public event pages and the one account panel.
+test("event booking page", async ({ page }) => {
+  await page.goto("/events");
+  await expect(page.locator("article.ep-event-card").first()).toBeVisible();
+  await expectNoViolations(page, "the event booking page");
+});
+
+test("event venue page", async ({ page }) => {
+  await page.goto("/venues/quinta-da-serra-azul");
+  await expect(page.getByRole("heading", { level: 1, name: "Quinta da Serra Azul" })).toBeVisible();
+  await expectNoViolations(page, "the venue page");
+});
+
+test("account panel, signed out and on the create-account step", async ({ page }) => {
+  await page.goto("/account");
+  await expect(page.getByRole("form", { name: "Sign in" })).toBeVisible();
+  await expectNoViolations(page, "the account sign-in");
+  await page.goto("/account?mode=create");
+  await expect(page.getByRole("button", { name: "Send my code" })).toBeVisible();
+  await expectNoViolations(page, "the create-account form");
 });
