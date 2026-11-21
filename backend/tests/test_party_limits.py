@@ -176,17 +176,18 @@ def test_a_booker_who_keeps_changing_people_stops_at_three_times_the_limit(
     assert counts(session) == before
 
 
-def test_the_lifetime_limit_without_a_party_limit_is_24(
-    client: TestClient, organiser: Organiser, monkeypatch: pytest.MonkeyPatch
+def test_no_party_limit_counts_as_the_largest_setting_for_the_lifetime_limit(
+    client: TestClient, organiser: Organiser
 ) -> None:
+    """No limit (0) is never stricter than 500: 3 x 500 people over the event, not 24."""
+    assert limits.PARTY_CHANGES_NO_LIMIT == 3 * limits.MAX_PARTY_SIZE_SETTING == 1500
     setup = invited_event(client, organiser, ["Ana Silva"], tables=8, per_table=4)
     assert _set_limit(client, setup, 0).status_code == 200
     ana = link_door(setup, "Ana Silva")
     seats = _flat(setup)
-    first = ana.confirm(client, party_body(seats[0], _members(seats[1:25])))
-    assert first.status_code == 200, first.text  # 24 members at once is allowed
-    over = ana.confirm(client, party_body(seats[0], _members(seats[25:26])))
-    assert over.status_code == 409 and over.json()["error"]["code"] == "party_changes_exhausted"
+    first = ana.confirm(client, party_body(seats[0], _members(seats[1:31])))
+    assert first.status_code == 200, first.text  # 30 members at once (24 was refused)
+    assert len(first.json()["members"]) == 30
 
 
 def test_erased_members_are_not_read_for_the_place_counts(

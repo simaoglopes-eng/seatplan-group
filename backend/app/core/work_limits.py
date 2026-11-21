@@ -8,8 +8,13 @@ take no lock (Postgres refuses FOR UPDATE with an aggregate).
 
 Demo venues (is_demo) and an event's own room setup copy (parent_venue_id
 set) are never counted: the seed makes the first, and applying a layout
-preset makes the second without the organiser asking for a new venue.
+preset makes the second without the organiser asking for a new venue. The
+place POST /events/create-with-venue makes with its event (made_with_event)
+is not counted as a venue either: the limit on events that have not ended
+bounds those, and an event that ends frees its place in that limit.
 """
+
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
@@ -34,6 +39,9 @@ def _own_venues(session: Session, user: Organiser, kind: str) -> int:
         & (Venue.kind == kind)
         & Venue.parent_venue_id.is_(None)
         & Venue.is_demo.is_(False)
+        # NULL-safe: only a venue marked True is left out. Venues made before
+        # the column existed are NULL and still count.
+        & Venue.made_with_event.is_not(True)
     )
     return session.scalar(query) or 0
 
@@ -60,26 +68,31 @@ def require_room_for_venue(session: Session, user: Organiser, kind: str) -> None
 
 
 def require_room_for_event(session: Session, user: Organiser) -> None:
-    """409 limit_reached when this account already has its share of events.
+    """409 limit_reached when this account already has its share of events still to end.
 
-    Counts every event of the account whose venue is not a demo one (a demo
-    event's setup copy is a demo venue too). There is no route that deletes
-    an event, so the count only grows.
+    Counts the account's events that have not ended (ends_at, or starts_at
+    when ends_at is empty, still in the future) whose venue is not a demo
+    one (a demo event's setup copy is a demo venue too). An event that ends
+    frees its place, so the limit never locks an organiser out for good.
     """
     lock_account(session, user)
     limit = limits.MAX_EVENTS_PER_ACCOUNT
+    ends = func.coalesce(Event.ends_at, Event.starts_at)
     query = (
         select(func.count())
         .select_from(Event)
         .join(Venue, Venue.id == Event.venue_id)
-        .where((Event.organiser_id == user.id) & Venue.is_demo.is_(False))
+        .where(
+            (Event.organiser_id == user.id) & Venue.is_demo.is_(False) & (ends > datetime.now(UTC))
+        )
     )
     if (session.scalar(query) or 0) >= limit:
         raise ApiError(
             409,
             "limit_reached",
-            f"One account can have up to {_plural(limit, 'event')}, and you have reached that. "
-            "Contact us if you need more.",
+            f"One account can have up to {_plural(limit, 'event')} that have not ended yet, "
+            "and you have reached that. You can add more once one has ended, "
+            "or contact us if you need more.",
             details={"limit": limit},
         )
 

@@ -79,6 +79,7 @@ NEW_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("guests", "booked_by_guest_id", "INTEGER REFERENCES guests (id)"),
     ("guests", "age_years", "INTEGER"),
     ("events", "max_party_size", "INTEGER"),
+    ("venues", "made_with_event", "BOOLEAN"),
 )
 
 # (index name, statement). Both databases understand "IF NOT EXISTS" here.
@@ -133,6 +134,28 @@ def _add_missing_columns(connection: Connection) -> list[str]:
     return changes
 
 
+def _mark_places_made_with_events(connection: Connection) -> list[str]:
+    """Mark the places create-with-venue made before venues.made_with_event existed.
+
+    Runs only in the migration that adds the column, and fills NULLs only. The
+    rule is what that route has always written and POST /venues never does:
+    no venue.create audit row, no slug, no venue type, UTC and a 1000 x 800
+    floor. A hall made through /venues has its audit row, so it keeps counting.
+    """
+    result = connection.execute(
+        text(
+            "UPDATE venues SET made_with_event = TRUE "
+            "WHERE made_with_event IS NULL AND kind = 'event' "
+            "AND parent_venue_id IS NULL AND is_demo = FALSE "
+            "AND slug IS NULL AND venue_type IS NULL AND timezone = 'UTC' "
+            "AND width = 1000 AND height = 800 "
+            "AND NOT EXISTS (SELECT 1 FROM audit_log a WHERE a.action = 'venue.create' "
+            "AND a.entity = 'venue' AND a.entity_id = venues.public_id)"
+        )
+    )
+    return [f"Marked {result.rowcount} places made with their event"]
+
+
 def _upgrade_review_scale(connection: Connection) -> list[str]:
     constraints = inspect(connection).get_check_constraints("restaurant_reviews")
     if not any(check["name"] == "ck_restaurant_review_score" for check in constraints):
@@ -169,6 +192,8 @@ def upgrade_schema(connection: Connection) -> list[str]:
     the guest_accounts table that create_all makes.
     """
     changes = _add_missing_columns(connection)
+    if "Added column venues.made_with_event" in changes:
+        changes.extend(_mark_places_made_with_events(connection))
     changes.extend(_upgrade_review_scale(connection))
     for name, statement in (*NEW_INDEXES, *RESTAURANT_INDEXES):
         connection.execute(text(statement))

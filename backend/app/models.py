@@ -124,6 +124,10 @@ class Venue(Base):
     # events_service/layouts.py): the venue it copies. That copy is private
     # (draft, no slug); public pages, names and the venue team are the parent's.
     parent_venue_id: Mapped[int | None] = mapped_column(ForeignKey("venues.id"))
+    # True on the place POST /events/create-with-venue makes together with its
+    # event: a per-event place, not counted in the account's event venue limit
+    # (core/work_limits.py). NULL on every other venue, older ones included.
+    made_with_event: Mapped[bool | None] = mapped_column(Boolean)
 
 
 class VenueMember(Base):

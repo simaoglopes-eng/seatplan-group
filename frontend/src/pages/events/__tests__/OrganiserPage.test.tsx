@@ -180,7 +180,7 @@ describe("Organiser page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save seat limit" }));
     expect((await screen.findAllByText(/Seat limit saved: 4 seats per person/)).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "No limit" }));
-    expect((await screen.findAllByText(/No limit saved\. One person can still add at most 24 people/)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/No limit saved\. One person can still add at most 1500 people/)).length).toBeGreaterThan(0);
     expect(callsTo(server, "PATCH", "/events/ev1")).toEqual([{ max_party_size: 4 }, { max_party_size: 0 }]);
   });
 
@@ -192,6 +192,8 @@ describe("Organiser page", () => {
     fireEvent.click(await screen.findByRole("tab", { name: "Settings" }));
     const save = screen.getByRole("button", { name: "Save seat limit" }) as HTMLButtonElement;
     expect(screen.getByText(/^No limit on seats at once/)).toBeTruthy();
+    // "No limit" is never stricter than the largest setting: 3 x 500 people over the event.
+    expect(screen.getByText(/at most 1500 people\./)).toBeTruthy();
     expect(save.disabled).toBe(true);
     fireEvent.change(screen.getByLabelText("Seats per person"), { target: { value: "6" } });
     expect(save.disabled).toBe(false);

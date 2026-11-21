@@ -68,7 +68,9 @@ from app.security import (
 CODE_MINUTES = 15
 MAX_CODE_TRIES = 5
 MIN_PASSWORD_LENGTH = 10
-CONSENT_VERSION = "2026-11-14"
+# PrivacyText.tsx PRIVACY_VERSION: bump both together. Only stamped on new
+# accounts: nothing compares it yet, so existing guests are not asked again.
+CONSENT_VERSION = "2026-11-21"
 # Rate limits (docs/guest-accounts.md, 8.1). Module constants so tests can lower them.
 # The per-network numbers leave room for a whole conference on one Wi-Fi.
 CODE_SENDS_PER_NETWORK_HOUR = 60

@@ -153,7 +153,8 @@ def verify(session: Session, email: str, code: str, signup_id: str) -> dict[str,
             action="owner.register",
             entity="organiser",
             entity_id=str(user.id),
-            detail={"consent_version": "2026-11-13"},
+            # The sign-up form shows PrivacyText.tsx: keep equal to its PRIVACY_VERSION.
+            detail={"consent_version": "2026-11-21"},
         )
         session.commit()
     except IntegrityError:

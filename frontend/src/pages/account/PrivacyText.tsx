@@ -1,5 +1,5 @@
 // Shown both at sign-up and on the account page.
-export const PRIVACY_VERSION = "2026-11-14";
+export const PRIVACY_VERSION = "2026-11-21";
 
 export function PrivacyText() {
   return (

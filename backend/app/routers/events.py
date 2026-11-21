@@ -4,6 +4,7 @@ Each route: check the login and the body, call one helper from
 app/events_service, bump the live scope, write the audit log, commit once.
 """
 
+from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Body, Query, Response
@@ -135,6 +136,13 @@ class NewEventIn(BaseModel):
     venue_address: PlainText | None = Field(default=None, max_length=200)
 
 
+def _require_not_ended(ends_at: datetime) -> None:
+    """422 for a new event that has already ended: it would never count in the
+    limit on events that have not ended (core/work_limits.py)."""
+    if ends_at <= datetime.now(UTC):
+        raise ApiError(422, "validation", "The event must end in the future.")
+
+
 @router.post("/events/create-with-venue", status_code=201)
 def create_event_with_venue(
     body: NewEventIn, user: CurrentOrganiser, session: db.SessionDep
@@ -142,13 +150,16 @@ def create_event_with_venue(
     """Create a new event and its empty floor together, or neither on error."""
     if body.ends_at <= body.starts_at:
         raise ApiError(422, "validation", "The event must end after it starts.")
-    # First: rate_limit commits its count. Each new event makes a venue of its own.
+    _require_not_ended(body.ends_at)
+    # First: rate_limit commits its count. Each new event makes a place of its own,
+    # marked made_with_event so the event venue limit leaves it out: only the
+    # limit on events that have not ended applies here.
     rate_limit(session, f"event-create:{user.id}", limits.EVENT_CREATES_PER_HOUR, 3600)
-    work_limits.require_room_for_venue(session, user, "event")
     work_limits.require_room_for_event(session, user)
     venue = Venue(
         organiser_id=user.id,
         kind="event",
+        made_with_event=True,
         name=(body.venue_name or "").strip() or body.name,
         address=(body.venue_address or "").strip(),
         timezone="UTC",
@@ -181,10 +192,14 @@ def create_event(body: EventIn, user: CurrentOrganiser, session: db.SessionDep) 
         or venue.organiser_id != user.id
         or venue.kind != "event"
         or venue.parent_venue_id is not None  # another event's setup copy
+        # The place create-with-venue made for one event: it is not counted as
+        # an event venue, so it must not hold more events than its own.
+        or venue.made_with_event is True
     ):
         raise ApiError(404, "not_found", "Event venue not found.")
     if body.ends_at <= body.starts_at:
         raise ApiError(422, "validation", "The event must end after it starts.")
+    _require_not_ended(body.ends_at)
     # One venue may hold several events, so the venue limit alone does not bound them.
     work_limits.require_room_for_event(session, user)
     event = Event(venue_id=venue.id, organiser_id=user.id, **body.model_dump(exclude={"venue_id"}))
@@ -246,6 +261,14 @@ def patch_event(
 ) -> dict[str, Any]:
     event = load_event(session, eid, user)
     changes = body.model_dump(exclude_unset=True)
+    # An ended event moved back into the future counts again in the limit on
+    # events that have not ended. Checked before any change, so the event does
+    # not count itself, and against the event's owner (a venue member may edit).
+    new_end = changes.get("ends_at") or event.ends_at
+    if event.ends_at <= datetime.now(UTC) < new_end and not load_venue(session, event).is_demo:
+        owner = session.get(Organiser, event.organiser_id)
+        if owner is not None:
+            work_limits.require_room_for_event(session, owner)
     for name, value in changes.items():
         if value is None and name not in ("change_deadline", "event_type", "max_party_size"):
             raise ApiError(422, "validation", f"{name} cannot be empty.")
