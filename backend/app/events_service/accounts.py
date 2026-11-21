@@ -56,9 +56,11 @@ from app.security import (
     keyed_hash,
     limit_reached,
     mailbox,
+    mark_now,
     network_of,
     new_token,
     rate_limit,
+    seconds_since,
     tokens_match,
     verify_password,
 )
@@ -71,7 +73,17 @@ CONSENT_VERSION = "2026-11-14"
 # The per-network numbers leave room for a whole conference on one Wi-Fi.
 CODE_SENDS_PER_NETWORK_HOUR = 60
 CODE_SENDS_PER_NETWORK_DAY = 200
-CODE_SENDS_PER_MAILBOX_HOUR = 3
+# One count per inbox for every kind of code email together (sign-up, new
+# password, organiser and owner sign-up, the account page), so asking for
+# one kind cannot be used to send more mail than this to one person.
+CODE_SENDS_PER_MAILBOX_HOUR = 5
+# The page waits this long before it offers "Send a new code"; the server
+# refuses sooner requests for the same inbox (429 too_soon), whatever the
+# purpose and whether or not an account exists, so the answer reveals nothing.
+CODE_RESEND_SECONDS = 30
+TOO_SOON = (
+    "We just sent an email to this address. Please wait 30 seconds before asking for another one."
+)
 CODE_SENDS_PER_APP_HOUR = 500
 CODE_CHECKS_PER_NETWORK = 100
 CODE_CHECK_WINDOW = 600
@@ -135,16 +147,24 @@ def sign_in_link() -> str:
 
 
 def count_code_send(session: Session, request: Request, email: str, purpose: str) -> None:
-    """The network and inbox limits on code emails, counted before any other write. Commits.
+    """The wait, network and inbox limits on code emails, before any other write. Commits.
 
-    `purpose` is "register" or "reset". Each has its own inbox count, so
-    asking for reset codes cannot use up someone's sign-up codes.
+    `purpose` ("register", "reset", "org_reg", "owner") only says which
+    route asks: the 30-second wait and the hourly inbox count are shared by
+    all of them. Both are checked before the route looks for an account, so
+    they answer the same for every address. A request refused for coming
+    too soon counts nothing.
     """
+    del purpose  # one shared count per inbox (see CODE_SENDS_PER_MAILBOX_HOUR)
+    inbox = mailbox(email)
+    resend_key = f"code-send-recent:{inbox}"
+    if seconds_since(session, resend_key) < CODE_RESEND_SECONDS:
+        raise ApiError(429, "too_soon", TOO_SOON)
     network = network_of(client_ip(request))
     rate_limit(session, f"code-send:{network}", CODE_SENDS_PER_NETWORK_HOUR, HOUR)
     rate_limit(session, f"code-send-day:{network}", CODE_SENDS_PER_NETWORK_DAY, DAY)
-    inbox_key = f"code-send-mail-{purpose}:{mailbox(email)}"
-    rate_limit(session, inbox_key, CODE_SENDS_PER_MAILBOX_HOUR, HOUR)
+    rate_limit(session, f"code-send-mail:{inbox}", CODE_SENDS_PER_MAILBOX_HOUR, HOUR)
+    mark_now(session, resend_key)
 
 
 def count_app_send(session: Session) -> None:
@@ -356,16 +376,11 @@ def start_sign_up(
     password_hash = hash_password(form.password)
     existing = find_account(session, form.email)
     if existing is not None:
-        hour = utc_now().strftime("%Y%m%d%H")
-        # A keyed hash, not the address: keys outlive a deleted account.
-        key = f"account-exists:{keyed_hash('mailbox:' + mailbox(form.email))[:32]}:{hour}"
         if event is None:
             parts = templates.account_exists_general(existing.name, sign_in_link())
         else:
             parts = templates.account_exists(existing.name, event.name, sign_in_link())
-        _queue(session, key, "account_exists", form.email, parts)
-        session.commit()
-        return key, None, signup_id
+        return queue_account_exists(session, "account-exists", form.email, parts), None, signup_id
     row, code = _new_code_row(
         session,
         form.email,
@@ -387,12 +402,37 @@ def start_sign_up(
     return _code_key(row), (code if show_code else None), signup_id
 
 
+def queue_account_exists(
+    session: Session, prefix: str, email: str, parts: templates.EmailParts
+) -> str:
+    """Queue the "you already have an account" note instead of a code. Commits.
+
+    Sent where a code would be, so a sign-up for a taken address does the
+    same work (an email queued, then sent at once) and takes as long as one
+    for a new address. One note per request, as a new address gets one code
+    per request: a key shared by repeated requests would let the outbox skip
+    the second send and answer faster. count_code_send (5 an hour, 30 s
+    apart) caps how many notes one inbox gets. The key holds a keyed hash,
+    not the address, so it outlives a deleted account without naming anyone.
+    """
+    key = f"{prefix}:{keyed_hash('mailbox:' + mailbox(email))[:32]}:{new_token()}"
+    _queue(session, key, "account_exists", email, parts)
+    session.commit()
+    return key
+
+
 def start_standalone_sign_up(session: Session, form: SignUp) -> tuple[str | None, str]:
-    """Queue verification without joining an event; never expose the code in the response."""
+    """Queue verification without joining an event; never expose the code in the response.
+
+    For an address that already has an account, the note that says so goes
+    out instead (queue_account_exists), so both answers cost the same.
+    """
     signup_id = new_token()
     password_hash = hash_password(form.password)
-    if find_account(session, form.email) is not None:
-        return None, signup_id
+    existing = find_account(session, form.email)
+    if existing is not None:
+        parts = templates.account_exists_general(existing.name, sign_in_link())
+        return queue_account_exists(session, "account-exists", form.email, parts), signup_id
     row, code = _new_code_row(
         session,
         form.email,

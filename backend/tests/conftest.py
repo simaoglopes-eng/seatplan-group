@@ -122,5 +122,17 @@ def organiser(session: Session) -> Organiser:
 
 
 @pytest.fixture
+def no_resend_wait(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Lift the 30-second wait between code emails to one inbox (accounts.count_code_send).
+
+    For tests that send several code emails to one address in a row on
+    purpose; test_email_limits.py tests the wait itself.
+    """
+    from app.events_service import accounts
+
+    monkeypatch.setattr(accounts, "CODE_RESEND_SECONDS", 0)
+
+
+@pytest.fixture
 def staff(session: Session) -> Organiser:
     return make_user(session, "tomas.staff@example.com", role="staff")

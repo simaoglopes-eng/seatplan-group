@@ -19,7 +19,10 @@ import {
   dropSeats,
   lostSeats,
   missingSummary,
+  noRoomMessage,
   parseAge,
+  partyLimitText,
+  partyRoom,
   removeCard,
   selectedSeats,
   splitName,
@@ -209,11 +212,50 @@ describe("what is sent", () => {
       me: { guest_id: 1, first_name: "Ana", last_name: "Silva", age_saved: true, seat_id: 11, details_complete: true },
       members: [{ id: 4, first_name: "Bea", last_name: "Silva", age_saved: true, seat_id: 12, rsvp: "yes" }],
       places_left: 3,
+      max_party_size: 8,
+      party_size_left: 6,
     };
     const cards = [card(ME_KEY, 11, "Ana", "Silva", "40"), card("g1", 12, "bea ", "silva", "9")];
     expect(alreadyBooked(party, cards)).toBe(true);
     expect(alreadyBooked(party, [cards[0], card("g1", 13, "Bea", "Silva", "9")])).toBe(false);
     expect(alreadyBooked({ ...party, me: { ...party.me, seat_id: 14 } }, cards)).toBe(false);
     expect(alreadyBooked(undefined, cards)).toBe(false);
+  });
+
+  describe("the party limit (seats one person can book)", () => {
+    const view = (places: number, max: number | null, sizeLeft: number | null): PartyView => ({
+      me: { guest_id: 1, first_name: "Ana", last_name: "Silva", age_saved: true, seat_id: null, details_complete: true },
+      members: [],
+      places_left: places,
+      max_party_size: max,
+      party_size_left: sizeLeft,
+    });
+
+    it("lets the smaller of the event's places and the party limit decide", () => {
+      expect(partyRoom(view(39, 8, 7))).toEqual({ room: 7, bySize: true });
+      expect(partyRoom(view(2, 8, 7))).toEqual({ room: 2, bySize: false });
+      expect(partyRoom(view(39, null, null))).toEqual({ room: 39, bySize: false });
+      expect(partyRoom(undefined)).toEqual({ room: null, bySize: false });
+    });
+
+    it("stops the ninth seat of a party of eight and says why", () => {
+      const me = card(ME_KEY, null);
+      let cards: PartyCard[] = [];
+      const room = partyRoom(view(39, 8, 7)).room;
+      for (let seat = 1; seat <= 8; seat += 1) {
+        const result = toggleSeat(cards, seat, me, room);
+        expect(result.outcome).toBe("added");
+        cards = result.cards;
+      }
+      expect(toggleSeat(cards, 9, me, room).outcome).toBe("full");
+      expect(noRoomMessage(view(39, 8, 0))).toBe("You can book up to 8 seats for this event, your own included, so you cannot choose more seats.");
+      expect(noRoomMessage(view(0, 8, 7))).toBe("This event has no place left for anyone else, so you can only choose your own seat.");
+    });
+
+    it("shows the limit, or nothing when there is none", () => {
+      expect(partyLimitText(view(39, 8, 7))).toBe("You can book up to 8 seats, your own included.");
+      expect(partyLimitText(view(39, 1, 0))).toBe("You can book up to 1 seat, your own included.");
+      expect(partyLimitText(view(39, null, null))).toBeNull();
+    });
   });
 });

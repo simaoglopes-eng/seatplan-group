@@ -153,6 +153,40 @@ export function toggleSeat(cards: PartyCard[], seatId: number, me: PartyCard, ro
   return { cards: [...withMe, { key: nextKey(withMe), seatId, firstName: "", lastName: "", age: "" }], outcome: "added" };
 }
 
+/**
+ * How many more people this guest may add now (null: unknown), and whether the
+ * party limit (the event's "seats one person can book") is what stops them,
+ * rather than the event running out of places. The server checks both again.
+ */
+export function partyRoom(party: PartyView | undefined): { room: number | null; bySize: boolean } {
+  if (!party) return { room: null, bySize: false };
+  const size = party.party_size_left ?? null;
+  if (size !== null && size <= party.places_left) return { room: size, bySize: true };
+  return { room: party.places_left, bySize: false };
+}
+
+function seatsWord(count: number): string {
+  return count === 1 ? "1 seat" : `${count} seats`;
+}
+
+/** "You can book up to 8 seats, your own included.", or null when the event has no limit. */
+export function partyLimitText(party: PartyView | undefined): string | null {
+  const max = party?.max_party_size ?? null;
+  return max === null ? null : `You can book up to ${seatsWord(max)}, your own included.`;
+}
+
+/** Why a tapped seat was not added: the party limit, or the event has no more places. */
+export function noRoomMessage(party: PartyView | undefined): string {
+  const { room, bySize } = partyRoom(party);
+  const left = room ?? 0;
+  if (bySize && party?.max_party_size != null) {
+    return `You can book up to ${seatsWord(party.max_party_size)} for this event, your own included, so you cannot choose more seats.`;
+  }
+  return left === 0
+    ? "This event has no place left for anyone else, so you can only choose your own seat."
+    : `This event has room for ${left} more ${left === 1 ? "person" : "people"} besides you, so you cannot choose more seats.`;
+}
+
 /** Gives a card a seat. If another card had that seat, the two swap. Locked cards never move. */
 export function assignSeat(cards: PartyCard[], key: string, seatId: number | null): PartyCard[] {
   const card = cards.find((c) => c.key === key);

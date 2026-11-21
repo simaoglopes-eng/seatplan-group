@@ -10,12 +10,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import db
-from app.core import audit, live, members
+from app.core import audit, limits, live, members, work_limits
 from app.core.errors import ApiError
 from app.core.layout import LayoutItem, save_layout
 from app.core.text import PlainText
 from app.models import Event, Organiser, Seat, Venue, VenueTable, Zone
-from app.security import CurrentOrganiser, CurrentUser
+from app.security import CurrentOrganiser, CurrentUser, rate_limit
 
 router = APIRouter(prefix="/venues", tags=["venues"])
 
@@ -192,6 +192,9 @@ def create_venue(
     user: CurrentOrganiser,
     session: db.SessionDep,
 ) -> dict[str, Any]:
+    # First: rate_limit commits its count. Then the account's limit, under its lock.
+    rate_limit(session, f"venue-create:{user.id}", limits.VENUE_CREATES_PER_HOUR, 3600)
+    work_limits.require_room_for_venue(session, user, body.kind)
     venue = Venue(organiser_id=user.id, **body.model_dump())
     session.add(venue)
     session.flush()

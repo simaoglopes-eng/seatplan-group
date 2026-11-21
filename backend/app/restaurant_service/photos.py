@@ -9,6 +9,7 @@ from typing import Any
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session, defer
 
+from app.core import work_limits
 from app.core.errors import ApiError
 from app.models import Organiser, Room, RoomOpening, Venue, VenuePhoto
 from app.restaurant_service import profiles
@@ -141,6 +142,7 @@ def upload(
         raise ApiError(422, "validation", "Keep the resized image at or below 800 KB.")
     mime, width, height = image_info(data)
     venue = lock(session, vid, user)
+    work_limits.require_photo_room(session, user, len(data))
     existing = listing(session, venue)
     opening_id = None
     if kind == "gallery":

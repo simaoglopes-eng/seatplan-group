@@ -78,6 +78,7 @@ NEW_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("venues", "parent_venue_id", "INTEGER REFERENCES venues (id)"),
     ("guests", "booked_by_guest_id", "INTEGER REFERENCES guests (id)"),
     ("guests", "age_years", "INTEGER"),
+    ("events", "max_party_size", "INTEGER"),
 )
 
 # (index name, statement). Both databases understand "IF NOT EXISTS" here.

@@ -56,6 +56,7 @@ def _reset(client: TestClient, email: str, code: str) -> None:
     assert answer.status_code == 200, answer.text
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_a_new_password_also_changes_the_work_password_made_by_one_sign_up(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -189,6 +190,7 @@ def test_an_unproven_guest_on_a_team_gets_no_work_identity(
     assert sorted(_login(client, "unproven@example.com", TEST_PASSWORD).json()) == ["guest"]
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_demo_reset_never_leaves_the_account_with_two_passwords(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:

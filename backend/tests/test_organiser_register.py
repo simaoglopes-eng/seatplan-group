@@ -1,5 +1,6 @@
 """Organiser registration must prove the mailbox before granting a session."""
 
+import pytest
 from sqlalchemy import select
 
 from app.events_service import accounts
@@ -38,6 +39,7 @@ def test_register_requires_verification_and_allows_login(client, session, monkey
     )
 
 
+@pytest.mark.usefixtures("no_resend_wait")
 def test_existing_email_does_not_expose_a_code_or_create_a_second_account(client, monkeypatch):
     monkeypatch.setattr(accounts, "_new_code", lambda: "123456")
     details = {"name": "A Person", "email": "a@example.com", "password": "a secure password"}

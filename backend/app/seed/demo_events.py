@@ -233,6 +233,7 @@ def _wedding_venue(session: Session, organiser: Organiser) -> Venue:
         organiser_id=organiser.id,
         kind="event",
         name="Quinta do Lago Azul",
+        is_demo=True,  # seeded: not counted in the account's limits (core/limits.py)
         width=1200,
         height=800,
         venue_type="quinta",
@@ -363,6 +364,7 @@ def _conference_venue(session: Session, organiser: Organiser) -> Venue:
         organiser_id=organiser.id,
         kind="event",
         name="Nova Auditorium",
+        is_demo=True,  # seeded: not counted in the account's limits (core/limits.py)
         width=1300,
         height=900,
         venue_type="hall",

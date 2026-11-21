@@ -8,12 +8,14 @@ share-enabled but unlisted event never appears, on any of the three routes.
 from datetime import timedelta
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from guest_helpers import shared_event
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from test_events_setup import EventSetup
 
+from app.core import limits
 from app.models import Event, Organiser, Venue, utc_now
 from app.seed import demo_photos
 
@@ -104,8 +106,10 @@ def test_an_unlisted_shared_event_never_appears_anywhere(
 
 
 def test_only_upcoming_shared_events_at_published_venues_with_a_slug(
-    client: TestClient, session: Session, organiser: Organiser
+    client: TestClient, session: Session, organiser: Organiser, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # Five venues for one organiser: more than the self-serve limit (core/limits.py).
+    monkeypatch.setattr(limits, "MAX_EVENT_VENUES_PER_ACCOUNT", 10)
     shown, _ = _listed_event(client, session, organiser, "shown-venue")
     link_off, _ = _listed_event(client, session, organiser, "link-off")
     _set(session, link_off, share_enabled=False)

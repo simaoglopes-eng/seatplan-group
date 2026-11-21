@@ -44,7 +44,9 @@ def register(session: Session, name: str, email: str, password: str) -> dict[str
     link = f"{get_settings().public_base_url}/owner/sign-in"
     if existing:
         parts = templates.account_exists(existing.name, "SeatPlan restaurants", link)
-        key = f"owner-exists:{keyed_hash(email)}:{utc_now():%Y%m%d%H}"
+        # One note per request (see accounts.queue_account_exists): a key per
+        # hour would make the second request skip the send and answer faster.
+        key = f"owner-exists:{keyed_hash(email)}:{new_token()}"
     else:
         old = session.scalar(
             select(EmailCode).where(EmailCode.email == email, EmailCode.purpose == "owner")

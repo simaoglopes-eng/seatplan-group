@@ -111,7 +111,13 @@ def register_organiser(body: RegisterIn, request: Request, session: db.SessionDe
     signup_id = new_token()
     password_hash = hash_password(body.password)
     existing = session.scalars(select(Organiser).where(Organiser.email == email)).first()
-    if existing is None:
+    if existing is not None:
+        # The same work as for a new address (an email queued and sent at once),
+        # so neither the answer nor its timing says the address has an account.
+        login = f"{get_settings().public_base_url}/login"
+        parts = templates.account_exists_general(existing.name, login)
+        key = accounts.queue_account_exists(session, "organiser-exists", email, parts)
+    else:
         row, code = accounts._new_code_row(
             session,
             email,
@@ -126,7 +132,7 @@ def register_organiser(body: RegisterIn, request: Request, session: db.SessionDe
         )
         accounts._queue(session, key, "organiser_code", email, parts)
         session.commit()
-        accounts.send_at_once(session, key)
+    accounts.send_at_once(session, key)
     return accounts.code_sent(email, None, signup_id)
 
 

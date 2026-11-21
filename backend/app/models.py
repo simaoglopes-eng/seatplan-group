@@ -332,6 +332,9 @@ class Event(Base):
     event_type: Mapped[str | None] = mapped_column(String(20))
     # Only listed events (with the shared link on) appear on the public pages.
     listed: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("FALSE"))
+    # Seats one guest may book, their own included (events_service/party.py).
+    # NULL: core/limits.DEFAULT_MAX_PARTY_SIZE; 0: no limit; else 1 to 500.
+    max_party_size: Mapped[int | None] = mapped_column(Integer)
 
 
 class GuestGroup(Base):

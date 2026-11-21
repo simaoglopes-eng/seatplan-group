@@ -55,6 +55,8 @@ export function partyView(): AttendeeView {
       me: { guest_id: 1, first_name: null, last_name: null, age_saved: false, seat_id: null, details_complete: false },
       members: [],
       places_left: 4,
+      max_party_size: 8,
+      party_size_left: 7,
     },
   };
 }
@@ -112,6 +114,7 @@ export function partyBackend(prefix = LINK, view: AttendeeView = partyView()): P
       setSeat(view, m.seat_id, "mine", { occupant: `${m.first_name} ${m.last_name}`, party_member_id: id });
     }
     party(view).places_left -= body.members.length;
+    if (party(view).party_size_left !== null) party(view).party_size_left = (party(view).party_size_left as number) - body.members.length;
     return answer();
   });
   server.routes.set(`POST ${prefix}/party/me`, (raw) => {
@@ -153,6 +156,7 @@ export function memberRoutes(backend: PartyBackend, prefix: string, memberId: nu
     if (m.seat_id !== null) setSeat(view, m.seat_id, "free", { occupant: null, party_member_id: undefined });
     party(view).members = party(view).members.filter((x) => x.id !== memberId);
     party(view).places_left += 1;
+    if (party(view).party_size_left !== null) party(view).party_size_left = (party(view).party_size_left as number) + 1;
     ages.delete(memberId);
     return { body: party(view) };
   });
@@ -169,6 +173,8 @@ export function bookedView(): AttendeeView {
     me: { guest_id: 1, first_name: "Ana", last_name: "Silva", age_saved: true, seat_id: 11, details_complete: true },
     members: [{ id: 4, first_name: "Bea", last_name: "Silva", age_saved: true, seat_id: 13, rsvp: "yes" }],
     places_left: 3,
+    max_party_size: 8,
+    party_size_left: 6,
   };
   return view;
 }

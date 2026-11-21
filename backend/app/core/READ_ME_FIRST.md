@@ -23,6 +23,8 @@ specific vertical (events or restaurants).
 | `members.py` | `is_member`, `member_venue_ids`, the owner's team list (`add`, `remove`, `listing`) | A venue's team is a list of addresses (`venue_members`); a work account with one of them works at that venue as staff. Used by every venue and event loader. An event's setup copy has no team: `is_member` checks its parent's |
 | `parent_venue.py` | `shown_venue`, `shown_venue_of` | An event's own copy of a hall (`venues.parent_venue_id`) is named and shown as its parent; anything else as itself |
 | `text.py` | `PlainText` | Request text a person types (names, notes, labels) never holds a control character such as NUL, which Postgres refuses; such text gets a 422 instead of a 500 |
+| `limits.py` | the numbers only | Every usage limit in one place: party size (default 8, the booker's seat included) and the lifetime companion count, 3 restaurants, 3 event venues and 10 events per work account, 50 MB of photos per account, and the hourly create limits. Tests lower them with monkeypatch |
+| `work_limits.py` | `require_room_for_venue`, `require_room_for_event`, `require_photo_room` | Under the account's row lock: 409 `limit_reached` past the restaurant, event venue or event limit, 409 `storage_full` past the photo storage. Demo venues and an event's setup copy are not counted |
 
 ## Data flow: a person picks a seat
 

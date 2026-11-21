@@ -291,11 +291,18 @@ def test_code_sending_limits(
     assert refused.status_code == 429 and _codes_hash(session) == before
 
 
-def test_three_codes_an_hour_per_mailbox(
+@pytest.mark.usefixtures("no_resend_wait")
+def test_five_codes_an_hour_per_mailbox(
     client: TestClient, organiser: Organiser, session: Session
 ) -> None:
     _setup, token = shared_event(client, organiser)
-    for email in ("max@example.com", "MAX@example.com", "max+x@example.com"):
+    for email in (
+        "max@example.com",
+        "MAX@example.com",
+        "max+x@example.com",
+        "max+y@example.com",
+        "max+z@example.com",
+    ):
         assert register(client, token, email).status_code == 202
     before = _codes_hash(session)
     assert register(client, token, "max+again@example.com").status_code == 429

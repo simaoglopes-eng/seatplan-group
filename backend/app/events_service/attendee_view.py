@@ -213,7 +213,15 @@ def set_age_profile(
         raise ApiError(422, "validation", "Enter a valid date of birth.")
     if born is None and share_age:
         raise ApiError(422, "validation", "Enter a date of birth before sharing your age.")
+    # Taking the age back (sharing off, the date of birth kept or cleared) is
+    # allowed at any time, as easily as it was given (GDPR art. 7(3)); only a
+    # write that shares more waits on the change deadline.
+    takes_back = not share_age and (born is None or born == me.birth_date)
+    unchanged = born == me.birth_date and share_age == me.share_age
+    if not (takes_back or unchanged):
+        require_before_deadline(event)
     lock_event(session, event)
+    recheck_after_lock(session, me)  # erased while we waited: write nothing on the old row
     me.birth_date, me.share_age = born, share_age
     _record(session, me, "guest.age_privacy", {"share_age": share_age})
     session.commit()
@@ -227,7 +235,9 @@ def set_name_profile(
     if not first_name or not last_name or len(first_name) + len(last_name) + 1 > 120:
         raise ApiError(422, "validation", "Enter your first and last name.")
     event = event_of(session, me)
+    require_before_deadline(event)
     lock_event(session, event)
+    recheck_after_lock(session, me)  # erased while we waited: write nothing on the old row
     me.first_name, me.last_name = first_name, last_name
     me.name = f"{first_name} {last_name}"
     _record(session, me, "guest.name", {})

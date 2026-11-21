@@ -60,6 +60,9 @@ def guest_dict(
     }
 
 
+AGES_FOR_ORGANISER = "Only the event's organiser can see or change ages."
+
+
 def shows_ages(event: Event, user: Organiser) -> bool:
     """Only the event's own organiser sees ages; the venue's team members do not."""
     return event.organiser_id == user.id
