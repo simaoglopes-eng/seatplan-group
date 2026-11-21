@@ -129,8 +129,8 @@ function DeadlineSetting({ org, data }: { org: OrganiserState; data: OrganiserEv
 /** The fallback when the server does not say (backend core/limits.DEFAULT_MAX_PARTY_SIZE). */
 const DEFAULT_PARTY_SIZE = 8;
 const MAX_PARTY_SIZE = 500;
-/** People one guest may add over the event when there is no limit (backend core/limits.PARTY_CHANGES_NO_LIMIT). */
-const NO_LIMIT_PEOPLE = 24;
+/** People one guest may add over the event when there is no limit: as for the largest setting, 3 x 500 (backend core/limits.PARTY_CHANGES_NO_LIMIT). */
+const NO_LIMIT_PEOPLE = 3 * MAX_PARTY_SIZE;
 
 /** Whole numbers from 1 to 500 typed as digits only, or null. */
 function parseSeats(text: string): number | null {
