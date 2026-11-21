@@ -23,7 +23,7 @@ from guest_helpers import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from test_events_setup import add_guest
+from test_events_setup import add_guest, give_account_details
 
 from app.config import get_settings
 from app.events_service import accounts
@@ -459,6 +459,7 @@ def test_the_mailer_passes_the_png_width(
     base = f"/api/guest/events/{setup.eid}"
     seat = setup.seats[0][0]
     client.post(f"{base}/hold", headers=headers, json={"seat_id": seat})
+    give_account_details(client, base, headers)  # a chosen seat carries a name and an age
     assert (
         client.post(f"{base}/confirm", headers=headers, json={"seat_id": seat}).status_code == 200
     )

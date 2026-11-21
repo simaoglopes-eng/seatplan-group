@@ -22,6 +22,7 @@ import { JoinPanel } from "./JoinPanel";
 import { joinOutcome, statusFromError } from "./joinOutcome";
 import { rememberWantedSeat } from "./wantedSeat";
 import "../events/events.css";
+import "../events/attendee.css";
 import "./join.css";
 
 type Load = { status: "loading" } | { status: "error"; error: ApiError } | { status: "ready"; view: VisitorView };

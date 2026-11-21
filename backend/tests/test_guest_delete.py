@@ -15,6 +15,7 @@ from guest_helpers import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from test_events_setup import give_account_details
 
 from app.models import Base, EmailCode, Guest, GuestAccount, Organiser, SeatAssignment
 
@@ -39,6 +40,7 @@ def _setup(client: TestClient, organiser: Organiser, monkeypatch: Any) -> dict[s
     for setup, seat in ((joined, joined.seats[0][0]), (invited, invited.seats[0][0])):
         base = f"/api/guest/events/{setup.eid}"
         client.post(f"{base}/hold", headers=headers, json={"seat_id": seat})
+        give_account_details(client, base, headers)  # a chosen seat carries a name and an age
         assert (
             client.post(f"{base}/confirm", headers=headers, json={"seat_id": seat}).status_code
             == 200

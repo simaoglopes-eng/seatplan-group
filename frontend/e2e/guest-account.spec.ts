@@ -9,7 +9,7 @@
 // the demo as it was.
 
 import type { APIRequestContext, Page } from "@playwright/test";
-import { expectConfirmed, firstRecommendation, seatOnMap } from "./attendee-steps";
+import { expectConfirmed, fillWhoSitsWhere, firstRecommendation, seatOnMap } from "./attendee-steps";
 import { ORGANISER, demoLinks, expect, lastPart, signIn, test } from "./fixtures";
 
 /** A made-up address on example.com: the demo shows its code on screen. */
@@ -77,7 +77,8 @@ test.describe.serial("a visitor with the shared link", () => {
   test("creates an account with the emailed code and lands on their seat page", async ({ page }) => {
     await page.goto(shareLink);
     await page.getByRole("link", { name: "Create an account to choose a seat" }).first().click();
-    await page.getByLabel("Your name").fill(VISITOR.name);
+    await page.getByLabel("First name").fill(VISITOR.name.split(" ")[0]);
+    await page.getByLabel("Last name").fill(VISITOR.name.split(" ").slice(1).join(" "));
     await page.getByRole("textbox", { name: "Email" }).fill(VISITOR.email);
     await page.getByLabel("Password", { exact: true }).fill(VISITOR.password);
     await page.getByRole("checkbox", { name: /I agree that SeatPlan stores my details/ }).check();
@@ -110,7 +111,9 @@ test.describe.serial("a visitor with the shared link", () => {
     await page.getByRole("button", { name: "Select this seat" }).click();
     const holdBar = page.getByRole("region", { name: "Selected seat" });
     await expect(holdBar).toContainText(seatName);
-    await holdBar.getByRole("button", { name: "Confirm this seat" }).click();
+    await holdBar.getByRole("button", { name: "Continue" }).click();
+    // Every seat carries a first name, a last name and an age, the booker's too (design D3).
+    await fillWhoSitsWhere(page, [{ age: "34" }]);
     await expectConfirmed(page, seatName);
     await expect(page.getByText(/Your seat is confirmed/)).toBeVisible();
   });

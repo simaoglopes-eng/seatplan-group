@@ -29,6 +29,9 @@ export type ErrorCode =
   | "guests_seated" // HTTP 409: an event room setup would move seated guests; send confirm to go ahead
   | "not_enough_seats" // HTTP 422: an event room setup has fewer seats than guests coming; confirm to go ahead
   | "too_small" // HTTP 422: the hall fits none of that event room setup
+  | "party_exists" // HTTP 409: a guest who booked seats for others cannot leave while those people are coming
+  | "has_party" // HTTP 409: the organiser deletes a guest who booked a party; send ?party=erase or keep
+  | "party_member" // HTTP 409: a party member gets no link or address; the guest who booked them manages them
   | "method_not_allowed" // HTTP 405
   | "internal" // HTTP 500, or a status the API never plans to send
   | "network" // client only: the request never reached the server
@@ -86,6 +89,8 @@ export interface MapSeat {
   accessible: boolean;
   /** Display name already filtered by core/privacy.py, for example "Ana P.". */
   occupant?: string | null;
+  /** Attendee map only: on a seat of someone this attendee booked (their party), that person's guest id. */
+  party_member_id?: number | null;
 }
 
 export interface MapZone {

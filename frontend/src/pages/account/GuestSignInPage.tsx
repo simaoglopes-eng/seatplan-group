@@ -3,6 +3,8 @@
 // (safeNext), so a link cannot send them to another website.
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AuthLayout, PageShell, useToast } from "../../design/components";
+import { PublicHeaderActions } from "../discover/PublicHeaderActions";
+import { AuthPhoto } from "../Login";
 import { SignInForm } from "./SignInForm";
 import { MY_HOME, safeNext } from "./safeNext";
 import "./account.css";
@@ -13,7 +15,8 @@ export default function GuestSignInPage() {
   const [params] = useSearchParams();
 
   return (
-    <PageShell title="Guest sign in">
+    <AuthPhoto>
+    <PageShell title="Guest sign in" variant="overlay" headerActions={<PublicHeaderActions />}>
       <AuthLayout eyebrow="FOR PARTICIPANTS" headline="Your place is waiting." description="Sign in to find your seat and revisit the events you have joined.">
       <div className="acc-page auth-account-page">
         <h1 className="acc-title">Sign in to see your seat</h1>
@@ -31,5 +34,6 @@ export default function GuestSignInPage() {
       </div>
       </AuthLayout>
     </PageShell>
+    </AuthPhoto>
   );
 }

@@ -31,6 +31,25 @@
 .login form + p,
 .login form ~ p { margin-top: var(--space-5); }
 
+/* Under the code field: "Send a new code" and "Use a different email", as text buttons. */
+.login-resend { margin-top: var(--space-4); }
+.login-resend-status { margin: 0; font-size: var(--fs-sm); }
+.login-resend-status:empty { display: none; }
+.login-resend-actions { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-5); }
+.login-linkbtn {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c-text);
+  font: inherit;
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.login-linkbtn:disabled { cursor: default; text-decoration: none; opacity: 0.85; }
+
 /* ---------- Organiser sign-in and sign-up over a photo (AuthPhoto in Login.tsx) ----------
    The terrace photo fills the window behind the page, under the shared veil; the header is the
    overlay one (white, glass buttons), the story is white text on the photo and the form sits
@@ -103,6 +122,8 @@
 .ap-route .login p { color: var(--glass-text-muted); }
 .ap-route .login a { color: var(--glass-text); font-weight: var(--fw-medium); text-decoration: underline; text-underline-offset: 4px; }
 .ap-route .auth-content :focus-visible { outline-color: var(--glass-text); }
+.ap-route .login-linkbtn { color: var(--glass-text); text-shadow: 0 1px 2px rgb(0 0 0 / 0.2); }
+.ap-route .login .login-resend-status { color: var(--glass-text); }
 
 .ap-route .field-label { color: var(--glass-text); }
 .ap-route .field-hint { color: var(--glass-text-muted); }
@@ -114,11 +135,34 @@
   background: rgb(255 255 255 / 0.94);
   box-shadow: none;
   color: #1f2b26;
+  color-scheme: light; /* so the browser's own field text resolves dark, in a dark scheme too */
 }
 .ap-route .field-input::placeholder { color: #5e655f; }
 .ap-route .field-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):hover { border-color: #fff; }
 .ap-route .field-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):focus { background: #fff; }
 .ap-route .field-invalid .field-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]) { border-color: #f3b4a8; box-shadow: 0 0 0 1px #f3b4a8; }
+/* Autofilled and revealed text stays dark on the light fill, in both schemes. The :not() chain is
+   repeated so these outrank the rules above (a bare .field-input:autofill would lose to them), and
+   each pseudo-class has its own rule: a browser that does not know one drops the whole rule. */
+.ap-route .field-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):-webkit-autofill {
+  -webkit-text-fill-color: #1f2b26;
+  caret-color: #1f2b26;
+  box-shadow: 0 0 0 100vmax #f6f7f6 inset;
+}
+.ap-route .field-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):autofill {
+  -webkit-text-fill-color: #1f2b26;
+  caret-color: #1f2b26;
+  box-shadow: 0 0 0 100vmax #f6f7f6 inset;
+}
+.ap-route .field-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):-webkit-autofill:focus { box-shadow: 0 0 0 100vmax #fff inset; }
+.ap-route .field-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):autofill:focus { box-shadow: 0 0 0 100vmax #fff inset; }
+.ap-route .field-invalid .field-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):-webkit-autofill { box-shadow: 0 0 0 100vmax #f6f7f6 inset, 0 0 0 1px #f3b4a8; }
+.ap-route .field-invalid .field-input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):autofill { box-shadow: 0 0 0 100vmax #f6f7f6 inset, 0 0 0 1px #f3b4a8; }
+/* The eye sits on the light fill: dark ink, and a dark focus ring (the white one below would vanish). */
+.ap-route .field-control .field-eye { color: #3d4842; }
+.ap-route .field-control .field-eye:hover,
+.ap-route .field-control .field-eye[aria-pressed="true"] { color: #1f2b26; }
+.ap-route .field-control .field-eye:focus-visible { outline-color: #1f2b26; }
 /* An error on glass: a light note with dark red ink (a fixed pair, legible on any photo). */
 .ap-route .field-error,
 .ap-route .login-error {

@@ -30,6 +30,7 @@ from app.events_service import share
 from app.events_service.access import deadline_passed
 from app.events_service.guests import erase_guest
 from app.events_service.mailer import forget_guest_emails
+from app.events_service.party import erase_party, members_of
 from app.events_service.problem import current_rows
 from app.events_service.seating import drop_assignment, lock_event
 from app.mail import templates
@@ -695,13 +696,21 @@ def _leave_event(session: Session, guest: Guest, actor: str) -> None:
     A row the account made is erased like an organiser erasure. A row the
     organiser typed stays theirs: we free the seat without an email, wipe the
     emails we sent, and unlink it.
+
+    The party members this account booked (party.py) were typed by the
+    account holder, so they are erased in every case, also when the organiser
+    already deleted the booker's row and kept the members (party=keep).
     """
     event = session.get(Event, guest.event_id)
+    if event is not None and members_of(session, guest):
+        lock_event(session, event)  # before any other write, see seating.py
+        erase_party(session, event, guest, actor)
     # Profile details supplied by the account holder do not belong to the invitation.
     guest.first_name = None
     guest.last_name = None
     guest.birth_date = None
     guest.share_age = False
+    guest.age_years = None
     if event is None or guest.token_revoked_at is not None:
         # The organiser removed this row earlier: it only remembered the
         # account, so that it could not join again. Forget that too.

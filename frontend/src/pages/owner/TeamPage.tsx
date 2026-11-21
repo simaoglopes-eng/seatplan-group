@@ -4,7 +4,7 @@
 // restaurant profile is not found there, so the venue's name comes from /account/work and the page
 // drops the restaurant steps and words (its staff run the events held there). The server never says whether an email has an account,
 // so neither does this page: it explains that the person needs one with that address.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { addMember, getAccountWork, listMembers, removeMember } from "../../api/account";
@@ -56,6 +56,7 @@ export default function TeamPage() {
   );
   if (eventVenue) {
     return (
+      <>
       <PageShell title="Team" width="wide">
         <div className="ow-team-venue">
           <p className="acc-links">
@@ -71,6 +72,8 @@ export default function TeamPage() {
           {body}
         </div>
       </PageShell>
+      <EventsSurface />
+      </>
     );
   }
   return (
@@ -87,6 +90,18 @@ export default function TeamPage() {
 }
 
 type Place = "restaurant" | "venue";
+
+/**
+ * An event venue's team belongs to Events, not to the Restaurants look that PageShell
+ * puts on every /owner path. Rendered as PageShell's next sibling, so this effect runs
+ * after PageShell's own and takes the restaurant surface off <html> again. Visual only.
+ */
+function EventsSurface() {
+  useEffect(() => {
+    delete document.documentElement.dataset.surface;
+  }, []);
+  return null;
+}
 
 function TeamList({ venueId, place, items, onChange }: { venueId: string; place: Place; items: VenueMember[]; onChange: (items: VenueMember[]) => void }) {
   const toast = useToast();

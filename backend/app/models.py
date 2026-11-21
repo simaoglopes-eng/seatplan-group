@@ -350,6 +350,7 @@ class Guest(Base):
     __table_args__ = (
         Index("uq_guests_event_account", "event_id", "account_id", unique=True),
         Index("ix_guests_account_id", "account_id"),
+        Index("ix_guests_booked_by_guest_id", "booked_by_guest_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -367,13 +368,18 @@ class Guest(Base):
     rsvp: Mapped[str] = mapped_column(String(10), default="pending")
     # Set when a guest account owns this row (docs/guest-accounts.md).
     account_id: Mapped[int | None] = mapped_column(ForeignKey("guest_accounts.id"))
-    # "invited" (typed by the organiser) or "self_registered" (joined with
-    # the shared link).
+    # "invited" (typed by the organiser), "self_registered" (joined with
+    # the shared link) or "companion" (a party member: another guest booked
+    # this seat for them, events_service/party.py).
     source: Mapped[str] = mapped_column(String(20), default="invited", server_default="invited")
     first_name: Mapped[str | None] = mapped_column(String(60))
     last_name: Mapped[str | None] = mapped_column(String(60))
     birth_date: Mapped[date | None] = mapped_column(Date)
     share_age: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("FALSE"))
+    # A party member ("companion"): the guest whose booking added this person.
+    booked_by_guest_id: Mapped[int | None] = mapped_column(ForeignKey("guests.id"))
+    # Whole years, typed when booking. Organiser-only: never read by age.visible_age.
+    age_years: Mapped[int | None] = mapped_column(Integer)
 
 
 class Acquaintance(Base):

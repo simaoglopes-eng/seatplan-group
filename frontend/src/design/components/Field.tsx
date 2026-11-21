@@ -1,20 +1,23 @@
 // A labelled text input with an optional hint and error. The label, hint and
 // error are wired to the input with ids, so a screen reader reads all three.
 import { useId } from "react";
-import type { InputHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
 
-interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   hint?: string;
   error?: string | null;
+  /** A control that sits inside the input's right edge, such as the show/hide eye on a password. */
+  trailing?: ReactNode;
 }
 
-export function Field({ label, hint, error, id, className = "", ...rest }: FieldProps) {
+export function Field({ label, hint, error, trailing, id, className = "", ...rest }: FieldProps) {
   const autoId = useId();
   const inputId = id ?? autoId;
   const hintId = `${inputId}-hint`;
   const errorId = `${inputId}-error`;
   const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined;
+  const input = <input {...rest} id={inputId} className="field-input" aria-invalid={error ? true : undefined} aria-describedby={describedBy} />;
 
   return (
     <div className={`field ${error ? "field-invalid" : ""} ${className}`.trim()}>
@@ -26,7 +29,14 @@ export function Field({ label, hint, error, id, className = "", ...rest }: Field
           {hint}
         </p>
       )}
-      <input {...rest} id={inputId} className="field-input" aria-invalid={error ? true : undefined} aria-describedby={describedBy} />
+      {trailing ? (
+        <div className="field-control">
+          {input}
+          {trailing}
+        </div>
+      ) : (
+        input
+      )}
       {error && <FieldError id={errorId} message={error} />}
     </div>
   );

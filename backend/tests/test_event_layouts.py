@@ -18,7 +18,7 @@ from fastapi.testclient import TestClient
 from guest_helpers import account_headers, make_account, outbox
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
-from test_events_setup import EventSetup, add_guest, choose, make_event
+from test_events_setup import EventSetup, add_guest, choose, give_account_details, make_event
 from test_public_events import _listed_event
 
 from app.events_service import layout_presets
@@ -673,6 +673,7 @@ def test_the_usual_event_flows_work_on_a_setup_copy(
     mine = client.get(f"/api/guest/events/{setup.eid}", headers=headers)
     assert mine.status_code == 200, mine.text
     assert len(mine.json()["map"]["seats"]) == 30
+    give_account_details(client, f"/api/guest/events/{setup.eid}", headers)
     done = client.post(
         f"/api/guest/events/{setup.eid}/confirm", headers=headers, json={"seat_id": free[1]}
     )

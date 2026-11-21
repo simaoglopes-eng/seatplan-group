@@ -96,6 +96,12 @@
 .ep-event-card .discover-card-body { padding: var(--space-4) var(--space-5); }
 .ep-event-card h3 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 400; line-height: 1.15; letter-spacing: -0.005em; }
 .ep-event-card .discover-card-line { font-size: var(--fs-sm); }
+/* On a phone a venue's name is a finger's target: 44px tall, the text itself unchanged
+   (the venue line of an event card, and the title of a hall or quinta card). */
+@media (max-width: 40rem) {
+  .ep-event-card .discover-card-line a,
+  .ep-venue-card h3 a { display: inline-flex; align-items: center; min-height: var(--touch-target); }
+}
 .ep-event-card .discover-card-photo img,
 .ep-venue-photo img { transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1); }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {

@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 from guest_helpers import bearer, outbox, shared_event, sign_up
 from sqlalchemy.orm import Session
-from test_events_setup import choose
+from test_events_setup import choose, give_account_details
 from test_seat_picture import read_png
 
 from app import db
@@ -30,6 +30,7 @@ def _account_holder(client: TestClient, organiser: Organiser) -> tuple:
 
 def _confirm(client: TestClient, eid: str, headers: dict, seat: int) -> None:
     base = f"/api/guest/events/{eid}"
+    give_account_details(client, base, headers)  # a chosen seat carries a name and an age
     assert (
         client.post(f"{base}/confirm", headers=headers, json={"seat_id": seat}).status_code == 200
     )

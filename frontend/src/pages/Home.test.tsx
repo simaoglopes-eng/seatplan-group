@@ -411,7 +411,7 @@ describe("Home", () => {
     stub();
     renderHome();
     const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    expect(headings).toEqual(["Plan an event", "Find my seat", "Three kinds of room, one way to seat it.", "Start with a room you can visit.", "Every guest, in the right seat.", "Try choosing a seat."]);
+    expect(headings).toEqual(["Plan an event", "Find my seat", "Three kinds of room, one way to seat it.", "Try choosing a seat.", "Start with a room you can visit.", "Every guest, in the right seat."]);
     // The header carries Federico's mark beside the name, and the glass "Sign in".
     const brand = screen.getByRole("link", { name: "SeatPlan, home" });
     expect(brand.querySelector("svg.wordmark-mark")).toBeTruthy();

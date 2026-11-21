@@ -9,7 +9,7 @@ carries and forgets any other left in the tab.
 |---|---|
 | `YourAccountPage.tsx` | Signed out: Sign in or Create account (`?mode=create`). Signed in: who, Sign out (both), Booking \| Staff (`?tab=staff`). A missing half explains itself and offers a sign-in |
 | `AccountSignIn.tsx` | `POST /account/login`; also used by `/events/staff` |
-| `AccountRegister.tsx` | `POST /account/register` (four fields only), then the code step (`POST /guest/verify`); the demo code is shown when the server sends it |
+| `AccountRegister.tsx` | The shared `SignUpForm` (`pages/signup/`) on `POST /account/register` (four fields only: first and last name are joined into `name`), then the code step (`POST /guest/verify`); the demo code is shown when the server sends it |
 | `BookingPanel.tsx` | `DinerDashboard` (bookings, saved restaurants) and My events (`GET /guest/me`) |
 | `StaffPanel.tsx` | `GET /account/work`: restaurants, event venues, events, with role badges; restaurant owners get Profile, Floor plan, Team, Publishing; event venue owners get Team. "Restaurant owner area" only for someone who owns a restaurant, else "Open your own restaurant" |
 

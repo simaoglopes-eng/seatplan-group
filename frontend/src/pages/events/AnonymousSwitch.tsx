@@ -14,7 +14,7 @@ export function AnonymousSwitch({ value, busy, onChange }: AnonymousSwitchProps)
     <div className="ev-anon">
       <Checkbox
         label="Appear anonymously to other guests"
-        hint='Other guests will see "Guest" instead of your name. The organiser always sees your name.'
+        hint='Other guests will see "Guest" instead of your name and the names of the people you book seats for. The organiser always sees every name.'
         checked={value}
         disabled={busy}
         onChange={(e) => onChange(e.target.checked)}

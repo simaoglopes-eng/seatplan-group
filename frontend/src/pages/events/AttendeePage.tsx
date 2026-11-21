@@ -23,6 +23,7 @@ import type { AttendeeState } from "./useAttendee";
 import { NameProfile } from "./NameProfile";
 import { AgeProfile } from "./AgeProfile";
 import { WelcomeStep } from "./WelcomeStep";
+import { WhoSitsWhere } from "./WhoSitsWhere";
 import "./events.css";
 import "./attendee.css";
 
@@ -68,7 +69,10 @@ export function AttendeeJourney({ state, top, doneEmailNote }: JourneyProps) {
   const [peopleDone, setPeopleDone] = useState(false);
   if (state.load.status !== "ready") return null;
   const view = state.load.view;
-  const step = currentStep({ view, peopleDone, changingSeat: state.changingSeat });
+  // Adding people or moving one of them happens on the seat step too, straight
+  // from "Your party": never through "Who do you know here?" again.
+  const partyChange = state.party.mode.kind !== "book";
+  const step = currentStep({ view, peopleDone: peopleDone || partyChange, changingSeat: state.changingSeat || partyChange });
   return (
     <div className="ev-page ev-attendee">
       {top}
@@ -113,7 +117,8 @@ function StepBody({ step, state, doneEmailNote, onPeopleDone }: StepBodyProps) {
     case "people":
       return <PeopleStep people={view.people} busy={busy === "knows"} moved={moved} onSave={(ids) => actions.saveKnows(ids, onPeopleDone)} onSkip={onPeopleDone} />;
     case "seat":
-      return <SeatStep state={state} view={view} moved={moved} />;
+      // "Who is sitting where?" is part of the seat step: the Stepper stays on "Choose seat".
+      return state.party.phase === "details" ? <WhoSitsWhere state={state} view={view} /> : <SeatStep state={state} view={view} moved={moved} />;
     case "done":
       return <DoneStep state={state} view={view} moved={moved} emailNote={doneEmailNote} />;
   }

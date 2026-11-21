@@ -1056,11 +1056,13 @@ guest token send the person to `/my/sign-in?next=<this path>`.
 
 Step 1, form (one column, each field a `Field` with a visible label):
 
-- "Your name" (autocomplete `name`); hint "The organiser sees it. Other guests see it as the organiser's privacy setting allows."
-- "Email" (type email, autocomplete `email`); hint "We email you a code to check it is yours, then your seat."
-- "Password" (type password, autocomplete `new-password`); hint "At least 10 characters." A "Show password" toggle button with `aria-pressed`.
+This form is the shared `SignUpForm` (`frontend/src/pages/signup/`), the same pieces as every other sign-up page; the page adds only the accessible-seat checkbox and the name hint.
+
+- "First name" and "Last name" (autocomplete `given-name`, `family-name`), side by side when they fit; joined as `${first} ${last}` into the one `name` the endpoint takes. Hint under them: "The organiser sees your name. Other guests see it as the organiser's privacy setting allows."
+- "Email" (type email, autocomplete `email`); hint "We email you a code to check it is yours."
+- "Password" (type password, autocomplete `new-password`); hint "At least 10 characters." An eye button inside the field, aria-label "Show password" / "Hide password", with `aria-pressed`.
 - Checkbox "I need an accessible seat".
-- Checkbox (required) "I agree that SeatPlan stores my details to manage my seat and emails me about it." followed by a `<details>` "What we store" with the privacy text of section 11.2.
+- Checkbox (required) "I agree that SeatPlan stores my details to manage bookings and seats and emails me about them." followed by a `<details>` "What we store" with the privacy text of section 11.2.
 - Button "Send my code".
 
 The register answer's `signup_id` is kept in the page's memory and sent with

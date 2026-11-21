@@ -5,7 +5,7 @@ import threading
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from test_events_setup import make_event
+from test_events_setup import give_details, make_event
 
 from app.models import Organiser, SeatAssignment
 
@@ -21,6 +21,8 @@ def test_first_confirmation_wins(
             {"name": "Bob", "email": "bob@example.com"},
         ],
     )
+    for guest_id in setup.guests.values():
+        give_details(guest_id)  # a chosen seat needs a name and an age
     seat = setup.seats[0][0]
     bob = setup.tokens["Bob"]
     alice = setup.tokens["Alice"]
@@ -46,6 +48,8 @@ def test_simultaneous_confirmations_have_one_winner(
             {"name": "Bob", "email": "bob@example.com"},
         ],
     )
+    for guest_id in setup.guests.values():
+        give_details(guest_id)  # a chosen seat needs a name and an age
     barrier = threading.Barrier(2)
     statuses = []
 

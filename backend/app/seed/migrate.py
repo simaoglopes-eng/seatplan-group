@@ -76,6 +76,8 @@ NEW_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("venues", "venue_type", "VARCHAR(20)"),
     ("organisers", "session_version", "INTEGER NOT NULL DEFAULT 0"),
     ("venues", "parent_venue_id", "INTEGER REFERENCES venues (id)"),
+    ("guests", "booked_by_guest_id", "INTEGER REFERENCES guests (id)"),
+    ("guests", "age_years", "INTEGER"),
 )
 
 # (index name, statement). Both databases understand "IF NOT EXISTS" here.
@@ -94,6 +96,10 @@ NEW_INDEXES: tuple[tuple[str, str], ...] = (
     (
         "ix_guests_account_id",
         "CREATE INDEX IF NOT EXISTS ix_guests_account_id ON guests (account_id)",
+    ),
+    (
+        "ix_guests_booked_by_guest_id",
+        "CREATE INDEX IF NOT EXISTS ix_guests_booked_by_guest_id ON guests (booked_by_guest_id)",
     ),
 )
 

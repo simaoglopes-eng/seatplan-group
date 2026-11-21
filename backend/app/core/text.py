@@ -11,6 +11,7 @@ is written once. Use it in a request model like this:
     name: PlainText = Field(min_length=1, max_length=120)
 """
 
+import unicodedata
 from typing import Annotated
 
 from pydantic import AfterValidator
@@ -28,3 +29,39 @@ def no_control_characters(text: str) -> str:
 
 
 PlainText = Annotated[str, AfterValidator(no_control_characters)]
+
+
+# ---------------------------------------------------------------- names of people
+#
+# A person's first or last name is stricter than other text: it is printed on
+# seat maps, lists and emails, so it must not hide, reverse or break lines.
+# Refused anywhere in a name: control characters (also tab and line breaks),
+# line and paragraph separators, format characters (zero width spaces, byte
+# order marks, direction marks and overrides), and the "filler" characters
+# that show nothing although Unicode counts them as letters or symbols.
+# Allowed: the zero width non-joiner and joiner, which Persian and Indian
+# scripts need inside real names. A name must also hold at least one letter
+# (has_letter), checked where the message can say which half is missing.
+
+FILLERS = frozenset({"ᅟ", "ᅠ", "ㅤ", "ﾠ", "⠀"})
+JOINERS = frozenset({"‌", "‍"})
+NAME_REFUSED = "Use letters only, without line breaks, tabs or invisible characters."
+
+
+def person_name_characters(text: str) -> str:
+    """NFC form of the name (an accent typed apart is joined to its letter), or ValueError."""
+    text = unicodedata.normalize("NFC", text)
+    for character in text:
+        category = unicodedata.category(character)
+        hidden = category == "Cf" and character not in JOINERS
+        if hidden or category in ("Cc", "Zl", "Zp") or character in FILLERS:
+            raise ValueError(NAME_REFUSED)
+    return text
+
+
+def has_letter(text: str | None) -> bool:
+    """True when the text holds at least one letter, in any script. Fillers are no letters."""
+    return any(character.isalpha() and character not in FILLERS for character in text or "")
+
+
+PersonNameText = Annotated[PlainText, AfterValidator(person_name_characters)]

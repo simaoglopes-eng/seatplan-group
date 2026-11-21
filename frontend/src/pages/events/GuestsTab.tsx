@@ -3,12 +3,14 @@
 // and export guests.
 import { useState } from "react";
 import * as eventsApi from "../../api/events";
-import type { OrganiserEvent, OrganiserGuest } from "../../api/events";
+import type { OrganiserEvent, OrganiserGuest, PartyChoice } from "../../api/events";
 import { Button, EmptyState, Field, Select } from "../../design/components";
 import { AddGuestForm } from "./AddGuestForm";
 import { bringMapIntoView, copyText, downloadText, fullLink } from "./browserHelpers";
 import { seatName } from "./format";
 import { GuestRow } from "./GuestRow";
+import { partyOrder } from "./guestParty";
+import type { PartyRow } from "./guestParty";
 import { ImportCsv } from "./ImportCsv";
 import type { OrganiserState } from "./useOrganiser";
 
@@ -29,15 +31,20 @@ function keep(guest: OrganiserGuest, filter: Filter, notChosen: Set<number>): bo
 }
 
 function visibleGuests(data: OrganiserEvent, filter: Filter, query: string): OrganiserGuest[] {
+  return visibleRows(data, filter, query).map((row) => row.guest);
+}
+
+/** Party members come straight after the guest who booked them; the filter then applies row by row. */
+function visibleRows(data: OrganiserEvent, filter: Filter, query: string): PartyRow[] {
   const needle = query.trim().toLowerCase();
   const notChosen = new Set(data.not_chosen.map((item) => item.guest_id));
-  return data.guests.filter((g) => keep(g, filter, notChosen) && g.name.toLowerCase().includes(needle));
+  return partyOrder(data.guests).filter((row) => keep(row.guest, filter, notChosen) && row.guest.name.toLowerCase().includes(needle));
 }
 
 export function GuestsTab({ org, data }: { org: OrganiserState; data: OrganiserEvent }) {
   const [filter, setFilter] = useState<Filter>("unseated");
   const [query, setQuery] = useState("");
-  const shown = visibleGuests(data, filter, query);
+  const shown = visibleRows(data, filter, query);
   const waiting = visibleGuests(data, "unseated", "").length;
 
   return (
@@ -54,7 +61,7 @@ export function GuestsTab({ org, data }: { org: OrganiserState; data: OrganiserE
         <Select label="Show" options={FILTERS} value={filter} onChange={(e) => setFilter(e.target.value as Filter)} />
         <Field label="Search guests" type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" />
       </div>
-      <GuestList org={org} data={data} guests={shown} filter={filter} />
+      <GuestList org={org} data={data} rows={shown} filter={filter} />
       <AddGuestForm org={org} />
       <ImportCsv org={org} />
       <ExportButton org={org} />
@@ -65,12 +72,19 @@ export function GuestsTab({ org, data }: { org: OrganiserState; data: OrganiserE
 interface GuestListProps {
   org: OrganiserState;
   data: OrganiserEvent;
-  guests: OrganiserGuest[];
+  rows: PartyRow[];
   filter: Filter;
 }
 
-function GuestList({ org, data, guests, filter }: GuestListProps) {
-  if (guests.length === 0) {
+/** The answer to a delete: for a guest with a party, which way the organiser chose. */
+function deletedMessage(guest: OrganiserGuest, party: PartyChoice | undefined, size: number): string {
+  if (party === "erase") return `${guest.name}'s data and the data of the ${size} ${size === 1 ? "person" : "people"} they booked were deleted.`;
+  if (party === "keep") return `${guest.name}'s data was deleted. The people they booked keep their seats.`;
+  return `${guest.name}'s data was deleted.`;
+}
+
+function GuestList({ org, data, rows, filter }: GuestListProps) {
+  if (rows.length === 0) {
     const title = filter === "unseated" ? "Everyone has a seat" : "No guests here";
     return <EmptyState title={title}>{filter === "unseated" ? <p>Nice work. Switch the filter to see everyone.</p> : <p>Try another name or filter.</p>}</EmptyState>;
   }
@@ -80,10 +94,13 @@ function GuestList({ org, data, guests, filter }: GuestListProps) {
   };
   return (
     <ul className="ev-guests" aria-label="Guests">
-      {guests.map((guest) => (
+      {rows.map(({ guest, depth, booker, members }) => (
         <GuestRow
           key={guest.id}
           guest={guest}
+          depth={depth}
+          booker={booker}
+          members={members}
           seatLabel={guest.seat_id === null ? null : seatName(guest.seat_id, data.map.seats, data.map.tables)}
           selected={org.selectedGuest === guest.id}
           link={org.links[guest.id]}
@@ -96,7 +113,14 @@ function GuestList({ org, data, guests, filter }: GuestListProps) {
               org.rememberLink(guest.id, answer.link);
             })
           }
-          onDelete={() => org.run(`delete-${guest.id}`, `${guest.name}'s data was deleted.`, () => eventsApi.deleteGuest(org.eventId, guest.id).then(() => undefined))}
+          onDelete={async (party) => {
+            const ok = await org.run(`delete-${guest.id}`, deletedMessage(guest, party, members.length), () =>
+              eventsApi.deleteGuest(org.eventId, guest.id, party).then(() => undefined),
+            );
+            // Refused (for example 409 has_party: they booked people a moment ago): show the list as it is now.
+            if (!ok) await org.reload().catch(() => undefined);
+            return ok;
+          }}
         />
       ))}
     </ul>

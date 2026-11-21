@@ -131,7 +131,7 @@ const SITE_PHOTOS: Omit<PhotoCredit, "group">[] = [
     licence: "CC BY 4.0",
     licenceUrl: CC_BY_4,
     sourceUrl: "https://commons.wikimedia.org/w/index.php?curid=191810382",
-    usedFor: "Home page, top (third photo); top of the venues page (/venues)",
+    usedFor: "Home page, top (third photo) and behind \"Try choosing a seat\"; top of the venues page (/venues)",
   },
 ];
 

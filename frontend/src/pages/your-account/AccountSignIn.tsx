@@ -5,9 +5,8 @@ import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { accountLogin } from "../../api/account";
 import type { AccountSessions } from "../../api/account";
-import { Button, Field } from "../../design/components";
+import { Button, Field, PasswordField } from "../../design/components";
 import { ProblemBox, asApiError } from "../account/FormProblem";
-import { PasswordToggle } from "../account/PasswordToggle";
 
 /** Wrong email and wrong password get the same words, so nobody learns who has an account. */
 function messageFor(error: unknown): string {
@@ -27,7 +26,6 @@ interface Props {
 export function AccountSignIn({ onSignedIn, links, submitLabel = "Sign in" }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [shown, setShown] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -55,19 +53,15 @@ export function AccountSignIn({ onSignedIn, links, submitLabel = "Sign in" }: Pr
     <form className="acc-form" onSubmit={(e) => void onSubmit(e)} noValidate aria-label="Sign in">
       <ProblemBox messages={problem ? [problem] : []} attempt={attempt} />
       <Field label="Email" type="email" name="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-      <div className="acc-password">
-        <Field
-          id="account-password"
-          label="Password"
-          type={shown ? "text" : "password"}
-          name="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <PasswordToggle shown={shown} controls="account-password" onToggle={() => setShown((v) => !v)} />
-      </div>
+      <PasswordField
+        id="account-password"
+        label="Password"
+        name="password"
+        autoComplete="current-password"
+        required
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
       <Button type="submit" busy={busy} className="acc-submit">
         {submitLabel}
       </Button>

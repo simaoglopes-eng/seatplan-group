@@ -6,6 +6,7 @@ import { getListing } from "../api/venueDirectory";
 import type { Listing } from "../api/venueDirectory";
 import { PageShell } from "../design/components";
 import { placeLine } from "./directory/directoryModel";
+import { PublicHeaderActions } from "./discover/PublicHeaderActions";
 import "./organiser-dashboard.css";
 
 type NewEvent = EventSummary & { public_id: string; venue_id: string };
@@ -87,9 +88,13 @@ export default function OrganiserDashboard() {
     finally { setBusy(false); }
   }
 
-  return <PageShell title="Your organiser space" headerActions={<button className="btn btn-ghost dashboard-signout" onClick={() => { clearSessionToken(); navigate("/"); }}>Sign out</button>}>
+  const signOut = (): void => { clearSessionToken(); navigate("/"); };
+  // The header carries the public navigation (as on every other page) plus Sign out. On a
+  // phone the header has no room for a third button, so Sign out moves under the intro there.
+  return <PageShell title="Your organiser space" headerActions={<><PublicHeaderActions /><button className="btn btn-ghost dashboard-signout" onClick={signOut}>Sign out</button></>}>
     <section className="organiser-dashboard">
     <div className="dashboard-content"><p className="dashboard-kicker">YOUR ORGANISER SPACE</p><h1>Gather people <em>beautifully.</em></h1><p className="dashboard-intro">Create an event, arrange your tables and invite your guests.</p>
+      <button className="btn btn-ghost dashboard-signout dashboard-signout-inline" onClick={signOut}>Sign out</button>
       {venue && <section className="dashboard-created dashboard-venue" aria-label="Chosen venue"><strong>Planning at {venue.name}</strong><p>{venue.kind_label} · {placeLine(venue)}. Create the event below, then draw this room’s tables in the floor plan.</p><Link to="/directory">Choose another venue →</Link></section>}
       {error && <p className="dashboard-error" role="alert">{error}</p>}
       {created && <section className="dashboard-created" aria-live="polite"><strong>“{created.name}” is ready to plan.</strong><p>Start by arranging your tables and seats.</p><Link to={`/editor/${encodeURIComponent(created.venue_id)}`}>Arrange the floor plan →</Link><Link to={`/organiser/${encodeURIComponent(created.public_id)}`}>Open event →</Link></section>}

@@ -38,6 +38,8 @@ export interface SeatMapProps {
   /** Which targets may be picked. Default: free ones. */
   selectable?: (id: number) => boolean;
   selectedId?: number | null;
+  /** More selected targets, drawn and read out like `selectedId` (several seats chosen for a party). Pass a memoised Set. */
+  selectedIds?: ReadonlySet<number>;
   onSelect?: (id: number) => void;
   /** Recommended targets, drawn with a round, dashed brass halo. */
   highlight?: ReadonlySet<number>;
@@ -47,6 +49,8 @@ export interface SeatMapProps {
   markedLabel?: string;
   /** The viewer's own hold. Its turning "held" or "mine" is not read out as someone else's. */
   ownId?: number | null;
+  /** More of the viewer's own targets (the seats chosen for their party): same rule as `ownId`. */
+  ownIds?: ReadonlySet<number>;
   /** Targets the viewer's last action changed (the tables staff just seated or moved). Their next change only moves, silently: the page has already said what happened. */
   actedOn?: readonly number[] | null;
   /** Seat currently targeted by an organiser drag-and-drop. */
@@ -234,7 +238,7 @@ export function SeatMap(props: SeatMapProps) {
   const noun = mode === "tables" ? "table" : "seat";
   const getFocus = () => focusTarget(model.targets, [focusId, selectedId], highlight);
   const panZoom = usePanZoom(viewportRef, model.bounds, { minK: model.readableK, getFocus });
-  const changes = useSeatChanges(model.targets, { selectedId, ownId: props.ownId ?? null, actedOn: props.actedOn ?? null, noun });
+  const changes = useSeatChanges(model.targets, { selectedId, ownId: props.ownId ?? null, ownIds: props.ownIds, actedOn: props.actedOn ?? null, noun });
 
   const isSelectable = useCallback(
     (id: number): boolean => (props.selectable ? props.selectable(id) : model.targetById.get(id)?.state === "free"),
@@ -295,6 +299,7 @@ export function SeatMap(props: SeatMapProps) {
               zoom={view.k}
               isSelectable={isSelectable}
               selectedId={selectedId}
+              selectedIds={props.selectedIds ?? NOTHING}
               activeId={activeId}
               dropTargetId={props.dropTargetId ?? null}
               highlight={highlight}
@@ -352,5 +357,6 @@ function captionFor(
   const item = itemFor(props.mode ?? "seats", id, { seats: props.seats, ...model });
   if (!item) return null;
   const marked = props.marked?.has(id) ? (props.markedLabel ?? "changed") : null;
-  return describeItem(item, { recommended: highlight.has(id), marked, selected: id === selectedId }, props.describe);
+  const selected = id === selectedId || (props.selectedIds?.has(id) ?? false);
+  return describeItem(item, { recommended: highlight.has(id), marked, selected }, props.describe);
 }

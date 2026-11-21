@@ -26,7 +26,7 @@ before `/my/:eventId`, so "account" is never read as an event id.
 | `MySeatPage.tsx` | Reuses `AttendeeJourney` from `pages/events/AttendeePage.tsx` with `accountApi(eventId)`; adds the account bar, the seat picked as a visitor, and the email sentence on the Done step |
 | `SignInForm.tsx` | One sign-in form for `/my/sign-in` and `/j/:token/sign-in`; one message for every failure ("Email or password is not correct.") |
 | `FormProblem.tsx` | The focused problem box, `splitFieldMessage` (puts "password: ..." next to the password field), small checks |
-| `AccountBar.tsx`, `PasswordToggle.tsx`, `PrivacyText.tsx` | Small shared parts; `PrivacyText` is the one copy of the privacy text (section 11.2) |
+| `AccountBar.tsx`, `PrivacyText.tsx` | Small shared parts (the show/hide eye is `design/components/PasswordField.tsx`, used by every password field); `PrivacyText` is the one copy of the privacy text (section 11.2) |
 | `account.css` | One-column layout, 44 px targets, the problem box and the account bar |
 
 ## Data flow

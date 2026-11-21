@@ -118,7 +118,8 @@ describe("Organiser page", () => {
     server.routes.set("GET /events/ev1", () => errorReply(401, "unauthorised", "Please log in again."));
     renderPage();
     expect(await screen.findByRole("heading", { level: 1, name: "Please sign in" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toContain("/login?next=");
+    // The header's own "Sign in" (the public navigation) goes to /account; this is the page's.
+    expect(within(screen.getByRole("main")).getByRole("link", { name: "Sign in" }).getAttribute("href")).toContain("/login?next=");
   });
 
   it("previews auto-fill on the map, then applies it", async () => {

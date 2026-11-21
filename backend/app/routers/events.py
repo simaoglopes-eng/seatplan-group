@@ -4,7 +4,7 @@ Each route: check the login and the body, call one helper from
 app/events_service, bump the live scope, write the audit log, commit once.
 """
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Body, Query, Response
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
@@ -24,6 +24,7 @@ from app.events_service import (
     guests,
     layouts,
     optimise,
+    party,
     plans,
     share,
     work,
@@ -251,7 +252,8 @@ def patch_event(
 
 @router.get("/events/{eid}/guests")
 def list_guests(eid: str, user: CurrentOrganiser, session: db.SessionDep) -> list[dict[str, Any]]:
-    return guests.list_guests(session, load_event(session, eid, user))
+    event = load_event(session, eid, user)
+    return guests.list_guests(session, event, guests.shows_ages(event, user))
 
 
 @router.post("/events/{eid}/guests", status_code=201)
@@ -274,19 +276,31 @@ def patch_guest(
     guest = load_event_guest(session, event, gid)
     guests.update_guest(session, event, guest, body.model_dump(exclude_unset=True), user)
     session.commit()
-    return next(item for item in guests.list_guests(session, event) if item["id"] == guest.id)
+    shown = guests.list_guests(session, event, guests.shows_ages(event, user))
+    return next(item for item in shown if item["id"] == guest.id)
 
 
 @router.delete("/events/{eid}/guests/{gid}")
 def delete_guest(
-    eid: str, gid: int, user: CurrentOrganiser, session: db.SessionDep
+    eid: str,
+    gid: int,
+    user: CurrentOrganiser,
+    session: db.SessionDep,
+    party_choice: Annotated[Literal["erase", "keep"] | None, Query(alias="party")] = None,
 ) -> dict[str, Any]:
-    """GDPR erasure: personal data overwritten, seat freed, link revoked."""
+    """GDPR erasure: personal data overwritten, seat freed, link revoked.
+
+    A guest who booked seats for a party needs ?party=erase (the members go
+    too) or ?party=keep (they stay seated); without it the answer is 409
+    has_party (events_service/party.py).
+    """
     event = load_event(session, eid, user)
     guest = load_event_guest(session, event, gid)
-    guests.erase_guest(session, event, guest, user.email)
+    erased = party.erase_with_party(session, event, guest, user.email, party_choice)
     session.commit()
-    return {"erased": True, "guest_id": gid}
+    if erased is None:
+        return {"erased": True, "guest_id": gid}
+    return {"erased": True, "guest_id": gid, "party_erased": erased}
 
 
 @router.post("/events/{eid}/guests/{gid}/new-link")

@@ -9,17 +9,21 @@ accounts (routers/guest_events.py).
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Path, Query, Request
 
 from app import db
-from app.events_service import attendee_view
+from app.events_service import attendee_view, party
 from app.events_service.access import load_guest
 from app.events_service.attendee_view import event_of
 from app.events_service.recommend import recommendations
 from app.events_service.schemas import (
+    MAX_ID,
     AgeProfileIn,
     KnowsIn,
+    MyDetailsIn,
     NameProfileIn,
+    PartyConfirmIn,
+    PersonPatch,
     PrivacyIn,
     RsvpIn,
     SeatChoice,
@@ -110,3 +114,47 @@ def confirm(body: SeatChoice, token: str, me: Attendee, session: db.SessionDep) 
 def release(token: str, me: Attendee, session: db.SessionDep) -> dict[str, Any]:
     release_seat(session, event_of(session, me), me, token)
     return {"seat_id": None}
+
+
+# ---------------------------------------------------------------- party (events_service/party.py)
+# The same routes, bodies and answers as routers/guest_events.py. "me" and
+# "confirm" come before "{member_id}".
+
+MemberId = Annotated[int, Path(ge=1, le=MAX_ID)]
+
+
+@router.get("/a/{token}/party")
+def get_party(me: Attendee, session: db.SessionDep) -> dict[str, Any]:
+    return party.party_view(session, event_of(session, me), me)
+
+
+@router.post("/a/{token}/party/confirm")
+def confirm_party(
+    body: PartyConfirmIn, token: str, me: Attendee, session: db.SessionDep
+) -> dict[str, Any]:
+    # The token is passed on so the seat email links back to this page.
+    return party.confirm_party(session, event_of(session, me), me, body, token)
+
+
+@router.post("/a/{token}/party/me")
+def party_me(body: MyDetailsIn, me: Attendee, session: db.SessionDep) -> dict[str, Any]:
+    return party.set_my_details(session, event_of(session, me), me, body)
+
+
+@router.patch("/a/{token}/party/{member_id}")
+def edit_member(
+    member_id: MemberId, body: PersonPatch, me: Attendee, session: db.SessionDep
+) -> dict[str, Any]:
+    return party.edit_member(session, event_of(session, me), me, member_id, body)
+
+
+@router.put("/a/{token}/party/{member_id}/seat")
+def move_member(
+    member_id: MemberId, body: SeatChoice, me: Attendee, session: db.SessionDep
+) -> dict[str, Any]:
+    return party.move_member(session, event_of(session, me), me, member_id, body.seat_id)
+
+
+@router.delete("/a/{token}/party/{member_id}")
+def remove_member(member_id: MemberId, me: Attendee, session: db.SessionDep) -> dict[str, Any]:
+    return party.remove_member(session, event_of(session, me), me, member_id)

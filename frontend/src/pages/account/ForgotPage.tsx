@@ -5,6 +5,8 @@ import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { forgotPassword } from "../../api/guest";
 import { Button, Field, PageShell } from "../../design/components";
+import { PublicHeaderActions } from "../discover/PublicHeaderActions";
+import { AuthPhoto } from "../Login";
 import { ProblemBox, asApiError, looksLikeEmail } from "./FormProblem";
 import "./account.css";
 
@@ -43,7 +45,9 @@ export default function ForgotPage() {
   };
 
   return (
-    <PageShell title="Forgot your password">
+    <AuthPhoto>
+    <PageShell title="Forgot your password" variant="overlay" headerActions={<PublicHeaderActions />}>
+      <div className="auth-content acc-solo">
       <div className="acc-page">
         <h1 className="acc-title">Choose a new password</h1>
         <p className="acc-lede">Type the email of your guest account. If there is an account for it, we email it a code.</p>
@@ -58,6 +62,8 @@ export default function ForgotPage() {
           </div>
         </form>
       </div>
+      </div>
     </PageShell>
+    </AuthPhoto>
   );
 }

@@ -112,18 +112,20 @@
     linear-gradient(180deg, rgb(var(--photo-veil-ink) / 0.25) 0%, rgb(var(--photo-veil-ink) / 0) 30%, rgb(var(--photo-veil-ink) / 0.55) 100%);
 
   /* Seat states. Colour is a helper only: every state also has a shape,
-     icon or pattern (see src/seatmap/glyphs.tsx). */
+     icon or pattern (see src/seatmap/glyphs.tsx). Yours and taken are both solid
+     discs, so they also differ in lightness (1.8:1 light, 2.5:1 dark), not only in
+     hue and mark; blocked keeps a strong hatched outline and bar beside them. */
   --seat-free-fill: #fbf8f2;
   --seat-free-stroke: #3f4a44;
   --seat-held: #7f5310;
   --seat-held-soft: #f5ead3;
   --seat-taken: #4b5550;
   --seat-taken-mark: #ffffff;
-  --seat-mine: #1f5a48;
+  --seat-mine: #2f8a68;
   --seat-mine-mark: #ffffff;
   --seat-friend: #6b3a68;
   --seat-friend-soft: #f1e4f0;
-  --seat-blocked: #7c7f78;
+  --seat-blocked: #6a6d66;
   --seat-blocked-soft: #ddd3c1;
   --seat-accessible: #0f5f73;
   --seat-accessible-mark: #ffffff;
@@ -269,13 +271,13 @@
     --seat-free-stroke: #c4ccc6;
     --seat-held: #e2b464;
     --seat-held-soft: #33290f;
-    --seat-taken: #8b958f;
+    --seat-taken: #6f7a74;
     --seat-taken-mark: #0d1110;
     --seat-mine: #8fd1b5;
     --seat-mine-mark: #0d1110;
     --seat-friend: #d9aad4;
     --seat-friend-soft: #33223a;
-    --seat-blocked: #6b7470;
+    --seat-blocked: #9aa39e;
     --seat-blocked-soft: #1c2420;
     --seat-accessible: #7fd0d8;
     --seat-accessible-mark: #0d1110;

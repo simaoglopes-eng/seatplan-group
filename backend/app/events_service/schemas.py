@@ -6,11 +6,11 @@ from a file is checked by exactly the same rules as a guest typed in by hand.
 """
 
 from datetime import date
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field
 
-from app.core.text import PlainText
+from app.core.text import PersonNameText, PlainText
 from app.events_service.event_types import EventType
 
 PrivacyMode = Literal["full_name", "first_initial", "anonymous"]
@@ -19,6 +19,15 @@ Rsvp = Literal["pending", "yes", "no"]
 
 # Database ids are positive; the upper bound only stops absurd numbers early.
 Id = Field(ge=1, le=2_000_000_000)
+MAX_ID = 2_000_000_000
+
+# A person's age in whole years, typed when booking seats for a party.
+# strict: "7", 7.5 and true are refused instead of being turned into 7 or 1.
+Age = Annotated[int, Field(ge=0, le=120, strict=True)]
+# One half of a name. Invisible, control and line-break characters are refused
+# here (core/text.py); blank after trimming, or without a letter, is refused in
+# events_service/party.py, so the message can say which half is missing.
+NamePart = Annotated[PersonNameText, Field(max_length=60)]
 
 
 class Strict(BaseModel):
@@ -64,11 +73,17 @@ class GuestPatch(Strict):
     reserved_tag: ReservedTag | None = None
     wants_anonymous: bool | None = None
     rsvp: Rsvp | None = None
+    # Party details (events_service/party.py). Both names together also set `name`.
+    first_name: NamePart | None = None
+    last_name: NamePart | None = None
+    age: Age | None = None  # null clears it, except for a party member
 
 
 class NameProfileIn(Strict):
-    first_name: PlainText = Field(min_length=1, max_length=60)
-    last_name: PlainText = Field(min_length=1, max_length=59)
+    # The same characters as a party name: this name also counts as the
+    # booker's details (events_service/party.py, details_complete).
+    first_name: PersonNameText = Field(min_length=1, max_length=60)
+    last_name: PersonNameText = Field(min_length=1, max_length=59)
 
 
 class AgeProfileIn(Strict):
@@ -78,6 +93,50 @@ class AgeProfileIn(Strict):
 
 class SeatChoice(Strict):
     seat_id: int = Id
+
+
+# ---------------------------------------------------------------- party booking
+#
+# One booker chooses several seats and names everyone on them
+# (events_service/party.py). The booker's own age may be left out (or null)
+# only when one is already saved; every party member needs one.
+
+
+class PersonIn(Strict):
+    first_name: NamePart
+    last_name: NamePart
+    age: Age
+
+
+class PartyMemberIn(PersonIn):
+    seat_id: int = Id
+
+
+class MyPartySeatIn(Strict):
+    seat_id: int = Id
+    first_name: NamePart
+    last_name: NamePart
+    age: Age | None = None  # left out: keep the saved age
+
+
+class PartyConfirmIn(Strict):
+    me: MyPartySeatIn
+    # Not a business limit (free seats are): only a guard against huge bodies.
+    members: list[PartyMemberIn] = Field(default_factory=list, max_length=1000)
+
+
+class MyDetailsIn(Strict):
+    first_name: NamePart
+    last_name: NamePart
+    age: Age | None = None  # left out: keep the saved age
+
+
+class PersonPatch(Strict):
+    """Change one party member. Only the fields sent change; none may be null."""
+
+    first_name: NamePart | None = None
+    last_name: NamePart | None = None
+    age: Age | None = None
 
 
 class OptimiseIn(Strict):

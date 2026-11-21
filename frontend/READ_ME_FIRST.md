@@ -37,6 +37,7 @@ npm run contrast   # WCAG contrast check of every colour pair in tokens.css
 | `src/design/tokens.css` | The only place with colours, spacing, type, radii, shadows, layers, durations |
 | `src/design/components/` | Button, Field, Select, Checkbox, Dialog, Toast, Badge, states, Stepper, Legend, PageShell. See `src/design/READ_ME_FIRST.md` |
 | `src/pages/Home.tsx`, `Login.tsx` | Landing page with demo links; organiser sign-in |
+| `src/pages/signup/` | THE sign-up form: `SignUpForm.tsx` + `useSignUp.ts`, used by every page that creates an account (`/account?mode=create`, `/organiser/register`, `/my/register`, `/j/:token/register`, the owner sign-up). Start with `pages/signup/READ_ME_FIRST.md` |
 | `src/pages/owner/` | Owner registration and private restaurant list. Owner login reuses Login with a default /owner destination |
 | `src/pages/editor/` | Floor-plan editor: pure layout functions, undo history, canvas, side panel, unsaved-changes guard. See `src/pages/editor/READ_ME_FIRST.md` |
 | `src/pages/events/` | Attendee flow (`/e/:token`) and organiser screens (`/organiser/:eventId`). Start with `pages/events/READ_ME_FIRST.md` |
