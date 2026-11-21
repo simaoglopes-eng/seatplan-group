@@ -40,3 +40,35 @@ export async function expectConfirmed(page: Page, seatName: string): Promise<voi
   await expect(page.getByRole("heading", { name: "You are all set" })).toBeVisible();
   await expect(page.locator(".ev-seat-big")).toHaveText(seatName);
 }
+
+/** One card of "Who is sitting where?": a name left out keeps what the page filled in (or "Guest" when it is empty). */
+export interface PersonDetails {
+  first?: string;
+  last?: string;
+  age: string;
+}
+
+/**
+ * "Who is sitting where?": one card per chosen seat, the booker first. Fills
+ * every card, checks Confirm is unavailable until the last age is in, then
+ * confirms all seats at once.
+ */
+export async function fillWhoSitsWhere(page: Page, people: PersonDetails[]): Promise<void> {
+  await expect(page.getByRole("heading", { name: "Who is sitting where?" })).toBeVisible();
+  const cards = page.locator("fieldset.party-card");
+  await expect(cards).toHaveCount(people.length);
+  const count = people.length;
+  const confirm = page.getByRole("button", { name: `Confirm ${count} ${count === 1 ? "seat" : "seats"}` });
+  for (const [index, person] of people.entries()) {
+    const card = cards.nth(index);
+    for (const [label, value] of [["First name", person.first], ["Last name", person.last]] as const) {
+      const field = card.getByLabel(label, { exact: true });
+      if (value !== undefined) await field.fill(value);
+      else if ((await field.inputValue()).trim() === "") await field.fill("Guest");
+    }
+    if (index === count - 1) await expect(confirm).toHaveAttribute("aria-disabled", "true");
+    await card.getByLabel("Age", { exact: true }).fill(person.age);
+  }
+  await expect(confirm).not.toHaveAttribute("aria-disabled", "true");
+  await confirm.click();
+}

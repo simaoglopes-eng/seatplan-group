@@ -90,7 +90,8 @@ test("a new account: create with the demo code, sign out, sign in, then Booking 
   await page.getByRole("link", { name: "Log in" }).click();
   await page.waitForURL((url) => url.pathname === "/account");
   await page.getByRole("button", { name: "Create account" }).click();
-  await page.getByLabel("Your name").fill(person.name);
+  await page.getByLabel("First name").fill(person.name.split(" ")[0]);
+  await page.getByLabel("Last name").fill(person.name.split(" ").slice(1).join(" "));
   await page.getByRole("textbox", { name: "Email" }).fill(person.email);
   await page.getByLabel("Password", { exact: true }).fill(person.password);
   await page.getByRole("checkbox", { name: /I agree that SeatPlan stores my details/ }).check();
@@ -197,7 +198,8 @@ test("Event booking: filter by type, open an event, and the shared link reaches 
   await cards.first().getByRole("link", { name: /Choose your seat/ }).click();
   await page.waitForURL((url) => url.pathname.startsWith("/j/"));
   await page.getByRole("link", { name: "Create an account to choose a seat" }).first().click();
-  await page.getByLabel("Your name").fill(person.name);
+  await page.getByLabel("First name").fill(person.name.split(" ")[0]);
+  await page.getByLabel("Last name").fill(person.name.split(" ").slice(1).join(" "));
   await page.getByRole("textbox", { name: "Email" }).fill(person.email);
   await page.getByLabel("Password", { exact: true }).fill(person.password);
   await page.getByRole("checkbox", { name: /I agree that SeatPlan stores my details/ }).check();

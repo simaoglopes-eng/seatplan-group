@@ -211,7 +211,7 @@ Events, attendee (`/a/{token}`)
 - `GET /a/{token}/people?q=` search among the visible people (searches only the name this attendee may see)
 - `POST /a/{token}/rsvp`, `POST /a/{token}/knows` `{guest_ids}`, `POST /a/{token}/privacy` `{wants_anonymous}`
 - `GET /a/{token}/recommendations` -> top seats, each with `rank` (1 = best), `match` (`strong`, `some` or `none`) and plain-language reasons. No raw score: it counts only the guest's own list, so it cannot reveal who listed this guest
-- `POST /a/{token}/hold` `{seat_id}` -> `{expires_at}` or 409; `POST /a/{token}/confirm` `{seat_id}`; `DELETE /a/{token}/seat`
+- `POST /a/{token}/hold` `{seat_id}` -> `{expires_at}` or 409; `POST /a/{token}/confirm` `{seat_id}` (422 `details_required` until the guest's first name, last name and age are saved; a taken seat still answers 409 `seat_taken` first; the page books with `POST /a/{token}/party/confirm`); `DELETE /a/{token}/seat`. `POST /a/{token}/privacy` also applies to the people the guest booked seats for
 
 Events, shared link and guest accounts (full shapes, errors and limits in `docs/guest-accounts.md` section 6)
 - Organiser: `GET|PATCH /events/{eid}/share` `{enabled?, cap?}` -> `{enabled, link, needs_new_link, cap, joined, capacity, guests, places_left}`; `POST /events/{eid}/share/regenerate` (the old link stops at once). Guest rows gain `source` and `has_account`

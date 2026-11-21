@@ -21,17 +21,18 @@ for (const width of [1440, 390]) {
   test(`owner creates an account and sees an empty private list at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
     await page.goto("/owner/sign-up");
-    await page.getByLabel("Name", { exact: true }).fill("Robin Owner");
+    await page.getByLabel("First name").fill("Robin");
+    await page.getByLabel("Last name").fill("Owner");
     await page.getByLabel("Email", { exact: true }).fill(`owner-${width}@example.com`);
     await page.getByLabel("Password", { exact: true }).fill("a long safe owner password");
     await page.getByRole("checkbox").check();
     expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
     await page.screenshot({ path: join(tmpdir(), `seatplan-owner-signup-${width}.png`), fullPage: true });
-    await page.getByRole("button", { name: "Send verification code" }).click();
-    const code = (await page.getByRole("status").filter({ hasText: "Demo code" }).innerText()).match(/\d{6}/)?.[0];
+    await page.getByRole("button", { name: "Send my code" }).click();
+    const code = (await page.getByText(/Demo only: your code is \d{6}/).innerText()).match(/\d{6}/)?.[0];
     expect(code).toBeTruthy();
-    await page.getByLabel("Verification code").fill(code!);
-    await page.getByRole("button", { name: "Verify and continue" }).click();
+    await page.getByLabel("Code", { exact: true }).fill(code!);
+    await page.getByRole("button", { name: "Create my account" }).click();
     await expect(page).toHaveURL(/\/owner$/);
     await expect(page.getByRole("heading", { name: "You have no restaurants yet" })).toBeVisible();
     await page.screenshot({ path: join(tmpdir(), `seatplan-owner-home-${width}.png`), fullPage: true });

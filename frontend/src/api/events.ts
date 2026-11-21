@@ -63,7 +63,78 @@ export interface AttendeeMe {
   held_until: string | null;
   /** Guest ids this person said they know. */
   knows: number[];
+  /** True when an age is saved for this person. The number itself is for the organiser only. */
+  age_saved?: boolean;
+  /** First name, last name and age are all saved. */
+  details_complete?: boolean;
 }
+
+// ---------- Party booking (/a/{token}/party, /guest/events/{eid}/party) ----------
+// One guest (the "booker") chooses several seats and names everyone on them.
+// Shapes copy backend/app/events_service/party.py (party_view). Ages travel
+// only from the page to the server: the answers say `age_saved`, never a number.
+
+/** The booker's own details, as the party answers show them. */
+export interface PartyMe {
+  guest_id: number;
+  first_name: string | null;
+  last_name: string | null;
+  age_saved: boolean;
+  seat_id: number | null;
+  details_complete: boolean;
+}
+
+/** One person the booker added. The organiser may have unseated them or marked them "no". */
+export interface PartyMember {
+  id: number;
+  first_name: string | null;
+  last_name: string | null;
+  age_saved: boolean;
+  seat_id: number | null;
+  rsvp: Rsvp;
+}
+
+export interface PartyView {
+  me: PartyMe;
+  members: PartyMember[];
+  /** How many more people this booker may add right now. */
+  places_left: number;
+}
+
+/** A person with their whole name and age in years (0 to 120). */
+export interface PersonIn {
+  first_name: string;
+  last_name: string;
+  age: number;
+}
+
+export interface PartyMemberIn extends PersonIn {
+  seat_id: number;
+}
+
+/** The booker's own seat and details. `age` left out keeps the saved age. */
+export interface MyPartySeatIn {
+  seat_id: number;
+  first_name: string;
+  last_name: string;
+  age?: number;
+}
+
+/** POST .../party/confirm: everything in one go, all or nothing. `members` holds only new people. */
+export interface PartyConfirmIn {
+  me: MyPartySeatIn;
+  members: PartyMemberIn[];
+}
+
+/** POST .../party/me. `age` left out keeps the saved age. */
+export interface MyDetailsIn {
+  first_name: string;
+  last_name: string;
+  age?: number;
+}
+
+/** PATCH .../party/{id}: only the fields that changed, never null. */
+export type PersonPatch = Partial<PersonIn>;
 
 /** Another attendee, with the name already filtered by core/privacy.py. */
 export interface VisiblePerson {
@@ -81,6 +152,8 @@ export interface AttendeeView {
   me: AttendeeMe;
   map: SeatMapPayload;
   people: VisiblePerson[];
+  /** The people this attendee booked seats for, and their own party details. */
+  party?: PartyView;
 }
 
 /**
@@ -150,6 +223,32 @@ export function releaseSeat(token: string): Promise<unknown> {
   return api.delete(attendeePath(token, "/seat"));
 }
 
+export function getParty(token: string): Promise<PartyView> {
+  return api.get<PartyView>(attendeePath(token, "/party"));
+}
+
+/** Seats the booker and adds every new member in one go. 409 `seat_taken` names the seats in details.seat_ids. */
+export function confirmParty(token: string, body: PartyConfirmIn): Promise<PartyView> {
+  return api.post<PartyView>(attendeePath(token, "/party/confirm"), body);
+}
+
+export function saveMyPartyDetails(token: string, body: MyDetailsIn): Promise<PartyView> {
+  return api.post<PartyView>(attendeePath(token, "/party/me"), body);
+}
+
+export function editPartyMember(token: string, memberId: number, patch: PersonPatch): Promise<PartyView> {
+  return api.patch<PartyView>(attendeePath(token, `/party/${memberId}`), patch);
+}
+
+export function movePartyMember(token: string, memberId: number, seatId: number): Promise<PartyView> {
+  return api.put<PartyView>(attendeePath(token, `/party/${memberId}/seat`), { seat_id: seatId });
+}
+
+/** Deletes the person's name and age and frees their seat. Cannot be undone. */
+export function removePartyMember(token: string, memberId: number): Promise<PartyView> {
+  return api.delete<PartyView>(attendeePath(token, `/party/${memberId}`));
+}
+
 // ---------- Organiser (/events) ----------
 
 /** Organiser map seats carry more than the attendee map: real names and who placed them. */
@@ -186,9 +285,19 @@ export interface OrganiserGuest {
   source: GuestSource;
   /** True when a guest account belongs to this row. Never the account's id or email. */
   has_account: boolean;
+  /** Party booking details. The age (whole years) is shown to the organiser only. */
+  first_name?: string | null;
+  last_name?: string | null;
+  age?: number | null;
+  /** On a party member: the guest who booked their seat (who may since have been deleted). */
+  booked_by_guest_id?: number | null;
 }
 
-export type GuestSource = "invited" | "self_registered";
+/** "companion": a party member, added by the guest who booked their seat (no link, no email). */
+export type GuestSource = "invited" | "self_registered" | "companion";
+
+/** What happens to the people a deleted guest booked seats for. */
+export type PartyChoice = "erase" | "keep";
 
 /** GET, PATCH /events/{eid}/share and POST .../share/regenerate (docs/guest-accounts.md 6.3). */
 export interface ShareSettings {
@@ -398,9 +507,14 @@ export function addGuest(eventId: string, guest: { name: string; email: string }
   return api.post<GuestWithLink>(eventPath(eventId, "/guests"), guest);
 }
 
-/** Erases the guest's personal data on the server. */
-export function deleteGuest(eventId: string, guestId: number): Promise<unknown> {
-  return api.delete(eventPath(eventId, `/guests/${guestId}`));
+/**
+ * Erases the guest's personal data on the server. A guest who booked seats for
+ * others needs `party`: "erase" deletes those people too, "keep" leaves them
+ * seated. Without it such a guest answers 409 `has_party`.
+ */
+export function deleteGuest(eventId: string, guestId: number, party?: PartyChoice): Promise<unknown> {
+  const query = party ? `?party=${party}` : "";
+  return api.delete(eventPath(eventId, `/guests/${guestId}${query}`));
 }
 
 /** Makes a new personal link; the old one stops working at once. */

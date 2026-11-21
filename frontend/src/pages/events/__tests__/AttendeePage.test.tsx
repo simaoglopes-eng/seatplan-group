@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AttendeeView, SeatRecommendation } from "../../../api/events";
+import type { AttendeeView, PartyConfirmIn, SeatRecommendation } from "../../../api/events";
 import type { MapSeat, SeatState } from "../../../api/types";
 import { ToastProvider } from "../../../design/components";
 import AttendeePage from "../AttendeePage";
@@ -90,6 +90,13 @@ function attendeeServer(view: AttendeeView): FakeServer {
     view.me.seat_id = id;
     return { body: {} };
   });
+  // The page books through the party route, also for one seat (design D3).
+  server.routes.set("POST /a/tok/party/confirm", (body) => {
+    const { me } = body as PartyConfirmIn;
+    setSeat(view, me.seat_id, "mine");
+    view.me.seat_id = me.seat_id;
+    return { body: {} };
+  });
   return server;
 }
 
@@ -150,12 +157,24 @@ describe("Attendee page", () => {
     expect(within(bar).getByText("Table 1, seat 3")).toBeTruthy();
     expect(within(bar).getByText("Available until someone confirms it.")).toBeTruthy();
     expect(callsTo(server, "POST", "/a/tok/hold")).toEqual([]);
-    fireEvent.click(within(bar).getByRole("button", { name: "Confirm this seat" }));
+    fireEvent.click(within(bar).getByRole("button", { name: "Continue" }));
+
+    // 3b. Who is sitting where? (design D3): my card, named from the invitation; Confirm waits for my age.
+    const who = await screen.findByRole("region", { name: "Confirm your seats" });
+    const confirm = within(who).getByRole("button", { name: "Confirm 1 seat" });
+    expect(confirm.getAttribute("aria-disabled")).toBe("true");
+    const card = screen.getByRole("group", { name: "You · Table 1, seat 3" });
+    expect((within(card).getByLabelText("First name") as HTMLInputElement).value).toBe("Ana");
+    expect((within(card).getByLabelText("Last name") as HTMLInputElement).value).toBe("Silva");
+    fireEvent.change(within(card).getByLabelText("Age"), { target: { value: "34" } });
+    fireEvent.click(within(who).getByRole("button", { name: "Confirm 1 seat" }));
 
     // 4. Done: seat label and the email promise.
     expect(await screen.findByRole("heading", { name: "You are all set" })).toBeTruthy();
     expect(screen.getByText(/Your seat is confirmed/)).toBeTruthy();
-    expect(callsTo(server, "POST", "/a/tok/confirm")).toEqual([{ seat_id: 13 }]);
+    // The seat is booked once, through the party route, with the age as a number.
+    expect(callsTo(server, "POST", "/a/tok/party/confirm")).toEqual([{ me: { seat_id: 13, first_name: "Ana", last_name: "Silva", age: 34 }, members: [] }]);
+    expect(callsTo(server, "POST", "/a/tok/confirm")).toEqual([]);
     expect(screen.getByRole("button", { name: "Change seat" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Release my seat" })).toBeTruthy();
   });
@@ -163,14 +182,17 @@ describe("Attendee page", () => {
   it("explains when another guest confirms first", async () => {
     const view = seatStepView();
     const server = attendeeServer(view);
-    server.routes.set("POST /a/tok/confirm", () => {
+    server.routes.set("POST /a/tok/party/confirm", () => {
       setSeat(view, 13, "taken");
-      return errorReply(409, "seat_taken", "That seat was just taken.");
+      return errorReply(409, "seat_taken", "That seat was just taken.", { seat_ids: [13] });
     });
     renderPage();
     fireEvent.click(await screen.findByRole("option", { name: /Table 1, seat 3, free/ }));
     const bar = await screen.findByRole("region", { name: "Selected seat" });
-    fireEvent.click(within(bar).getByRole("button", { name: "Confirm this seat" }));
+    fireEvent.click(within(bar).getByRole("button", { name: "Continue" }));
+    const card = await screen.findByRole("group", { name: "You · Table 1, seat 3" });
+    fireEvent.change(within(card).getByLabelText("Age"), { target: { value: "34" } });
+    fireEvent.click(screen.getByRole("button", { name: "Confirm 1 seat" }));
     const alert = await screen.findByRole("alert");
     expect(within(alert).getByText("That seat was just taken")).toBeTruthy();
     fireEvent.click(within(alert).getByRole("button", { name: "Select Table 1, seat 4" }));

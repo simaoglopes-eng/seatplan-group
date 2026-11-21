@@ -6,7 +6,16 @@
 // take an AttendeeApi and never need to know which kind of guest is using them.
 import { api } from "../../api/client";
 import * as eventsApi from "../../api/events";
-import type { AttendeeView, HoldResponse, SeatRecommendation, VisiblePerson } from "../../api/events";
+import type {
+  AttendeeView,
+  HoldResponse,
+  MyDetailsIn,
+  PartyConfirmIn,
+  PartyView,
+  PersonPatch,
+  SeatRecommendation,
+  VisiblePerson,
+} from "../../api/events";
 import * as guestApi from "../../api/guest";
 
 export interface AttendeeApi {
@@ -21,6 +30,13 @@ export interface AttendeeApi {
   hold(seatId: number): Promise<HoldResponse>;
   confirm(seatId: number): Promise<unknown>;
   release(): Promise<unknown>;
+  /** Party booking (events_service/party.py): one guest books several seats and names everyone on them. */
+  party(): Promise<PartyView>;
+  partyConfirm(body: PartyConfirmIn): Promise<PartyView>;
+  partyMe(body: MyDetailsIn): Promise<PartyView>;
+  partyEdit(memberId: number, patch: PersonPatch): Promise<PartyView>;
+  partyMove(memberId: number, seatId: number): Promise<PartyView>;
+  partyRemove(memberId: number): Promise<PartyView>;
 }
 
 /** Today's calls with a personal link: /a/{token}/... */
@@ -37,6 +53,12 @@ export function linkApi(token: string): AttendeeApi {
     hold: (seatId) => eventsApi.holdSeat(token, seatId),
     confirm: (seatId) => eventsApi.confirmSeat(token, seatId),
     release: () => eventsApi.releaseSeat(token),
+    party: () => eventsApi.getParty(token),
+    partyConfirm: (body) => eventsApi.confirmParty(token, body),
+    partyMe: (body) => eventsApi.saveMyPartyDetails(token, body),
+    partyEdit: (memberId, patch) => eventsApi.editPartyMember(token, memberId, patch),
+    partyMove: (memberId, seatId) => eventsApi.movePartyMember(token, memberId, seatId),
+    partyRemove: (memberId) => eventsApi.removePartyMember(token, memberId),
   };
 }
 
@@ -54,5 +76,11 @@ export function accountApi(eventId: string): AttendeeApi {
     hold: (seatId) => guestApi.holdAccountSeat(eventId, seatId),
     confirm: (seatId) => guestApi.confirmAccountSeat(eventId, seatId),
     release: () => guestApi.releaseAccountSeat(eventId),
+    party: () => guestApi.getAccountParty(eventId),
+    partyConfirm: (body) => guestApi.confirmAccountParty(eventId, body),
+    partyMe: (body) => guestApi.saveAccountPartyDetails(eventId, body),
+    partyEdit: (memberId, patch) => guestApi.editAccountPartyMember(eventId, memberId, patch),
+    partyMove: (memberId, seatId) => guestApi.moveAccountPartyMember(eventId, memberId, seatId),
+    partyRemove: (memberId) => guestApi.removeAccountPartyMember(eventId, memberId),
   };
 }

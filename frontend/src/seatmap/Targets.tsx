@@ -164,6 +164,8 @@ export interface TargetsLayerProps {
   zoom: number;
   isSelectable: (id: number) => boolean;
   selectedId: number | null;
+  /** More selected targets (several seats chosen at once); a stable Set keeps the memo working. */
+  selectedIds?: ReadonlySet<number>;
   activeId: number | null;
   highlight: ReadonlySet<number>;
   marked: ReadonlySet<number>;
@@ -195,7 +197,7 @@ export const TargetsLayer = memo(function TargetsLayer(p: TargetsLayerProps) {
     const flags = {
       domId: targetDomId(p.mapId, id),
       selectable: p.isSelectable(id),
-      selected: id === p.selectedId,
+      selected: id === p.selectedId || (p.selectedIds?.has(id) ?? false),
       active: id === p.activeId,
       highlighted: p.highlight.has(id),
       marked: p.marked.has(id),

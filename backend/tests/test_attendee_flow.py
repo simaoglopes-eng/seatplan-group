@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
-from test_events_setup import choose, make_event, recorded_writes, seat_state
+from test_events_setup import choose, give_details, make_event, recorded_writes, seat_state
 
 from app.core import live
 from app.models import AuditLog, EmailOutbox, Organiser, SeatAssignment
@@ -49,6 +49,7 @@ def test_full_attendee_flow(client: TestClient, organiser: Organiser, session: S
     knows = client.post(f"/api/a/{ana}/knows", json={"guest_ids": [setup.guests["Bruno Costa"]]})
     assert knows.json() == {"knows": [setup.guests["Bruno Costa"]]}
 
+    give_details(setup.guests["Ana Silva"])  # a chosen seat carries a name and an age
     assert client.post(f"/api/a/{ana}/confirm", json={"seat_id": first}).status_code == 200
     assert seat_state(setup.page(client, "Ana Silva"), first) == "mine"
     assert seat_state(setup.page(client, "Bruno Costa"), first) == "taken"
@@ -102,6 +103,7 @@ def test_recommendations_name_only_people_i_know(client: TestClient, organiser: 
 
 def test_confirm_without_hold_succeeds(client: TestClient, organiser: Organiser) -> None:
     setup = make_event(client, organiser, GUESTS)
+    give_details(setup.guests["Ana Silva"])
     response = client.post(
         f"/api/a/{setup.tokens['Ana Silva']}/confirm", json={"seat_id": setup.seats[0][0]}
     )
@@ -150,6 +152,8 @@ def test_two_attendees_race_for_one_seat(
     client: TestClient, organiser: Organiser, session: Session
 ) -> None:
     setup = make_event(client, organiser, GUESTS)
+    for name in ("Ana Silva", "Bruno Costa"):
+        give_details(setup.guests[name])
     seat = setup.seats[0][0]
     start = threading.Barrier(2)
     results: dict[str, int] = {}
@@ -217,6 +221,7 @@ def test_seat_writes_lock_the_event_first(
     """
     setup = make_event(client, organiser, GUESTS)
     token, seat = setup.tokens["Ana Silva"], setup.seats[0][0]
+    give_details(setup.guests["Ana Silva"])
     with recorded_writes() as writes:
         response = client.post(f"/api/a/{token}/{action}", json={"seat_id": seat})
     assert response.status_code == 200, response.text

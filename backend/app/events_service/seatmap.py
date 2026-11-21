@@ -89,10 +89,19 @@ def seat_base(seat: Seat) -> dict[str, Any]:
 
 
 def _attendee_state(
-    seat: Seat, me: Guest, owner: SeatAssignment | None, holder: str | None, knows: set[int]
+    seat: Seat,
+    me: Guest,
+    owner: SeatAssignment | None,
+    holder: str | None,
+    knows: set[int],
+    party: frozenset[int] = frozenset(),
 ) -> str:
-    """One state per seat, from the attendee's point of view (contract section 5)."""
-    if owner is not None and owner.guest_id == me.id:
+    """One state per seat, from the attendee's point of view (contract section 5).
+
+    `party` holds the ids of the people this attendee booked seats for
+    (events_service/party.py): their seats are "mine" too.
+    """
+    if owner is not None and (owner.guest_id == me.id or owner.guest_id in party):
         return "mine"
     if owner is not None:
         return "friend" if owner.guest_id in knows else "taken"
@@ -111,11 +120,28 @@ def attendee_map(session: Session, event: Event, venue: Venue, me: Guest) -> dic
     guests = {guest.id: guest for guest in event_guests(session, event)}
     holds = live_holds(session, event)
     knows = known_ids(session, me)
+    # The people I booked seats for. I typed their names, so I see them in full.
+    party = frozenset(
+        guest.id
+        for guest in guests.values()
+        if guest.booked_by_guest_id == me.id and guest.token_revoked_at is None
+    )
     seats = []
     for seat in venue_seats(session, venue.id):
         owner = owner_of.get(seat.id)
-        state = _attendee_state(seat, me, owner, holds.get(seat.id), knows)
+        state = _attendee_state(seat, me, owner, holds.get(seat.id), knows, party)
         occupant = None
+        if owner is not None and owner.guest_id in party:
+            member = guests[owner.guest_id]
+            seats.append(
+                {
+                    **seat_base(seat),
+                    "state": state,
+                    "occupant": member.name,
+                    "party_member_id": member.id,
+                }
+            )
+            continue
         if state == "mine":
             occupant = "You"
         elif owner is not None:

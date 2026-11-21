@@ -3,7 +3,7 @@
 // The two tests run in order: the second one checks that the seat the first
 // attendee confirmed cannot be taken by anybody else.
 
-import { expectConfirmed, firstRecommendation, goToSeatStep, seatOnMap } from "./attendee-steps";
+import { expectConfirmed, fillWhoSitsWhere, firstRecommendation, goToSeatStep, seatOnMap } from "./attendee-steps";
 import { demoLinks, expect, lastPart, test } from "./fixtures";
 
 test.describe.serial("wedding attendees", () => {
@@ -23,7 +23,9 @@ test.describe.serial("wedding attendees", () => {
     const holdBar = page.getByRole("region", { name: "Selected seat" });
     await expect(holdBar).toContainText(seatName);
     await expect(holdBar).toContainText("Available until someone confirms it.");
-    await holdBar.getByRole("button", { name: "Confirm this seat" }).click();
+    await holdBar.getByRole("button", { name: "Continue" }).click();
+    // Every seat carries a first name, a last name and an age, the booker's too (design D3).
+    await fillWhoSitsWhere(page, [{ age: "34" }]);
 
     await expectConfirmed(page, seatName);
 

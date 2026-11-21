@@ -16,7 +16,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import event
 
 from app import db
-from app.models import Organiser
+from app.core.text import has_letter
+from app.models import Guest, Organiser
 
 SeatExtras = dict[tuple[int, int], dict[str, Any]]
 
@@ -119,8 +120,37 @@ def add_guest(client: TestClient, setup: EventSetup, guest: dict[str, Any]) -> i
     return data["id"]
 
 
+def give_details(guest_id: int, age: int = 30) -> None:
+    """Save a first name, a last name and an age for the guest, as the booking form does.
+
+    Every chosen seat needs them (events_service/party.py, require_details),
+    so a test that confirms one seat the short way saves them first. They are
+    written straight to the database, so the test's own audit rows, live
+    versions and emails stay exactly what they were. Saved details are kept;
+    the guest's `name` is never changed.
+    """
+    with db.new_session() as session:
+        guest = session.get(Guest, guest_id)
+        assert guest is not None
+        first, _, last = guest.name.partition(" ")
+        # Test names like "Guest 1" have no letter in their second word.
+        guest.first_name = guest.first_name or (first if has_letter(first) else "Test")
+        guest.last_name = guest.last_name or (last if has_letter(last) else "Tester")
+        if guest.age_years is None:
+            guest.age_years = age
+        session.commit()
+
+
+def give_account_details(client: TestClient, base: str, headers: dict[str, str]) -> None:
+    """give_details for the guest row behind a signed-in account's event page (`base`)."""
+    page = client.get(base, headers=headers)
+    assert page.status_code == 200, page.text
+    give_details(page.json()["me"]["id"])
+
+
 def choose(client: TestClient, setup: EventSetup, name: str, seat_id: int) -> None:
-    """The attendee holds and confirms a seat themselves."""
+    """The attendee confirms a seat themselves, with their details saved."""
+    give_details(setup.guests[name])
     token = setup.tokens[name]
     confirmed = client.post(f"/api/a/{token}/confirm", json={"seat_id": seat_id})
     assert confirmed.status_code == 200, confirmed.text

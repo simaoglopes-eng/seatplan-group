@@ -27,6 +27,7 @@ from app.core.privacy import display_name
 from app.events_service.access import (
     MAX_TOKEN_LENGTH,
     deadline_passed,
+    is_active,
     load_venue,
 )
 from app.events_service.age import visible_age
@@ -164,14 +165,27 @@ def _open_seats(session: Session, event: Event) -> tuple[int, int]:
     return len(seats), sum(1 for seat in seats if seat.reserved_tag is not None)
 
 
+def _came_by_link(guest: Guest, everyone: dict[int, Guest]) -> bool:
+    """Joined with the link, or a party member booked by someone who did.
+
+    `everyone` holds erased rows too: a member keeps counting after the
+    organiser deleted only their booker (party=keep).
+    """
+    if guest.source == "self_registered":
+        return True
+    booker = everyone.get(guest.booked_by_guest_id) if guest.booked_by_guest_id else None
+    return guest.source == "companion" and booker is not None and booker.source == "self_registered"
+
+
 def place_counts(session: Session, event: Event) -> dict[str, int]:
     """capacity (seats not blocked), guests (active) and joined (active, by the link)."""
     capacity, _reserved = _open_seats(session, event)
-    coming = active_guests(session, event)
+    everyone = {guest.id: guest for guest in event_guests(session, event)}
+    coming = [guest for guest in everyone.values() if is_active(guest)]
     return {
         "capacity": capacity,
         "guests": len(coming),
-        "joined": sum(1 for guest in coming if guest.source == "self_registered"),
+        "joined": sum(1 for guest in coming if _came_by_link(guest, everyone)),
     }
 
 
@@ -203,6 +217,21 @@ def places_left(session: Session, event: Event) -> int:
     if event.share_cap is not None:
         left = min(left, event.share_cap - counts["joined"])
     return max(0, left)
+
+
+def party_room(session: Session, event: Event, booker: Guest) -> int:
+    """How many more people this booker may bring right now (events_service/party.py).
+
+    Each party member is a new guest, so the rule of places_left applies:
+    invited guests who have not chosen yet keep their places, and seats
+    reserved for a tag are not for members (they have none). The link's cap
+    counts only when the booker came in with the link. Call after lock_event.
+    """
+    counts = place_counts(session, event)
+    room = min(counts["capacity"] - counts["guests"], _seats_for_newcomers(session, event))
+    if booker.source == "self_registered" and event.share_cap is not None:
+        room = min(room, event.share_cap - counts["joined"])
+    return max(0, room)
 
 
 def room_to_come_back(session: Session, event: Event, guest: Guest) -> bool:
