@@ -39,11 +39,11 @@
     },
     {
       "source": "/e/:token",
-      "destination": { "service": "frontend", "path": "/index.html" }
+      "destination": { "service": "frontend", "path": "/" }
     },
     {
       "source": "/j/:token/:rest*",
-      "destination": { "service": "frontend", "path": "/index.html" }
+      "destination": { "service": "frontend", "path": "/" }
     },
     {
       "source": "/(.*)",
