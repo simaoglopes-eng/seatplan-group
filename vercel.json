@@ -32,18 +32,16 @@
       ]
     }
   ],
+  "redirects": [
+    { "source": "/e/:token", "destination": "/#/e/:token", "permanent": false },
+    { "source": "/j/:token", "destination": "/#/j/:token", "permanent": false },
+    { "source": "/j/:token/register", "destination": "/#/j/:token/register", "permanent": false },
+    { "source": "/j/:token/sign-in", "destination": "/#/j/:token/sign-in", "permanent": false }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": { "service": "backend" }
-    },
-    {
-      "source": "/e/:token",
-      "destination": { "service": "frontend", "path": "/" }
-    },
-    {
-      "source": "/j/:token/:rest*",
-      "destination": { "service": "frontend", "path": "/" }
     },
     {
       "source": "/(.*)",

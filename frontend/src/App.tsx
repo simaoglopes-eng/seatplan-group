@@ -1,7 +1,7 @@
 // The complete route table. Every screen of SeatPlan Events is listed here once,
 // so feature owners fill in their page file and never need to touch this one.
 // Events only: the restaurant pages stay in the tree but have no route here.
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import EditorPage from "./pages/editor/EditorPage";
 import AttendeePage from "./pages/events/AttendeePage";
 import OrganiserPage from "./pages/events/OrganiserPage";
@@ -31,10 +31,16 @@ import RegisterPage from "./pages/join/RegisterPage";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
+function HomeEntry() {
+  const { hash } = useLocation();
+  const invitation = /^#(\/(?:e\/[\w-]+|j\/[\w-]+(?:\/(?:register|sign-in))?))$/.exec(hash);
+  return invitation ? <Navigate to={invitation[1]} replace /> : <Home />;
+}
+
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<HomeEntry />} />
       <Route path="/participant" element={<ParticipantStartPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/organiser/register" element={<OrganiserRegister />} />
