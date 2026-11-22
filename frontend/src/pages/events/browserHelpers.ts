@@ -6,13 +6,32 @@ export function fullLink(link: string): string {
   return link.startsWith("/") ? `${window.location.origin}${link}` : link;
 }
 
-/** True when the text reached the clipboard. Fails on old browsers and plain http. */
+/** Copy through the Clipboard API or the browser's selection-based fallback. */
 export async function copyText(text: string): Promise<boolean> {
+  if (!text) return false;
   try {
     await navigator.clipboard.writeText(text);
     return true;
   } catch {
+    // Some embedded browsers block the Clipboard API but allow copying a selection.
+  }
+
+  const focused = document.activeElement;
+  const field = document.createElement("textarea");
+  field.value = text;
+  field.readOnly = true;
+  field.style.position = "fixed";
+  field.style.opacity = "0";
+  document.body.appendChild(field);
+  try {
+    field.select();
+    field.setSelectionRange(0, field.value.length);
+    return document.execCommand("copy");
+  } catch {
     return false;
+  } finally {
+    field.remove();
+    if (focused instanceof HTMLElement) focused.focus({ preventScroll: true });
   }
 }
 
