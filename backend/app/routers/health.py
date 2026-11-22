@@ -8,7 +8,10 @@ process remembers it and skips the column check (columns are only ever
 added); any other answer is checked again on the next call.
 """
 
+import logging
+import os
 from typing import Any
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -21,6 +24,7 @@ from app.models import Base, utc_now
 from app.seed.migrate import NEW_COLUMNS
 
 router = APIRouter(tags=["health"])
+logger = logging.getLogger("seatplan.health")
 
 # Databases (by URL, without the password) already seen with every column.
 _READY: set[str] = set()
@@ -57,6 +61,18 @@ def health(session: db.SessionDep) -> JSONResponse:
             schema = "empty"
         else:
             schema = "incomplete"
+        if schema != "ready" and os.environ.get("VERCEL"):
+            integrated = urlsplit(os.environ.get("NEWDB_DATABASE_URL", ""))
+            active = session.get_bind().url
+            active_host = (active.host or "").replace("-pooler.", ".")
+            integrated_host = (integrated.hostname or "").replace("-pooler.", ".")
+            logger.warning(
+                "SeatPlan database schema=%s integrated_match=%s missing_tables=%d",
+                schema,
+                bool(integrated_host and active_host == integrated_host
+                     and active.database == integrated.path.removeprefix("/")),
+                len(expected_tables - present_tables),
+            )
     except SQLAlchemyError:
         database = "error"
         schema = "unknown"
