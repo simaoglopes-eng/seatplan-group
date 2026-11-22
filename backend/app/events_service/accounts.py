@@ -126,8 +126,12 @@ def require_signup_mail(email: str) -> None:
     if not settings.trust_forwarded_for:
         return
     if (
-        settings.email_provider != "resend"
-        or not settings.resend_api_key
+        settings.email_provider not in {"resend", "gmail"}
+        or (settings.email_provider == "resend" and not settings.resend_api_key)
+        or (
+            settings.email_provider == "gmail"
+            and (not settings.gmail_username or not settings.gmail_app_password)
+        )
         or (not settings.email_allow_all and email not in settings.email_allowlist)
     ):
         raise ApiError(

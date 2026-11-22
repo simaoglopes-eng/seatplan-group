@@ -10,8 +10,12 @@ provider and lets us swap Resend for another service by writing one class.
 
 import base64
 import logging
+import smtplib
+import ssl
 import uuid
 from dataclasses import dataclass
+from email.message import EmailMessage
+from email.utils import formataddr, make_msgid
 from typing import Protocol
 
 import httpx
@@ -134,8 +138,69 @@ class ResendProvider:
         return message_id
 
 
+class GmailSmtpProvider:
+    """Send low-volume transactional mail through the owner's Gmail account.
+
+    Gmail credentials are held only in server environment variables. SMTP is
+    awaited in this request so Vercel does not suspend the send after replying.
+    """
+
+    def __init__(self, username: str, app_password: str, timeout_s: float = 10.0) -> None:
+        if not username or not app_password:
+            raise ValueError("GMAIL_USERNAME and GMAIL_APP_PASSWORD are required")
+        self._username = username
+        self._app_password = app_password.replace(" ", "")
+        self._timeout_s = timeout_s
+
+    def __repr__(self) -> str:
+        return "GmailSmtpProvider(credentials=***)"
+
+    def _message(self, message: OutgoingEmail) -> EmailMessage:
+        outgoing = EmailMessage()
+        outgoing["From"] = formataddr(("SeatPlan", self._username))
+        outgoing["To"] = message.to_email
+        outgoing["Subject"] = message.subject
+        outgoing["Message-ID"] = make_msgid(domain="seatplan.events")
+        outgoing.set_content(message.body_text)
+        outgoing.add_alternative(message.body_html, subtype="html")
+        if message.image_png is not None:
+            html_part = outgoing.get_payload()[-1]
+            html_part.add_related(
+                base64.b64decode(message.image_png),
+                maintype="image",
+                subtype="png",
+                cid="<seatmap>",
+                filename="seat-map.png",
+                disposition="inline",
+            )
+        if message.ics is not None:
+            outgoing.add_attachment(
+                message.ics.encode("utf-8"),
+                maintype="text",
+                subtype="calendar",
+                filename="invite.ics",
+            )
+        return outgoing
+
+    def send(self, message: OutgoingEmail) -> str:
+        outgoing = self._message(message)
+        try:
+            with smtplib.SMTP("smtp.gmail.com", 587, timeout=self._timeout_s) as server:
+                server.ehlo()
+                server.starttls(context=ssl.create_default_context())
+                server.ehlo()
+                server.login(self._username, self._app_password)
+                server.send_message(outgoing)
+        except (smtplib.SMTPException, OSError, ssl.SSLError) as error:
+            # SMTP exceptions may contain account addresses or server text.
+            raise ProviderError(f"Gmail SMTP failed: {type(error).__name__}") from None
+        return f"gmail-{uuid.uuid4().hex}"
+
+
 def provider_from_settings(settings: Settings) -> Provider:
-    """EMAIL_PROVIDER=resend sends for real; anything else stays on the console."""
+    """Select the configured email provider."""
     if settings.email_provider == "resend":
         return ResendProvider(settings.resend_api_key, settings.email_from)
+    if settings.email_provider == "gmail":
+        return GmailSmtpProvider(settings.gmail_username, settings.gmail_app_password)
     return ConsoleProvider()

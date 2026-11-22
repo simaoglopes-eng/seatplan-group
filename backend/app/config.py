@@ -35,6 +35,8 @@ class Settings:
     email_allowlist: tuple[str, ...]
     public_base_url: str
     email_allow_all: bool = False
+    gmail_username: str = field(default="", repr=False)
+    gmail_app_password: str = field(default="", repr=False)
     # True only on Vercel, which writes X-Forwarded-For itself (see security.client_ip).
     trust_forwarded_for: bool = False
     # Deposits: "demo" (no money moves, the default) or "stripe". The keys are
@@ -173,6 +175,8 @@ def load_settings() -> Settings:
         cron_secret=os.environ.get("CRON_SECRET", ""),
         email_provider=os.environ.get("EMAIL_PROVIDER", "console"),
         resend_api_key=os.environ.get("RESEND_API_KEY", ""),
+        gmail_username=os.environ.get("GMAIL_USERNAME", "").strip(),
+        gmail_app_password=os.environ.get("GMAIL_APP_PASSWORD", "").replace(" ", ""),
         email_from=os.environ.get("EMAIL_FROM", "SeatPlan <noreply@example.com>"),
         email_allowlist=_read_list("EMAIL_ALLOWLIST"),
         email_allow_all=_read_bool("EMAIL_ALLOW_ALL"),
