@@ -129,8 +129,19 @@ def _choose_secret_key(is_postgres: bool) -> str:
     return secrets.token_hex(32)
 
 
+def _integrated_database_url() -> str:
+    return os.environ.get("NEWDB_DATABASE_URL", "").strip()
+
+
+def migration_database_url(database_url: str) -> str:
+    direct_key = (
+        "NEWDB_DATABASE_URL_UNPOOLED" if _integrated_database_url() else "DATABASE_URL_UNPOOLED"
+    )
+    return _normalise_database_url(os.environ.get(direct_key, "").strip() or database_url)
+
+
 def _choose_database_url() -> str:
-    raw = os.environ.get("DATABASE_URL", "").strip()
+    raw = _integrated_database_url() or os.environ.get("DATABASE_URL", "").strip()
     # Vercel sets VERCEL=1. Its file system is read-only, so the SQLite
     # fallback could never work there; say what is missing instead.
     if not raw and os.environ.get("VERCEL"):

@@ -20,12 +20,11 @@ The DDL below is fixed text written in this file, never built from input, so
 contract section 7 ("no string-built SQL") still holds.
 """
 
-import os
 
 from sqlalchemy import Connection, inspect, text
 
 from app import db
-from app.config import _normalise_database_url, get_settings
+from app.config import get_settings, migration_database_url
 from app.models import RestaurantReview
 
 # (table, column, the column's type and rules as ALTER TABLE wants them).
@@ -203,8 +202,7 @@ def upgrade_schema(connection: Connection) -> list[str]:
 
 def main() -> None:
     settings = get_settings()
-    raw_url = os.environ.get("DATABASE_URL_UNPOOLED", "").strip() or settings.database_url
-    db.init_engine(_normalise_database_url(raw_url))
+    db.init_engine(migration_database_url(settings.database_url))
     for line in db.create_all():
         print(line)
     print("Tables are ready.")
@@ -213,8 +211,7 @@ def main() -> None:
 def apply_schema_migration(*, only_when_empty: bool = False) -> list[str]:
     """Apply the schema using Neon/Vercel's direct URL without changing app state."""
     settings = get_settings()
-    raw_url = os.environ.get("DATABASE_URL_UNPOOLED", "").strip() or settings.database_url
-    engine = db.make_engine(_normalise_database_url(raw_url))
+    engine = db.make_engine(migration_database_url(settings.database_url))
     try:
         return db.create_all(engine=engine, only_when_empty=only_when_empty)
     finally:
