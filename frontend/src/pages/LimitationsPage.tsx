@@ -6,32 +6,32 @@ import "./limitations.css";
 const roadmap = [
   {
     title: "From discovery to booking",
-    limit: "The directory helps organisers find venues across several cities and contact them directly. A listing does not confirm availability or a reservation.",
-    solution: "Pilot a request-to-book flow with a few venue partners. Start with venue approval and explicit booking status, then add direct reservations where availability can be kept current.",
+    limit: "Organisers can find venues across several cities. They still have to contact the venue to check dates and book.",
+    solution: "Pilot booking requests with a few partner venues. Add instant reservations once partners can keep availability up to date.",
     measure: "Track response time and the share of enquiries that turn into confirmed bookings.",
   },
   {
     title: "Ready-to-use floor plans",
-    limit: "An organiser still has to draw the room. The same hall can have different capacities and arrangements for a banquet, theatre or reception.",
-    solution: "Work with venues to publish approved layouts for each configuration. Let organisers start from a template and adapt it to their event.",
+    limit: "Organisers still draw the room for each event. Capacity and seating vary by setup.",
+    solution: "Publish venue-approved banquet, theatre and reception layouts that organisers can adapt.",
     measure: "Compare setup time and record how often organisers need to correct a template.",
   },
   {
     title: "Scale city by city",
-    limit: "More listings increase reach, but opening hours, contact details and accessibility information can go stale. A large directory also needs repeat users and venue participation.",
-    solution: "Build density in a few cities first. Invite venues to maintain their listings and let organisers report changes. More useful listings can attract organisers, whose enquiries give venues a reason to keep participating.",
+    limit: "As the directory grows, contact details, opening hours and accessibility information are harder to keep current.",
+    solution: "Expand city by city and let venues manage their listings. A useful local directory attracts organisers, whose enquiries give venues a reason to stay active.",
     measure: "Track recently verified listings, active venues and repeat organisers by city.",
   },
   {
     title: "Venue and catering partnerships",
-    limit: "Finding a venue still leaves organisers coordinating food and other suppliers. SeatPlan has no integrated partner marketplace.",
-    solution: "After venue selection, offer optional introductions to local caterers and event partners. Test a clearly disclosed referral fee or paid venue services once the referrals show value.",
+    limit: "After choosing a venue, organisers still find and coordinate suppliers separately.",
+    solution: "Offer optional introductions to catering and event partners. Test clearly disclosed referral fees or paid venue services.",
     measure: "Track accepted referrals, supplier response times and organiser satisfaction.",
   },
   {
     title: "Reliability when everyone joins",
-    limit: "A burst of guests can compete for seats. A successful local test cannot establish how the deployed app behaves under event-day load.",
-    solution: "Keep reservation rules on the server, preserve conflict handling and test concurrent holds, expired holds and retries at realistic event sizes.",
+    limit: "Many guests may try to book the same seat. Event-day traffic still needs testing.",
+    solution: "Load-test simultaneous reservations, expired holds and repeat requests at realistic event sizes.",
     measure: "Check that no seat is assigned twice and track response latency under load.",
   },
 ];
@@ -63,34 +63,41 @@ export default function LimitationsPage() {
       <PageShell title="Limitations and solutions" width="wide" variant="overlay" headerActions={<PublicHeaderActions />}>
         <section className="sp-review-hero" aria-labelledby="sp-review-title">
           <img className="sp-review-hero-img" src="/images/photos/hero-terrace-assisi.jpg" width={2000} height={1333} alt="" fetchPriority="high" />
-          <div className="sp-review-wrap">
-            <div className="glass-panel sp-review-panel">
-              <p className="glass-eyebrow">SeatPlan · Nova SBE team project</p>
-              <h1 id="sp-review-title">Limitations and solutions</h1>
-              <p>SeatPlan helps organisers find a venue, plan a room and give guests a way to choose their seats. The next step is to make venue information and bookings easier to trust.</p>
-              <div className="sp-review-actions">
-                <Link className="btn btn-glass-green" to="/demo">Open live demo</Link>
-                <a className="btn btn-glass-brass" href="#code-walkthrough">Code walkthrough</a>
-              </div>
+          <div className="sp-review-panel">
+            <p className="sp-review-kicker">Nova SBE team project</p>
+            <h1 id="sp-review-title">Limitations and solutions</h1>
+            <p>SeatPlan helps organisers find venues, plan rooms and let guests choose their seats. Here’s where it falls short today and what we’d build next.</p>
+            <div className="sp-review-actions">
+              <Link className="sp-review-action sp-review-action-primary" to="/demo">Open live demo</Link>
+              <a className="sp-review-action sp-review-action-secondary" href="#code-walkthrough">Code walkthrough</a>
             </div>
           </div>
         </section>
         <section className="sp-review-wrap sp-review-section" aria-labelledby="sp-roadmap">
           <h2 id="sp-roadmap">Where SeatPlan goes next</h2>
-          <div className="sp-review-grid">
+          <div className="sp-review-roadmap">
             {roadmap.map(({ title, limit, solution, measure }) => (
-              <article className="sp-review-card" key={title}>
+              <article className="sp-review-roadmap-item" key={title}>
                 <h3>{title}</h3>
-                <ul>
-                  <li><strong>Today.</strong> {limit}</li>
-                  <li><strong>Next step.</strong> {solution}</li>
-                  <li><strong>How to check.</strong> {measure}</li>
-                </ul>
+                <dl>
+                  <div>
+                    <dt>Today</dt>
+                    <dd>{limit}</dd>
+                  </div>
+                  <div>
+                    <dt>Proposed solution</dt>
+                    <dd>{solution}</dd>
+                  </div>
+                  <div>
+                    <dt>How to measure it</dt>
+                    <dd>{measure}</dd>
+                  </div>
+                </dl>
               </article>
             ))}
           </div>
         </section>
-        <section className="sp-review-demo" aria-labelledby="sp-live-demo">
+        <section className="sp-review-wrap sp-review-demo" aria-labelledby="sp-live-demo">
           <img src="/images/photos/palazzo-hall.jpg" width={1400} height={933} alt="Rows of chairs in the Palazzo Vecchio hall" loading="lazy" decoding="async" />
           <div>
             <h2 id="sp-live-demo">What to show live</h2>
@@ -99,7 +106,7 @@ export default function LimitationsPage() {
               <li>Open a guest invitation, choose a seat and confirm it.</li>
               <li>Return to the organiser view and show the updated assignment. Explain how a competing request is handled.</li>
             </ol>
-            <Link className="btn btn-primary" to="/demo">Launch the SeatPlan demo</Link>
+            <Link className="sp-review-action sp-review-action-primary" to="/demo">Launch the SeatPlan demo</Link>
           </div>
         </section>
         <section className="sp-review-wrap sp-review-section" id="code-walkthrough" aria-labelledby="sp-code-title">
@@ -107,7 +114,7 @@ export default function LimitationsPage() {
           <p>Follow one guest action from the interface to the API and its tests. Open these files in the repository during the presentation.</p>
           <ol className="sp-review-code">
             {walkthrough.map(({ title, file, detail, code }) => (
-              <li key={file} className="sp-review-card">
+              <li key={file} className="sp-review-code-card">
                 <h3>{title}</h3>
                 <a className="sp-review-file" href={`https://github.com/f3deric0/seatplan-federico-private/blob/main/${file}`}>{file}</a>
                 <p>{detail}</p>
@@ -121,7 +128,7 @@ export default function LimitationsPage() {
             <li><strong>Read and explain the code.</strong> Follow inputs, branches and return values across files, including code written by another teammate or suggested by AI.</li>
             <li><strong>Verify behaviour.</strong> Compare the intended result with API responses, persisted data and the live demo. Check the failure case as well as the happy path.</li>
           </ul>
-          <Link to="/">← Back to SeatPlan</Link>
+          <Link className="sp-review-back" to="/">← Back to SeatPlan</Link>
         </section>
       </PageShell>
     </div>
