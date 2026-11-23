@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { PageShell } from "../design/components";
 import { PublicHeaderActions } from "./discover/PublicHeaderActions";
@@ -6,30 +7,35 @@ import "./limitations.css";
 const roadmap = [
   {
     title: "From discovery to booking",
+    photo: "/images/venues/relation-5424595.jpg",
     limit: "Organisers can find venues across several cities. They still have to contact the venue to check dates and book.",
     solution: "Pilot booking requests with a few partner venues. Add instant reservations once partners can keep availability up to date.",
     measure: "Track response time and the share of enquiries that turn into confirmed bookings.",
   },
   {
     title: "Ready-to-use floor plans",
+    photo: "/images/photos/palazzo-hall.jpg",
     limit: "Organisers still draw the room for each event. Capacity and seating vary by setup.",
     solution: "Publish venue-approved banquet, theatre and reception layouts that organisers can adapt.",
     measure: "Compare setup time and record how often organisers need to correct a template.",
   },
   {
     title: "Scale city by city",
+    photo: "/images/venues/way-144502504.jpg",
     limit: "As the directory grows, contact details, opening hours and accessibility information are harder to keep current.",
     solution: "Expand city by city and let venues manage their listings. A useful local directory attracts organisers, whose enquiries give venues a reason to stay active.",
     measure: "Track recently verified listings, active venues and repeat organisers by city.",
   },
   {
     title: "Venue and catering partnerships",
+    photo: "/images/photos/hero-dinner-giant.jpg",
     limit: "After choosing a venue, organisers still find and coordinate suppliers separately.",
     solution: "Offer optional introductions to catering and event partners. Test clearly disclosed referral fees or paid venue services.",
     measure: "Track accepted referrals, supplier response times and organiser satisfaction.",
   },
   {
     title: "Reliability when everyone joins",
+    photo: "/images/photos/hero-dining-hall.jpg",
     limit: "Many guests may try to book the same seat. Event-day traffic still needs testing.",
     solution: "Load-test simultaneous reservations, expired holds and repeat requests at realistic event sizes.",
     measure: "Check that no seat is assigned twice and track response latency under load.",
@@ -57,6 +63,55 @@ const walkthrough = [
   },
 ];
 
+function RoadmapExplorer() {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const { title, photo, limit, solution, measure } = roadmap[selectedIndex];
+
+  return (
+    <section className="sp-review-wrap sp-review-section" id="roadmap" aria-labelledby="sp-roadmap">
+      <h2 id="sp-roadmap">Where SeatPlan goes next</h2>
+      <div className="sp-review-explorer">
+        <div className="sp-review-topics" role="group" aria-label="Roadmap topics">
+          {roadmap.map((item, index) => (
+            <button
+              key={item.title}
+              type="button"
+              aria-pressed={selectedIndex === index}
+              aria-controls="sp-review-topic"
+              onClick={() => setSelectedIndex(index)}
+            >
+              {item.title}
+              <span aria-hidden="true">↗</span>
+            </button>
+          ))}
+        </div>
+        <article className="sp-review-topic" id="sp-review-topic" aria-labelledby="sp-review-topic-title">
+          <div className="sp-review-topic-cover">
+            <img key={photo} src={photo} alt="" loading="lazy" decoding="async" />
+          </div>
+          <div className="sp-review-topic-copy">
+            <h3 id="sp-review-topic-title" aria-live="polite">{title}</h3>
+            <dl key={title}>
+              <div>
+                <dt>Today</dt>
+                <dd>{limit}</dd>
+              </div>
+              <div>
+                <dt>Proposed solution</dt>
+                <dd>{solution}</dd>
+              </div>
+              <div className="sp-review-topic-measure">
+                <dt>How to measure it</dt>
+                <dd>{measure}</dd>
+              </div>
+            </dl>
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
 export default function LimitationsPage() {
   return (
     <div className="sp-review">
@@ -68,47 +123,12 @@ export default function LimitationsPage() {
             <h1 id="sp-review-title">Limitations and solutions</h1>
             <p>SeatPlan helps organisers find venues, plan rooms and let guests choose their seats. Here’s where it falls short today and what we’d build next.</p>
             <div className="sp-review-actions">
-              <Link className="sp-review-action sp-review-action-primary" to="/demo">Open live demo</Link>
+              <a className="sp-review-action sp-review-action-primary" href="#roadmap">Explore the roadmap <span aria-hidden="true">↓</span></a>
               <a className="sp-review-action sp-review-action-secondary" href="#code-walkthrough">Code walkthrough</a>
             </div>
           </div>
         </section>
-        <section className="sp-review-wrap sp-review-section" aria-labelledby="sp-roadmap">
-          <h2 id="sp-roadmap">Where SeatPlan goes next</h2>
-          <div className="sp-review-roadmap">
-            {roadmap.map(({ title, limit, solution, measure }) => (
-              <article className="sp-review-roadmap-item" key={title}>
-                <h3>{title}</h3>
-                <dl>
-                  <div>
-                    <dt>Today</dt>
-                    <dd>{limit}</dd>
-                  </div>
-                  <div>
-                    <dt>Proposed solution</dt>
-                    <dd>{solution}</dd>
-                  </div>
-                  <div>
-                    <dt>How to measure it</dt>
-                    <dd>{measure}</dd>
-                  </div>
-                </dl>
-              </article>
-            ))}
-          </div>
-        </section>
-        <section className="sp-review-wrap sp-review-demo" aria-labelledby="sp-live-demo">
-          <img src="/images/photos/palazzo-hall.jpg" width={1400} height={933} alt="Rows of chairs in the Palazzo Vecchio hall" loading="lazy" decoding="async" />
-          <div>
-            <h2 id="sp-live-demo">What to show live</h2>
-            <ol>
-              <li>Open a venue or demo room and show the organiser’s floor plan.</li>
-              <li>Open a guest invitation, choose a seat and confirm it.</li>
-              <li>Return to the organiser view and show the updated assignment. Explain how a competing request is handled.</li>
-            </ol>
-            <Link className="sp-review-action sp-review-action-primary" to="/demo">Launch the SeatPlan demo</Link>
-          </div>
-        </section>
+        <RoadmapExplorer />
         <section className="sp-review-wrap sp-review-section" id="code-walkthrough" aria-labelledby="sp-code-title">
           <h2 id="sp-code-title">Code walkthrough</h2>
           <p>Follow one guest action from the interface to the API and its tests. Open these files in the repository during the presentation.</p>
