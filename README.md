@@ -1,6 +1,6 @@
 # SeatPlan
 
-> **Independent project status (2026-11-16):** This is Federico’s personal event application in the private `f3deric0/seatplan-events` repository, deployed at [seatplan-events-federico.vercel.app](https://seatplan-events-federico.vercel.app/). Neon is connected and the schema is ready. Real email delivery and verified sign-up are not configured or verified yet; do not use this site for real attendees until those checks pass. See [independent setup](docs/INDEPENDENT_SETUP.md) and [implementation plan](PIANO_SEATPLAN.md).
+> **SeatPlan** is a group project by Simão Lopes and Federico for Introduction to Programming 2026, NOVA SBE. Live site: [seatplan-federico-private.vercel.app](https://seatplan-federico-private.vercel.app/). It runs on Vercel with a Neon Postgres database. The project started on 20 Nov 2026 from the shared SeatPlan codebase; see the first commit for where that code comes from.
 
 SeatPlan lets people choose their own seat on a live 2D map. Two verticals share
 one core:
