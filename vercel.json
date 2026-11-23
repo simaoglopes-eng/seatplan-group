@@ -33,6 +33,7 @@
     }
   ],
   "redirects": [
+    { "source": "/limitations-and-solutions", "destination": "/#/limitations-and-solutions", "permanent": false },
     { "source": "/e/:token", "destination": "/#/e/:token", "permanent": false },
     { "source": "/j/:token", "destination": "/#/j/:token", "permanent": false },
     { "source": "/j/:token/register", "destination": "/#/j/:token/register", "permanent": false },

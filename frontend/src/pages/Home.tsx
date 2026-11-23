@@ -54,6 +54,7 @@ export default function Home() {
             <Link to="/demo">Live demo</Link>
             <Link to="/events/staff">Staff area</Link>
             <Link to="/login">Organiser sign in</Link>
+            <Link to="/limitations-and-solutions">Limitations and solutions</Link>
           </p>
         }
       >

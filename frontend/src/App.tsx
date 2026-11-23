@@ -22,6 +22,7 @@ import VenuePage from "./pages/events-public/VenuePage";
 import VenuesPage from "./pages/events-public/VenuesPage";
 import DirectoryPage from "./pages/directory/DirectoryPage";
 import Home from "./pages/Home";
+import LimitationsPage from "./pages/LimitationsPage";
 import DemoHome from "./pages/DemoHome";
 import CreditsPage from "./pages/credits/CreditsPage";
 import ParticipantStartPage from "./pages/ParticipantStartPage";
@@ -33,6 +34,7 @@ import NotFound from "./pages/NotFound";
 
 function HomeEntry() {
   const { hash } = useLocation();
+  if (hash === "#/limitations-and-solutions") return <Navigate to="/limitations-and-solutions" replace />;
   const invitation = /^#(\/(?:e\/[\w-]+|j\/[\w-]+(?:\/(?:register|sign-in))?))$/.exec(hash);
   return invitation ? <Navigate to={invitation[1]} replace /> : <Home />;
 }
@@ -44,6 +46,7 @@ export default function App() {
       <Route path="/participant" element={<ParticipantStartPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/organiser/register" element={<OrganiserRegister />} />
+      <Route path="/limitations-and-solutions" element={<LimitationsPage />} />
       <Route path="/demo" element={<DemoHome />} />
       {/* Photo and data credits, as the licences ask */}
       <Route path="/credits" element={<CreditsPage />} />
